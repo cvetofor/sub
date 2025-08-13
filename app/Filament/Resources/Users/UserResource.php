@@ -9,6 +9,7 @@ use App\Filament\Resources\Users\Schemas\UserForm;
 use App\Filament\Resources\Users\Tables\UsersTable;
 use App\Models\User;
 use BackedEnum;
+use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -42,6 +43,12 @@ class UserResource extends Resource {
         return [
             //
         ];
+    }
+
+    public static function canCreate(): bool {
+        $user = Filament::auth()->user();
+
+        return $user && $user->role_id === 1;
     }
 
     public static function getPages(): array {

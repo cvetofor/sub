@@ -8,6 +8,7 @@ use Filament\Schemas\Schema;
 use Filament\Forms\Components\TextInput;
 use App\Models\User;
 use Filament\Actions\DeleteAction;
+use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\TextEntry;
@@ -25,36 +26,45 @@ class EditUser extends EditRecord {
     }
 
     public function form(Schema $schema): Schema {
+        $currentUser = Filament::auth()->user();
+
+        $fields = [
+            TextInput::make('name')
+                ->label('Имя')
+                ->trim()
+                ->required(),
+
+            TextInput::make('email')
+                ->label('Email')
+                ->email()
+                ->required()
+                ->unique(User::class, 'email')
+                ->trim(),
+        ];
+
+        if ($currentUser && $currentUser->role_id === 1) {
+            $fields[] = TextInput::make('password')
+                ->label('Пароль')
+                ->password()
+                ->dehydrated(fn($state) => filled($state))
+                ->trim();
+
+            $fields[] = Select::make('role_id')
+                ->label('Роль')
+                ->options(Role::pluck('name', 'id'))
+                ->required();
+        } else {
+            $fields[] = TextEntry::make('role_id')
+                ->label('Роль')
+                ->getStateUsing(fn($record) => optional($record->role)->name);
+        }
+
+        $fields[] = Toggle::make('is_active')
+            ->label('Активирован');
+
         return $schema->components([
             Grid::make(1)->schema([
-                Section::make('Детали')->schema([
-                    TextInput::make('name')
-                        ->label('Имя')
-                        ->trim()
-                        ->required(),
-
-                    TextInput::make('email')
-                        ->label('Email')
-                        ->email()
-                        ->required()
-                        ->unique(User::class, 'email')
-                        ->trim(),
-
-                    TextInput::make('password')
-                        ->label('Пароль')
-                        ->password()
-                        ->dehydrated(fn($state) => filled($state))
-                        ->trim(),
-
-                    Select::make('role_id')
-                        ->label('Роль')
-                        ->options(Role::pluck('name', 'id'))
-                        ->required(),
-
-                    Toggle::make('is_active')
-                        ->label('Активирован')
-                ]),
-
+                Section::make('Детали')->schema($fields),
             ]),
             Grid::make(1)->schema([
                 Section::make('Ревизия')->schema([
@@ -64,8 +74,8 @@ class EditUser extends EditRecord {
                     TextEntry::make('updated_at')
                         ->label('Дата последнего редактирования')
                         ->dateTime(),
-                ])
-            ])
+                ]),
+            ]),
         ]);
     }
 }

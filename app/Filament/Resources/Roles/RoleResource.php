@@ -9,6 +9,7 @@ use App\Filament\Resources\Roles\Schemas\RoleForm;
 use App\Filament\Resources\Roles\Tables\RolesTable;
 use App\Models\Role;
 use BackedEnum;
+use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -42,6 +43,12 @@ class RoleResource extends Resource {
         return [
             //
         ];
+    }
+
+    public static function canCreate(): bool {
+        $user = Filament::auth()->user();
+
+        return $user && $user->role_id === 1;
     }
 
     public static function getPages(): array {
