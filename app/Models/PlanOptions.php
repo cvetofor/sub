@@ -13,4 +13,8 @@ class PlanOptions extends Model {
         'is_active',
         'type'
     ];
+
+    public function plans() {
+        return $this->belongsToMany(Plan::class, 'plan_plan_option');
+    }
 }

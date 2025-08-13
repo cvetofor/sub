@@ -16,4 +16,8 @@ class Plan extends Model {
     public function subscription() {
         return $this->belongsTo(Subscription::class);
     }
+
+    public function options() {
+        return $this->belongsToMany(PlanOptions::class, 'plan_plan_option');
+    }
 }

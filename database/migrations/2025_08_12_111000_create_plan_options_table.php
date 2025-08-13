@@ -12,7 +12,7 @@ return new class extends Migration {
         Schema::create('plan_options', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->float('price', 2)->default(0.00);
+            $table->float('price', 8, 2)->default(0.00);
             $table->string('type');
             $table->boolean('is_active')->default(true);
             $table->timestamps();

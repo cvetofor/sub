@@ -9,23 +9,18 @@ return new class extends Migration {
      * Run the migrations.
      */
     public function up(): void {
-        Schema::create('plans', function (Blueprint $table) {
+        Schema::create('cities', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->float('price', 8, 2)->default(0.00);
-            $table->string('description')->nullable();
-            $table->boolean('is_active')->default(true);
-            $table->boolean('is_custom')->default(false);
+            $table->string('code');
             $table->timestamps();
         });
     }
-
-
 
     /**
      * Reverse the migrations.
      */
     public function down(): void {
-        Schema::dropIfExists('plans');
+        Schema::dropIfExists('cities');
     }
 };
