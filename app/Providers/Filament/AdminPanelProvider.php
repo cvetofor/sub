@@ -36,8 +36,9 @@ class AdminPanelProvider extends PanelProvider {
                 'warning'  => '#f59e0b',
             ])
             ->brandName("Цветофор.рф")
-            ->brandLogo(asset('/images/logo.svg'))
+            ->brandLogo(asset('images/logo.svg'))
             ->brandLogoHeight('3rem')
+            ->favicon(asset('images/favicon.ico'))
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->pages([
                 Dashboard::class,
