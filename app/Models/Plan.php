@@ -1,0 +1,19 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Plan extends Model {
+    protected $fillable = [
+        'name',
+        'price',
+        'description',
+        'subscription_id',
+        'is_active'
+    ];
+
+    public function subscription() {
+        return $this->belongsTo(Subscription::class);
+    }
+}
