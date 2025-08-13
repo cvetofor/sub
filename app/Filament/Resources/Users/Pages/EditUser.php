@@ -8,13 +8,12 @@ use Filament\Schemas\Schema;
 use Filament\Forms\Components\TextInput;
 use App\Models\User;
 use Filament\Actions\DeleteAction;
-use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
-use Filament\Support\View\Components\ButtonComponent;
 
 class EditUser extends EditRecord {
     protected static string $resource = UserResource::class;
@@ -31,25 +30,28 @@ class EditUser extends EditRecord {
                 Section::make('Детали')->schema([
                     TextInput::make('name')
                         ->label('Имя')
+                        ->trim()
                         ->required(),
 
                     TextInput::make('email')
                         ->label('Email')
                         ->email()
                         ->required()
-                        ->unique(User::class, 'email'),
+                        ->unique(User::class, 'email')
+                        ->trim(),
 
                     TextInput::make('password')
                         ->label('Пароль')
                         ->password()
-                        ->required()
-                        ->dehydrated(fn($state) => filled($state)),
+                        ->dehydrated(fn($state) => filled($state))
+                        ->trim(),
 
                     Select::make('role_id')
                         ->label('Роль')
-                        ->options(Role::pluck('name', 'id')),
+                        ->options(Role::pluck('name', 'id'))
+                        ->required(),
 
-                    Checkbox::make('is_active')
+                    Toggle::make('is_active')
                         ->label('Активирован')
                 ]),
 
@@ -65,9 +67,5 @@ class EditUser extends EditRecord {
                 ])
             ])
         ]);
-    }
-
-    public function getRoles() {
-        return Role::all();
     }
 }

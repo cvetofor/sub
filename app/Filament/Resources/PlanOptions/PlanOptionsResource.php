@@ -18,7 +18,15 @@ use UnitEnum;
 class PlanOptionsResource extends Resource {
     protected static ?string $model = PlanOptions::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static bool $hasTitleCaseModelLabel = false;
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::Wrench;
+
+    protected static ?string $navigationLabel = 'Опции планов подписки';
+
+    protected static ?string $pluralModelLabel = 'Опции планов подписки';
+
+    protected static ?string $modelLabel = 'опцию плана подписки';
 
     protected static string | UnitEnum | null $navigationGroup = 'Административное управлние элементами';
 

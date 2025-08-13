@@ -18,11 +18,15 @@ use UnitEnum;
 class RoleResource extends Resource {
     protected static ?string $model = Role::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static bool $hasTitleCaseModelLabel = false;
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::User;
 
     protected static ?string $navigationLabel = 'Роли пользователей';
 
     protected static ?string $pluralModelLabel = 'Роли пользователей';
+
+    protected static ?string $modelLabel = 'роль';
 
     protected static string | UnitEnum | null $navigationGroup = 'Административное управлние элементами';
 

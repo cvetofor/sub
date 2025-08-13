@@ -22,10 +22,6 @@ class UsersTable {
                     ->formatStateUsing(fn($state) => Role::find($state)?->name ?? 'Не указана'),
                 IconColumn::make('is_active')->label('Активирован')->boolean(),
             ])
-            ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
-            ])
             ->filters([
                 SelectFilter::make('is_active')
                     ->label('Статус пользователя')
@@ -37,6 +33,10 @@ class UsersTable {
                     ->label('Роль')
                     ->options(fn() => Role::pluck('name', 'id')->toArray())
             ])
+            ->recordActions([
+                EditAction::make(),
+                DeleteAction::make(),
+            ])
             ->filtersTriggerAction(
                 fn(Action $action) => $action
                     ->button()
@@ -44,7 +44,6 @@ class UsersTable {
             )
             ->searchable()
             ->deferFilters(false)
-            ->persistFiltersInSession()
-            ->toolbarActions([]);
+            ->persistFiltersInSession();
     }
 }

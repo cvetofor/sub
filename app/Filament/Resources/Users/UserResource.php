@@ -20,7 +20,7 @@ class UserResource extends Resource {
 
     protected static bool $hasTitleCaseModelLabel = false;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::User;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::UserGroup;
 
     protected static ?string $navigationLabel = 'Пользователи';
 

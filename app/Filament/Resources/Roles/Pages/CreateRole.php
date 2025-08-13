@@ -25,7 +25,8 @@ class CreateRole extends CreateRecord {
                         ->afterStateUpdated(function ($state, callable $set) {
                             $transliterated = $this->transliterateToLatin($state);
                             $set('code', $transliterated);
-                        }),
+                        })
+                        ->trim(),
                 ])
             ])
         ]);

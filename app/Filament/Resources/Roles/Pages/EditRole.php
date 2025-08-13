@@ -26,9 +26,8 @@ class EditRole extends EditRecord {
                 Section::make('Детали')->schema([
                     TextInput::make('name')
                         ->label('Название')
-                        ->required(),
-
-
+                        ->required()
+                        ->trim()
                 ]),
 
             ]),
