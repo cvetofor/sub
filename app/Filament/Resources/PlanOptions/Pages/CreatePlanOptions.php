@@ -48,7 +48,7 @@ class CreatePlanOptions extends CreateRecord {
                         ->required(),
 
                     Toggle::make('is_active')
-                        ->label('Активирован')
+                        ->label('Активировать')
                 ])
             ])
         ]);

@@ -9,8 +9,4 @@ class Role extends Model {
         'name',
         'code'
     ];
-
-    public function getName(): string {
-        return $this->name;
-    }
 }

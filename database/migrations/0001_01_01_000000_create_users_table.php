@@ -2,6 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
@@ -15,7 +17,7 @@ return new class extends Migration {
             $table->string('email')->unique();
             $table->string('password');
             $table->boolean('is_active')->default(false);
-            $table->foreignId('role_id')->constrained('roles')->cascadeOnDelete();
+            $table->foreignId('role_id')->constrained('roles');
             $table->rememberToken();
             $table->timestamps();
         });
@@ -34,6 +36,18 @@ return new class extends Migration {
             $table->longText('payload');
             $table->integer('last_activity')->index();
         });
+
+        if (getenv('APP_DEBUG') == true) {
+            DB::table('users')->insert([
+                'name' => 'Никита',
+                'email' => 'iwanaev23@gmail.com',
+                'password' => Hash::make('qwe123'), // Хэшируем пароль
+                'is_active' => true,
+                'role_id' => 1, // Убедись, что роль с id=1 уже есть в таблице roles
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
     }
 
     /**

@@ -20,9 +20,9 @@ class EditUser extends EditRecord {
     protected static string $resource = UserResource::class;
 
     protected function getHeaderActions(): array {
-        return [
-            DeleteAction::make(),
-        ];
+        $currentUser = Filament::auth()->user();
+
+        return $currentUser && $currentUser->role_id === 1 ? [DeleteAction::make()] : [];
     }
 
     public function form(Schema $schema): Schema {
@@ -60,7 +60,7 @@ class EditUser extends EditRecord {
         }
 
         $fields[] = Toggle::make('is_active')
-            ->label('Активирован');
+            ->label('Активировать');
 
         return $schema->components([
             Grid::make(1)->schema([

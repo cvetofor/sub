@@ -54,7 +54,7 @@ class EditPlanOptions extends EditRecord {
                         ->required(),
 
                     Toggle::make('is_active')
-                        ->label('Активирован')
+                        ->label('Активировать')
                 ])
             ]),
             Grid::make(1)->schema([

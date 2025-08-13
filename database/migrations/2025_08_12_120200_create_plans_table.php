@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->string('description')->nullable();
             $table->boolean('is_active')->default(true);
             $table->boolean('is_custom')->default(false);
+            $table->foreignId('city_id')->constrained('cities');
             $table->timestamps();
         });
     }

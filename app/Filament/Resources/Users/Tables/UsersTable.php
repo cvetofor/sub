@@ -6,6 +6,7 @@ use App\Models\Role;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Facades\Filament;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -13,6 +14,14 @@ use Filament\Tables\Table;
 
 class UsersTable {
     public static function configure(Table $table): Table {
+        $currentUser = Filament::auth()->user();
+        $action = $currentUser && $currentUser->role_id === 1 ? [
+            EditAction::make(),
+            DeleteAction::make()
+        ] : [
+            EditAction::make()
+        ];
+
         return $table
             ->columns([
                 TextColumn::make('name')->label('Имя')->searchable(),
@@ -33,10 +42,7 @@ class UsersTable {
                     ->label('Роль')
                     ->options(fn() => Role::pluck('name', 'id')->toArray())
             ])
-            ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
-            ])
+            ->recordActions($action)
             ->filtersTriggerAction(
                 fn(Action $action) => $action
                     ->button()
