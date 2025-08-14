@@ -19,4 +19,8 @@ class City extends Model {
             $city->code = Str::slug($city->name, '_');
         });
     }
+
+    public function scopeActive($query) {
+        return $query->where('is_active', true);
+    }
 }

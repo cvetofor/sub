@@ -9,8 +9,10 @@ class Plan extends Model {
         'name',
         'price',
         'description',
-        'subscription_id',
-        'is_active'
+        'is_active',
+        'is_custom',
+        'city_id'
+
     ];
 
     public function subscription() {
@@ -18,6 +20,11 @@ class Plan extends Model {
     }
 
     public function options() {
-        return $this->belongsToMany(PlanOptions::class, 'plan_plan_option');
+        return $this->belongsToMany(
+            PlanOptions::class,
+            'plan_plan_option',
+            'plan_id',
+            'plan_option_id'
+        );
     }
 }

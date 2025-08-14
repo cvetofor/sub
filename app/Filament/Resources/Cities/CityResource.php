@@ -18,6 +18,8 @@ use UnitEnum;
 class CityResource extends Resource {
     protected static ?string $model = City::class;
 
+    protected static bool $hasTitleCaseModelLabel = false;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::BuildingOffice2;
 
     protected static ?string $navigationLabel = 'Города';

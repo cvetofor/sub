@@ -30,7 +30,7 @@ class PlanOptionsTable {
                         return  self::typeOptions[$state] ?? 'Не указана';
                     })
                     ->searchable(),
-                IconColumn::make('is_active')->label('Активирован')->boolean(),
+                IconColumn::make('is_active')->label('Активирован')->boolean()->alignCenter(),
             ])
             ->filters([
                 SelectFilter::make('is_active')

@@ -15,6 +15,7 @@ use Filament\Tables\Table;
 class UsersTable {
     public static function configure(Table $table): Table {
         $currentUser = Filament::auth()->user();
+
         $action = $currentUser && $currentUser->role_id === 1 ? [
             EditAction::make(),
             DeleteAction::make()
@@ -29,7 +30,7 @@ class UsersTable {
                 TextColumn::make('role_id')
                     ->label('Роль')
                     ->formatStateUsing(fn($state) => Role::find($state)?->name ?? 'Не указана'),
-                IconColumn::make('is_active')->label('Активирован')->boolean(),
+                IconColumn::make('is_active')->label('Активирован')->boolean()->alignCenter(),
             ])
             ->filters([
                 SelectFilter::make('is_active')
@@ -48,7 +49,6 @@ class UsersTable {
                     ->button()
                     ->label('Фильтры'),
             )
-            ->searchable()
             ->deferFilters(false)
             ->persistFiltersInSession();
     }

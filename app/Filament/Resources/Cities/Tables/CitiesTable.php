@@ -2,9 +2,7 @@
 
 namespace App\Filament\Resources\Cities\Tables;
 
-use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -17,7 +15,7 @@ class CitiesTable {
                 TextColumn::make('name')
                     ->label('Название')
                     ->searchable(),
-                IconColumn::make('is_active')->label('Активирован')->boolean(),
+                IconColumn::make('is_active')->label('Активирован')->boolean()->alignCenter(),
             ])
             ->recordActions([
                 EditAction::make(),
