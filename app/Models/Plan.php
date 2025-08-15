@@ -27,4 +27,8 @@ class Plan extends Model {
             'plan_option_id'
         );
     }
+
+    public function scopeActive($query) {
+        return $query->where('is_active', true)->orderBy('id');
+    }
 }

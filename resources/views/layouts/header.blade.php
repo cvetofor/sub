@@ -5,7 +5,7 @@
 
 <header class="sticky top-0 z-30 backdrop-blur bg-white/70 border-b border-rose-100">
     <div class="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
-        <img src="/images/logo.svg" alt="logo" width="140px">
+        <img src="{{asset('/images/logo.svg')}}" alt="logo" width="140px">
         <div class="flex items-center gap-3">
             <select class="px-3 py-2 rounded-xl border border-rose-200 bg-white shadow-sm cursor-pointer" name="select_city" id="select_city">
                 @foreach ($cities as $city)

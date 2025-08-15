@@ -50,4 +50,53 @@
             </div>
         </div>
     </section>
+
+    <section class="mx-auto max-w-7xl px-4 pt-2 pb-10">
+        <div class="flex items-center gap-2">
+            <button id="readyBtn" class="plan-btn active">
+                Готовые планы
+            </button>
+            <button id="customBtn" class="plan-btn">
+                Собрать самому
+            </button>
+            <div class="ml-auto flex items-center gap-2 text-sm btn-group">
+                <p class="text-gray-600">Частота:</p>
+                <button class="toggle-btn px-3 py-1 rounded-xl border bg-rose-100 border-rose-400 text-rose-700 active">Еженедельно</button>
+                <button class="toggle-btn px-3 py-1 rounded-xl border bg-white border-rose-200">Раз в 2 недели</button>
+                <button class="toggle-btn px-3 py-1 rounded-xl border bg-white border-rose-200">Раз в месяц</button>
+            </div>
+        </div>
+
+        <div class="mt-6 grid md:grid-cols-4 gap-4">
+            @foreach ($plans as $plan)
+                <div class="rounded-3xl border p-5 shadow-sm border-rose-500 shadow-rose-100 shadow-lg">
+                    <div class="flex items-baseline justify-between mb-2">
+                        <h1 class="flex items-baseline justify-between mb-2 text-xl font-semibold">{{ $plan->name }}</h1>
+                        <p class="text-rose-600 text-xs font-semibold">выбрано</p>
+                    </div>
+                    <div class="text-3xl font-bold">{{ $plan->price }} ₽ <span
+                            class="text-base font-medium text-gray-600">за
+                            доставку</span></div>
+                    <p class="mt-1 text-sm text-gray-600">≈ 4 доставк(и) в месяц</p>
+                    <p class="mt-3 text-sm text-gray-700 min-h-[48px]">{{ $plan->description }}</p>
+                    <p class="mt-3 text-sm text-gray-600">Опции:
+                        @foreach ($plan->options as $option)
+                            <span>{{ $option->name }} +{{ $option->price }} ₽, </span>
+                        @endforeach
+                    </p>
+                    <div class="mt-4 p-3 rounded-2xl bg-rose-100 border border-rose-200">
+                        <p class="text-sm text-gray-700">Итого в месяц (с выбранными опциями):</p>
+                        <p class="text-2xl font-extrabold">123 ₽</p>
+                    </div>
+                    <button class="mt-4 w-full px-4 py-2 rounded-2xl bg-rose-600 text-white">Выбрать план</button>
+                </div>
+            @endforeach
+        </div>
+    </section>
+
+    <section>
+        
+    </section>
+
+    <script src="{{ asset('js/main_page.js') }}"></script>
 @endsection

@@ -1,0 +1,49 @@
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #ec003f;
+    border-radius: 6px;
+    border: 3px solid #fecdd3;
+}
+
+::-webkit-scrollbar-track {
+    background: #fecdd3;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: #555;
+}
+
+.plan-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 1rem;
+    border-width: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background-color: white;
+    border-color: rgb(254 205 211);
+    color: black;
+}
+
+.plan-btn.active {
+    background-color: rgb(225 29 72);
+    color: white;
+    border-color: rgb(225 29 72);
+}
+
+.toggle-btn {
+    cursor: pointer;
+    transition: all 0.2s;
+    background-color: white;
+    border-color: rgb(254 205 211);
+    color: black;
+}
+
+.toggle-btn.active {
+    background-color: rgb(254 205 211);
+    border-color: rgb(225 29 72);
+    color: rgb(225 29 72);
+}
