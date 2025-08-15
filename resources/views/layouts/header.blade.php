@@ -3,7 +3,7 @@
     $cities = City::active()->get();
 @endphp
 
-<header class="w-full border-b border-rose-200">
+<header class="sticky top-0 z-30 backdrop-blur bg-white/70 border-b border-rose-100">
     <div class="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
         <img src="/images/logo.svg" alt="logo" width="140px">
         <div class="flex items-center gap-3">
