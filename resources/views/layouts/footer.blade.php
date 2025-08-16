@@ -12,8 +12,7 @@
         <div>
             <h3 class="font-semibold text-gray-800">Правовое</h3>
             <div class="flex gap-4">
-                <a href="#" target="_blank">Публичная оферта</a>
-                <a href="#" target="_blank">Политика конфиденциальности</a>
+                <a href="{{ route('policy') }}">Политика конфиденциальности</a>
             </div>
         </div>
     </div>
