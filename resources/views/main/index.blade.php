@@ -3,6 +3,16 @@
 @section('title', 'Цветофор — Подписка на цветы')
 
 @section('content')
+    @php
+        use App\Models\City;
+        use App\Models\TimeDelivery;
+
+        $cities = City::active()->get();
+        $timeDeliveries = TimeDelivery::all();
+
+        $totalOptDel = $options->where('type', 'delivery')->merge($options->where('type', 'addition'))->toArray();
+    @endphp
+
     <section class="flex mx-auto max-w-7xl px-4 pt-10 pb-8">
         <div class="grid md:grid-cols-2 gap-8 items-center">
             <div class="flex flex-col">
@@ -81,7 +91,9 @@
                         <p class="mt-3 text-sm text-gray-700 min-h-[48px]">{{ $plan->description }}</p>
                         <p class="mt-3 text-sm text-gray-600">Опции:
                             @foreach ($plan->options as $option)
-                                <span>{{ $option->name }} +{{ $option->price }}₽ @if (!$loop->last), @endif </span>
+                                <span>{{ $option->name }} +{{ $option->price }}₽ @if (!$loop->last)
+                                        ,
+                                    @endif </span>
                             @endforeach
                         </p>
                         <div class="mt-4 p-3 rounded-2xl bg-rose-100 border border-rose-200">
@@ -96,6 +108,157 @@
             <div class="swiper-button swiper-button-next"></div>
             <div class="swiper-button swiper-button-prev"></div>
         </div>
+
+        <div class="mt-6 grid lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-7 xl:col-span-8 p-5 rounded-3xl border border-rose-200 bg-white shadow-sm">
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Город</label>
+                        <select id="citySelect" class="w-full px-3 py-2 rounded-xl border border-rose-200 cursor-pointer">
+                            @foreach ($cities as $city)
+                                <option value="{{ $city->id }}">{{ $city->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Адрес доставки</label>
+                        <input class="w-full px-3 py-2 rounded-xl border border-rose-200" type="text"
+                            placeholder="Улица, дом, подъезд, комментарий">
+                    </div>
+
+                    <div class="ml-auto flex flex-wrap items-center gap-2 text-sm btn-group">
+                        <p class="text-gray-600 w-full sm:w-auto">Частота:</p>
+                        <button
+                            class="toggle-btn px-3 py-2 rounded-xl border bg-rose-100 border-rose-400 text-rose-700 active">Еженедельно</button>
+                        <button class="toggle-btn px-3 py-2 rounded-xl border bg-white border-rose-200">
+                            Раз в 2 недели</button>
+                        <button class="toggle-btn px-3 py-2 rounded-xl border bg-white border-rose-200">Раз в месяц</button>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Окно доставки</label>
+                        <select class="w-full px-3 py-2 rounded-xl border border-rose-200" name="" id="">
+                            @foreach ($timeDeliveries as $time)
+                                <option value="{{ $time->id }}">{{ $time->from }}—{{ $time->to }}</option>
+                            @endforeach
+                        </select>
+                        @foreach ($options->where('type', 'delivery') as $option)
+                            <label class="mt-2 flex items-center gap-2 text-sm text-gray-700">
+                                <input type="checkbox">{{ $option->name }} (+{{ $option->price }}₽/доставка)
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <label class="block text-sm text-gray-600 mb-2">
+                        Бюджет за доставку: <span id="budgetValueMain" class="font-medium text-gray-700">2 990 ₽</span>
+                    </label>
+                    <input id="budgetRange" type="range" min="2990" max="50000" step="10" value="2990"
+                        class="w-full h-2 bg-rose-200 rounded-lg appearance-none">
+                    <p class="text-sm text-gray-600 mt-1">
+                        Диапазон: 2 990 – 50 000 ₽. Флористы подберут состав под ваш бюджет, без привязки к «количеству
+                        стеблей».
+                    </p>
+                </div>
+
+                <div class="mt-6 grid md:grid-cols-2 gap-4">
+                    <div>
+                        @if ($options->where('type', 'style')->isNotEmpty())
+                            <div class="text-sm text-gray-600 mb-1">Стиль букетов</div>
+                            @foreach ($options->where('type', 'style') as $option)
+                                <label class="flex items-center gap-2 text-sm text-gray-800 mb-1">
+                                    <input type="checkbox">
+                                    {{ $option->name }}
+                                </label>
+                            @endforeach
+                        @endif
+                    </div>
+                    <div>
+                        @if ($options->where('type', 'preference')->isNotEmpty())
+                            <div class="text-sm text-gray-600 mb-1">Предпочтения</div>
+                            @foreach ($options->where('type', 'preference') as $option)
+                                <label class="flex items-center gap-2 text-sm text-gray-800 mb-1">
+                                    <input type="checkbox">
+                                    {{ $option->name }}
+                                </label>
+                            @endforeach
+                        @endif
+                    </div>
+                </div>
+
+                <div class="mt-6 grid md:grid-cols-2 gap-4">
+                    @if ($options->where('type', 'occasion')->isNotEmpty())
+                        <div>
+                            <label class="block text-sm text-gray-600 mb-1">Повод</label>
+                            <select class="w-full px-3 py-2 rounded-xl border border-rose-200">
+                                @foreach ($options->where('type', 'occasion') as $option)
+                                    <option value="{{ $option->id }}">{{ $option->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
+                    @if ($options->where('type', 'recipient')->isNotEmpty())
+                        <div>
+                            <label class="block text-sm text-gray-600 mb-1">Кому дарится букет</label>
+                            <select class="w-full px-3 py-2 rounded-xl border border-rose-200">
+                                @foreach ($options->where('type', 'recipient') as $option)
+                                    <option value="{{ $option->id }}">{{ $option->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
+                </div>
+
+                @if ($options->where('type', 'addition')->isNotEmpty())
+                    <div class="mt-6">
+                        <p class="text-sm text-gray-600 mb-2">Дополнения</p>
+                        <div class="grid sm:grid-cols-2 gap-3">
+                            @foreach ($options->where('type', 'addition') as $option)
+                                <label class="flex items-center gap-2 text-sm text-gray-800">
+                                    <input type="checkbox">
+                                    {{ $option->name }} (
+                                    @if ($option->price > 0)
+                                        +{{ $option->price }}₽
+                                    @else
+                                        бесплатно
+                                    @endif
+                                    )
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                <div class="mt-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-sm text-gray-700">
+                    Оплата — только рекуррентные платежи с карты. Отмена/пауза по заявке без штрафов. Для адресов за городом
+                    — доплата 899 ₽ за каждую доставку (до 20 км).
+                </div>
+            </div>
+            <aside class="lg:col-span-5 xl:col-span-4">
+                <div class="sticky top-24 p-5 rounded-3xl border border-rose-300 bg-white shadow-md">
+                    <h2 class="text-lg font-semibold">Ваш выбор</h2>
+                    <p class="mt-2 text-sm text-gray-700">Город: <b id="cityOutput"></b></p>
+                    <p class="mt-2 text-sm text-gray-700">Частота: <b id="frequencyOutput"></b></p>
+                    <div class="mt-3">
+                        <label class="block text-sm text-gray-600 mb-2">
+                            Бюджет за доставку: <span id="budgetValueAside" class="font-medium text-gray-700">2 990
+                                ₽</span>
+                        </label>
+                    </div>
+                    <div class="mt-4 border-t border-dashed pt-3">
+                        <p class="text-sm text-gray-600">Опции за доставку</p>
+                        <ul class="text-sm mt-1 space-y-1">
+                            @foreach ($totalOptDel as $option) 
+                                <li class="opacity-50">{{ $option['name'] }} +{{ $option['price'] }}₽</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
     </section>
 
     <section class="mx-auto max-w-7xl px-4 pb-14 grid md:grid-cols-2 gap-8">
@@ -130,7 +293,8 @@
                 <summary class="cursor-pointer font-medium">
                     Что, если опоздаете?
                 </summary>
-                <p class="text-sm text-gray-700 mt-2">Работаем в 2‑часовых окнах 09:00–23:00. При сдвиге предупредим заранее
+                <p class="text-sm text-gray-700 mt-2">Работаем в 2‑часовых окнах 09:00–23:00. При сдвиге предупредим
+                    заранее
                     и компенсируем бонусом.</p>
             </details>
             <details class="mb-2">

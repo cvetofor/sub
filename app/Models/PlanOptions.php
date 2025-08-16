@@ -14,6 +14,10 @@ class PlanOptions extends Model {
         'type'
     ];
 
+    public function scopeActive($query) {
+        return $query->where('is_active', true);
+    }
+
     public function plans() {
         return $this->belongsToMany(Plan::class, 'plan_plan_option');
     }

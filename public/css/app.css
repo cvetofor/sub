@@ -52,25 +52,57 @@
     position: relative;
     overflow: hidden;
 }
+
 .plans-container {
     display: flex;
     will-change: transform;
 }
+
 .plan-card {
     flex: 0 0 auto;
 }
-.prev, .next {
+
+.prev,
+.next {
     cursor: pointer;
     font-size: 1.5rem;
     z-index: 10;
 }
- 
-/* При необходимости — точечно на кнопки */
+
 .swiper-button {
-  --swiper-navigation-size: 25px;
-  --swiper-navigation-color: rgb(225 29 72); /* цвет стрелок */
+    --swiper-navigation-size: 25px;
+    --swiper-navigation-color: rgb(225 29 72);
     padding: 15px;
     background-color: rgba(255, 255, 255, 0.4);
     backdrop-filter: blur(1px);
     border-radius: 5px;
+}
+
+/* Для WebKit (Chrome, Safari) */
+#budgetRange::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background-color: #f43f5e; /* цвет ползунка */
+    border-radius: 50%;
+    cursor: pointer;  
+}
+
+/* Для Firefox */
+#budgetRange::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background-color: #f43f5e;
+    border-radius: 50%; 
+    cursor: pointer;
+}
+
+/* Для IE */
+#budgetRange::-ms-thumb {
+    width: 20px;
+    height: 20px;
+    background-color: #f43f5e;
+    border-radius: 50%; 
+    cursor: pointer;
 }

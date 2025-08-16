@@ -44,8 +44,34 @@ class CreatePlanOptions extends CreateRecord {
                             'style' => 'Стиль букетов',
                             'preference' => 'Предпочтение',
                             'addition' => 'Дополнительно',
+                            'occasion' => 'Повод',
+                            'recipient' => 'Получатель'
                         ])
                         ->required(),
+
+                    // Select::make('occasion')
+                    //     ->label('Тип')
+                    //     ->options([
+                    //         'love' => 'Любю безумно',
+                    //         'reason' => 'Без повода',
+                    //         'birthday' => 'День рождения',
+                    //         'anniversary' => 'Годовщина',
+                    //         'office' => 'В офис',
+                    //         'home' => 'В дом'
+                    //     ])
+                    //     ->required(),
+
+                    // Select::make('recipient')
+                    //     ->label('Тип')
+                    //     ->options([
+                    //         'myself' => 'Для себя',
+                    //         'partner' => 'Партнёру/супругу',
+                    //         'parents' => 'Родителям',
+                    //         'colleague' => 'Коллеге',
+                    //         'family' => 'Детям/семьям',
+                    //         'other' => 'Другое',
+                    //     ])
+                    //     ->required(),
 
                     Toggle::make('is_active')
                         ->label('Активировать')

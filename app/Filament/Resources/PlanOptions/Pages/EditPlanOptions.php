@@ -50,6 +50,8 @@ class EditPlanOptions extends EditRecord {
                             'style' => 'Стиль букетов',
                             'preference' => 'Предпочтение',
                             'addition' => 'Дополнительно',
+                            'occasion' => 'Повод',
+                            'recipient' => 'Получатель'
                         ])
                         ->required(),
 

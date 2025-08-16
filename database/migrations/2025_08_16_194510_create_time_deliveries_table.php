@@ -9,12 +9,10 @@ return new class extends Migration {
      * Run the migrations.
      */
     public function up(): void {
-        Schema::create('subscriptions', function (Blueprint $table) {
+        Schema::create('time_deliveries', function (Blueprint $table) {
             $table->id();
-            $table->boolean('is_active')->default(true);
-            $table->foreignId('time_delivery_id')->constrained('time_deliveries');
-            $table->foreignId('user_id')->constrained('users');
-            $table->foreignId('plan_id')->constrained('plans');
+            $table->time('from_time');
+            $table->time('to_time');
             $table->timestamps();
         });
     }
@@ -23,6 +21,6 @@ return new class extends Migration {
      * Reverse the migrations.
      */
     public function down(): void {
-        Schema::dropIfExists('subscriptions');
+        Schema::dropIfExists('time_deliveries');
     }
 };
