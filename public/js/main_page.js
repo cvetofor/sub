@@ -112,4 +112,14 @@ document.addEventListener('DOMContentLoaded', function () {
         const count = deliveryCounts[activeBtn.textContent] || 1;
         planCards.forEach(card => updatePlan(card, count));
     }
+
+    const plansSection = document.getElementById('plansSection');
+
+    document.getElementById('subscribeBtn').addEventListener('click', function () {
+        plansSection.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    document.getElementById('choosePlanBtn').addEventListener('click', function () {
+        plansSection.scrollIntoView({ behavior: 'smooth' });
+    });
 });

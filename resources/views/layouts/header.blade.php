@@ -13,7 +13,7 @@
                     <option value="{{ $city->id }}">{{ $city->name }}</option>
                 @endforeach
             </select>
-            <button class="px-4 py-2 rounded-xl bg-rose-600 text-white shadow cursor-pointer" type="button">Собрать
+            <button class="px-4 py-2 rounded-xl bg-rose-600 text-white shadow cursor-pointer" id="subscribeBtn" type="button">Собрать
                 подписку</button>
         </div>
     </div>

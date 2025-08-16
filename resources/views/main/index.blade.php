@@ -20,7 +20,7 @@
                     </span>
                 </div>
                 <div class="mt-6 flex gap-3">
-                    <button class="px-5 py-3 rounded-xl bg-rose-600 text-white shadow cursor-pointer">
+                    <button class="px-5 py-3 rounded-xl bg-rose-600 text-white shadow cursor-pointer" id="choosePlanBtn">
                         Выбрать план
                     </button>
                     <button class="px-5 py-3 rounded-xl border border-rose-200 bg-white shadow-sm cursor-pointer">
@@ -51,16 +51,12 @@
         </div>
     </section>
 
-    <section class="mx-auto max-w-7xl px-4 pt-2 pb-10">
-        <div class="flex items-center gap-2">
-            <button id="readyBtn" class="plan-btn active">
-                Готовые планы
-            </button>
-            <button id="customBtn" class="plan-btn">
-                Собрать самому
-            </button>
-            <div class="ml-auto flex items-center gap-2 text-sm btn-group">
-                <p class="text-gray-600">Частота:</p>
+    <section class="mx-auto max-w-7xl px-4 pt-2 pb-10" id="plansSection">
+         <div class="flex flex-wrap items-center gap-2">
+            <button id="readyBtn" class="plan-btn active flex-1 sm:flex-none">Готовые планы</button>
+            <button id="customBtn" class="plan-btn flex-1 sm:flex-none">Собрать самому</button>
+            <div class="ml-auto flex flex-wrap items-center gap-2 text-sm btn-group">
+                <p class="text-gray-600 w-full sm:w-auto">Частота:</p>
                 <button
                     class="toggle-btn px-3 py-1 rounded-xl border bg-rose-100 border-rose-400 text-rose-700 active">Еженедельно</button>
                 <button class="toggle-btn px-3 py-1 rounded-xl border bg-white border-rose-200">Раз в 2 недели</button>
@@ -68,7 +64,8 @@
             </div>
         </div>
 
-        <div class="plans-wrapper mt-6 swiper-container relative">
+
+        <div class="plans-wrapper mt-6 swiper-container relative" id="plansSection">
             <div class="swiper-wrapper">
                 @foreach ($plans as $plan)
                     <div class="swiper-slide rounded-3xl border p-5 shadow-sm border-rose-500 shadow-rose-100 shadow-lg">
@@ -118,26 +115,30 @@
                 <summary class="cursor-pointer font-medium">
                     Подписка навсегда? Как отменить?
                 </summary>
-                <p class="text-sm text-gray-700 mt-2">Отмена и пауза по заявке в один клик, без штрафов. Оплата всегда рекуррентная, списание по графику
+                <p class="text-sm text-gray-700 mt-2">Отмена и пауза по заявке в один клик, без штрафов. Оплата всегда
+                    рекуррентная, списание по графику
                     доставок.</p>
             </details>
             <details class="mb-2">
                 <summary class="cursor-pointer font-medium">
                     Не будет ли одно и то же?
                 </summary>
-                <p class="text-sm text-gray-700 mt-2">Профиль предпочтений + сезонные подборки. Можно исключить конкретные цветы и сильные ароматы.</p>
+                <p class="text-sm text-gray-700 mt-2">Профиль предпочтений + сезонные подборки. Можно исключить конкретные
+                    цветы и сильные ароматы.</p>
             </details>
             <details class="mb-2">
                 <summary class="cursor-pointer font-medium">
                     Что, если опоздаете?
                 </summary>
-                <p class="text-sm text-gray-700 mt-2">Работаем в 2‑часовых окнах 09:00–23:00. При сдвиге предупредим заранее и компенсируем бонусом.</p>
+                <p class="text-sm text-gray-700 mt-2">Работаем в 2‑часовых окнах 09:00–23:00. При сдвиге предупредим заранее
+                    и компенсируем бонусом.</p>
             </details>
             <details class="mb-2">
                 <summary class="cursor-pointer font-medium">
                     Можно в подарок?
                 </summary>
-                <p class="text-sm text-gray-700 mt-2">Да. Электронный сертификат на 3/6/12 месяцев + бесплатная открытка к каждому букету.</p>
+                <p class="text-sm text-gray-700 mt-2">Да. Электронный сертификат на 3/6/12 месяцев + бесплатная открытка к
+                    каждому букету.</p>
             </details>
         </div>
     </section>
