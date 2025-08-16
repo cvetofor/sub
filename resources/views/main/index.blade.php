@@ -145,7 +145,10 @@
                         </select>
                         @foreach ($options->where('type', 'delivery') as $option)
                             <label class="mt-2 flex items-center gap-2 text-sm text-gray-700">
-                                <input type="checkbox">{{ $option->name }} (+{{ $option->price }}₽/доставка)
+                                <input type="checkbox" name="delivery_option_{{ $option->id }}"
+                                    value="{{ $option->id }}" data-option-name="{{ $option->name }}"
+                                    data-option-price="{{ $option->price }}">{{ $option->name }}
+                                (+{{ $option->price }}₽/доставка)
                             </label>
                         @endforeach
                     </div>
@@ -169,8 +172,9 @@
                             <div class="text-sm text-gray-600 mb-1">Стиль букетов</div>
                             @foreach ($options->where('type', 'style') as $option)
                                 <label class="flex items-center gap-2 text-sm text-gray-800 mb-1">
-                                    <input type="checkbox">
-                                    {{ $option->name }}
+                                    <input type="checkbox" name="style_option_{{ $option->id }}"
+                                        value="{{ $option->id }}" data-option-name="{{ $option->name }}"
+                                        data-option-price="{{ $option->price }}">{{ $option->name }}
                                 </label>
                             @endforeach
                         @endif
@@ -180,8 +184,9 @@
                             <div class="text-sm text-gray-600 mb-1">Предпочтения</div>
                             @foreach ($options->where('type', 'preference') as $option)
                                 <label class="flex items-center gap-2 text-sm text-gray-800 mb-1">
-                                    <input type="checkbox">
-                                    {{ $option->name }}
+                                    <input type="checkbox" name="preference_option_{{ $option->id }}"
+                                        value="{{ $option->id }}" data-option-name="{{ $option->name }}"
+                                        data-option-price="{{ $option->price }}">{{ $option->name }}
                                 </label>
                             @endforeach
                         @endif
@@ -217,8 +222,9 @@
                         <div class="grid sm:grid-cols-2 gap-3">
                             @foreach ($options->where('type', 'addition') as $option)
                                 <label class="flex items-center gap-2 text-sm text-gray-800">
-                                    <input type="checkbox">
-                                    {{ $option->name }} (
+                                    <input type="checkbox" name="addition_option_{{ $option->id }}"
+                                        value="{{ $option->id }}" data-option-name="{{ $option->name }}"
+                                        data-option-price="{{ $option->price }}">{{ $option->name }} (
                                     @if ($option->price > 0)
                                         +{{ $option->price }}₽
                                     @else
@@ -250,10 +256,18 @@
                     <div class="mt-4 border-t border-dashed pt-3">
                         <p class="text-sm text-gray-600">Опции за доставку</p>
                         <ul class="text-sm mt-1 space-y-1">
-                            @foreach ($totalOptDel as $option) 
-                                <li class="opacity-50">{{ $option['name'] }} +{{ $option['price'] }}₽</li>
+                            @foreach ($totalOptDel as $option)
+                                <li class="opacity-50" data-option-name="{{ $option['name'] }}" data-option-price="{{ $option['price'] }}">{{ $option['name'] }} +{{ $option['price'] }}₽</li>
                             @endforeach
                         </ul>
+                    </div>
+                    <label class="mt-3 flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox" name="" id="">
+                        Я новый клиент (применить промо 1+1)
+                    </label>
+                    <div class="mt-4 p-3 rounded-2xl bg-rose-50 border border-rose-200">
+                        <p class="text-sm text-gray-700">1-й месяц (до промо)</p>
+                        <h1 class="text-3xl font-extrabold">₽</h1>
                     </div>
                 </div>
             </aside>

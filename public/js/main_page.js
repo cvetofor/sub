@@ -180,4 +180,65 @@ document.addEventListener('DOMContentLoaded', function () {
             frequencyOutput.textContent = this.textContent.trim();
         });
     });
+
+    // ---- ЛОГИКА ДЛЯ ЧЕКБОКСОВ ОПЦИЙ ДОСТАВКИ ----
+    const deliveryOptions = document.querySelectorAll('input[type="checkbox"]');
+    const optionsList = document.querySelector('.lg\\:col-span-5 .text-sm.mt-1.space-y-1');
+    
+    if (optionsList) {
+        // Получаем все существующие опции из списка
+        const existingOptions = optionsList.querySelectorAll('li');
+        if (existingOptions.length > 0) {
+            // Добавляем data-атрибуты к существующим элементам, если их нет
+            existingOptions.forEach(li => {
+                if (!li.dataset.optionName) {
+                    const text = li.textContent;
+                    const name = text.split(' +')[0];
+                    const price = text.match(/\+(\d+)₽/)?.[1] || '0';
+                    li.dataset.optionName = name;
+                    li.dataset.optionPrice = price;
+                }
+            });
+        }
+    }
+
+    // Обработчик для всех чекбоксов
+    deliveryOptions.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateDeliveryOptions();
+        });
+    });
+
+    function updateDeliveryOptions() {
+        const optionsList = document.querySelector('.lg\\:col-span-5 .text-sm.mt-1.space-y-1');
+        if (!optionsList) return;
+
+        const listItems = optionsList.querySelectorAll('li');
+        
+        listItems.forEach(li => {
+            const optionName = li.dataset.optionName;
+            const optionPrice = li.dataset.optionPrice || '0';
+            
+            if (!optionName) return;
+            
+            // Ищем соответствующий чекбокс
+            const checkbox = Array.from(deliveryOptions).find(cb => {
+                const label = cb.closest('label');
+                return label && label.textContent.includes(optionName);
+            });
+            
+            if (checkbox && checkbox.checked) {
+                // Опция выбрана
+                li.className = 'opacity-100';
+                li.innerHTML = `${optionName} +${optionPrice}₽`;
+            } else {
+                // Опция не выбрана
+                li.className = 'opacity-50';
+                li.innerHTML = `${optionName} (не выбрано)`;
+            }
+        });
+    }
+
+    // Инициализация при загрузке страницы
+    updateDeliveryOptions();
 });
