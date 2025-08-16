@@ -99,11 +99,47 @@
             <div class="swiper-button swiper-button-next"></div>
             <div class="swiper-button swiper-button-prev"></div>
         </div>
-
     </section>
 
-    <section>
-
+    <section class="mx-auto max-w-7xl px-4 pb-14 grid md:grid-cols-2 gap-8">
+        <div class="p-6 rounded-3xl border border-rose-200 bg-white shadow-sm">
+            <h2 class="text-xl font-semibold mb-2">Гарантии и условия</h2>
+            <ul class="space-y-2 text-gray-700 text-sm">
+                <li>48 часов гарантия свежести — заменим букет, если увял.</li>
+                <li>Не понравилось при получении — сделаем замену сразу.</li>
+                <li>Пауза по заявке — без штрафов.</li>
+                <li>Доставка: город и до 20 км за пределами (+899 ₽).</li>
+                <li>Фото-подтверждение по желанию (+199 ₽ за доставку).</li>
+            </ul>
+        </div>
+        <div class="p-6 rounded-3xl border border-rose-200 bg-white shadow-sm">
+            <h2 class="text-xl font-semibold mb-2">Вопросы и ответы</h2>
+            <details class="mb-2">
+                <summary class="cursor-pointer font-medium">
+                    Подписка навсегда? Как отменить?
+                </summary>
+                <p class="text-sm text-gray-700 mt-2">Отмена и пауза по заявке в один клик, без штрафов. Оплата всегда рекуррентная, списание по графику
+                    доставок.</p>
+            </details>
+            <details class="mb-2">
+                <summary class="cursor-pointer font-medium">
+                    Не будет ли одно и то же?
+                </summary>
+                <p class="text-sm text-gray-700 mt-2">Профиль предпочтений + сезонные подборки. Можно исключить конкретные цветы и сильные ароматы.</p>
+            </details>
+            <details class="mb-2">
+                <summary class="cursor-pointer font-medium">
+                    Что, если опоздаете?
+                </summary>
+                <p class="text-sm text-gray-700 mt-2">Работаем в 2‑часовых окнах 09:00–23:00. При сдвиге предупредим заранее и компенсируем бонусом.</p>
+            </details>
+            <details class="mb-2">
+                <summary class="cursor-pointer font-medium">
+                    Можно в подарок?
+                </summary>
+                <p class="text-sm text-gray-700 mt-2">Да. Электронный сертификат на 3/6/12 месяцев + бесплатная открытка к каждому букету.</p>
+            </details>
+        </div>
     </section>
 
 
