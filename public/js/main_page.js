@@ -73,14 +73,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    const plansContainer = document.querySelector("section.mx-auto.max-w-7xl.px-4.pt-2.pb-10 .grid");
+    const plansContainer = document.querySelector(".swiper-wrapper");
     if (!plansContainer) return;
 
-    const plans = Array.from(plansContainer.querySelectorAll(":scope > div"));
+    const plans = Array.from(plansContainer.querySelectorAll(".swiper-slide"));
 
     plans.forEach((plan, index) => {
         plan.addEventListener("click", () => selectPlan(plan, plans));
-
         if (index === 0) selectPlan(plan, plans);
     });
 
@@ -107,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function () {
             planCards.forEach(card => updatePlan(card, count));
         });
     });
- 
+
     const activeBtn = document.querySelector(".toggle-btn.active");
     if (activeBtn) {
         const count = deliveryCounts[activeBtn.textContent] || 1;

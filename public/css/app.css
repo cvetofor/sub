@@ -47,3 +47,30 @@
     border-color: rgb(225 29 72);
     color: rgb(225 29 72);
 }
+
+.plans-wrapper {
+    position: relative;
+    overflow: hidden;
+}
+.plans-container {
+    display: flex;
+    will-change: transform;
+}
+.plan-card {
+    flex: 0 0 auto;
+}
+.prev, .next {
+    cursor: pointer;
+    font-size: 1.5rem;
+    z-index: 10;
+}
+ 
+/* При необходимости — точечно на кнопки */
+.swiper-button {
+  --swiper-navigation-size: 25px;
+  --swiper-navigation-color: rgb(225 29 72); /* цвет стрелок */
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(1px);
+    border-radius: 5px;
+}

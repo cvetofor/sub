@@ -61,42 +61,75 @@
             </button>
             <div class="ml-auto flex items-center gap-2 text-sm btn-group">
                 <p class="text-gray-600">Частота:</p>
-                <button class="toggle-btn px-3 py-1 rounded-xl border bg-rose-100 border-rose-400 text-rose-700 active">Еженедельно</button>
+                <button
+                    class="toggle-btn px-3 py-1 rounded-xl border bg-rose-100 border-rose-400 text-rose-700 active">Еженедельно</button>
                 <button class="toggle-btn px-3 py-1 rounded-xl border bg-white border-rose-200">Раз в 2 недели</button>
                 <button class="toggle-btn px-3 py-1 rounded-xl border bg-white border-rose-200">Раз в месяц</button>
             </div>
         </div>
 
-        <div class="mt-6 grid md:grid-cols-4 gap-4">
-            @foreach ($plans as $plan)
-                <div class="rounded-3xl border p-5 shadow-sm border-rose-500 shadow-rose-100 shadow-lg">
-                    <div class="flex items-baseline justify-between mb-2">
-                        <h1 class="flex items-baseline justify-between mb-2 text-xl font-semibold">{{ $plan->name }}</h1>
-                        <p class="text-rose-600 text-xs font-semibold">выбрано</p>
+        <div class="plans-wrapper mt-6 swiper-container relative">
+            <div class="swiper-wrapper">
+                @foreach ($plans as $plan)
+                    <div class="swiper-slide rounded-3xl border p-5 shadow-sm border-rose-500 shadow-rose-100 shadow-lg">
+                        <div class="flex items-baseline justify-between mb-2">
+                            <h1 class="flex items-baseline justify-between mb-2 text-xl font-semibold">{{ $plan->name }}
+                            </h1>
+                            <p class="text-rose-600 text-xs font-semibold">выбрано</p>
+                        </div>
+                        <div class="text-3xl font-bold">{{ $plan->price }} ₽ <span
+                                class="text-base font-medium text-gray-600">за
+                                доставку</span></div>
+                        <p class="mt-1 text-sm text-gray-600">≈ 4 доставк(и) в месяц</p>
+                        <p class="mt-3 text-sm text-gray-700 min-h-[48px]">{{ $plan->description }}</p>
+                        <p class="mt-3 text-sm text-gray-600">Опции:
+                            @foreach ($plan->options as $option)
+                                <span>{{ $option->name }} +{{ $option->price }} ₽, </span>
+                            @endforeach
+                        </p>
+                        <div class="mt-4 p-3 rounded-2xl bg-rose-100 border border-rose-200">
+                            <p class="text-sm text-gray-700">Итого в месяц (с выбранными опциями):</p>
+                            <p class="text-2xl font-extrabold">123 ₽</p>
+                        </div>
+                        <button class="mt-4 w-full px-4 py-2 rounded-2xl bg-rose-600 text-white">Выбрать план</button>
                     </div>
-                    <div class="text-3xl font-bold">{{ $plan->price }} ₽ <span
-                            class="text-base font-medium text-gray-600">за
-                            доставку</span></div>
-                    <p class="mt-1 text-sm text-gray-600">≈ 4 доставк(и) в месяц</p>
-                    <p class="mt-3 text-sm text-gray-700 min-h-[48px]">{{ $plan->description }}</p>
-                    <p class="mt-3 text-sm text-gray-600">Опции:
-                        @foreach ($plan->options as $option)
-                            <span>{{ $option->name }} +{{ $option->price }} ₽, </span>
-                        @endforeach
-                    </p>
-                    <div class="mt-4 p-3 rounded-2xl bg-rose-100 border border-rose-200">
-                        <p class="text-sm text-gray-700">Итого в месяц (с выбранными опциями):</p>
-                        <p class="text-2xl font-extrabold">123 ₽</p>
-                    </div>
-                    <button class="mt-4 w-full px-4 py-2 rounded-2xl bg-rose-600 text-white">Выбрать план</button>
-                </div>
-            @endforeach
+                @endforeach
+            </div>
+
+            <div class="swiper-button swiper-button-next"></div>
+            <div class="swiper-button swiper-button-prev"></div>
         </div>
+
     </section>
 
     <section>
-        
+
     </section>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const swiper = new Swiper('.swiper-container', {
+                slidesPerView: 1,
+                spaceBetween: 16,
+                navigation: {
+                    nextEl: '.swiper-button-next',
+                    prevEl: '.swiper-button-prev',
+                },
+                breakpoints: {
+                    640: {
+                        slidesPerView: 2,
+                        spaceBetween: 20,
+                    },
+                    768: {
+                        slidesPerView: 4,
+                        spaceBetween: 24,
+                    }
+                }
+            });
+        });
+    </script>
 
     <script src="{{ asset('js/main_page.js') }}"></script>
 @endsection
