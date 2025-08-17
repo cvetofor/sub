@@ -136,6 +136,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const choosePlanBtn = document.getElementById('choosePlanBtn');
     if (choosePlanBtn) {
         choosePlanBtn.addEventListener('click', () => {
+            readyPlansWrapper.classList.remove('hidden');
+            customWrapper.classList.add('hidden');
             plansSection.scrollIntoView({ behavior: 'smooth' });
         });
     }
@@ -143,6 +145,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const subscribeBtn = document.getElementById('subscribeBtn');
     if (subscribeBtn) {
         subscribeBtn.addEventListener('click', () => {
+            readyPlansWrapper.classList.remove('hidden');
+            customWrapper.classList.add('hidden');
+            plansSection.scrollIntoView({ behavior: 'smooth' });
+        });
+    }
+
+    const chooseCustomPlanBtn = document.getElementById('chooseCustomPlanBtn');
+    if (chooseCustomPlanBtn) {
+        chooseCustomPlanBtn.addEventListener('click', () => {
+            customWrapper.classList.remove('hidden');
+            readyPlansWrapper.classList.add('hidden');
             plansSection.scrollIntoView({ behavior: 'smooth' });
         });
     }

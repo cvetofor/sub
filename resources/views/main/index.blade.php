@@ -33,7 +33,7 @@
                     <button class="px-5 py-3 rounded-xl bg-rose-600 text-white shadow cursor-pointer" id="choosePlanBtn">
                         Выбрать план
                     </button>
-                    <button class="px-5 py-3 rounded-xl border border-rose-200 bg-white shadow-sm cursor-pointer">
+                    <button class="px-5 py-3 rounded-xl border border-rose-200 bg-white shadow-sm cursor-pointer" id="chooseCustomPlanBtn">
                         Просто по бюджету
                     </button>
                 </div>
