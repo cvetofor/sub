@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const totalParagraph = card.querySelector("div.mt-4.p-3.rounded-2xl.bg-rose-100.border p.text-2xl.font-extrabold");
-        if (totalParagraph) totalParagraph.textContent = `${(pricePerDelivery + optionsSum) * deliveriesPerMonth } ₽`;
+        if (totalParagraph) totalParagraph.textContent = `${(pricePerDelivery + optionsSum) * deliveriesPerMonth} ₽`;
     };
 
     // Переключение "Готовые планы / Собрать самому"
@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        let frequency = deliveryCounts[frequencyOutput.textContent]
+        let frequency = deliveryCounts[frequencyOutput.textContent];
 
         return (baseBudget + totalOptionsPrice) * frequency;
     }
@@ -167,9 +167,28 @@ document.addEventListener('DOMContentLoaded', function () {
     // Функция для обновления отображения общей суммы
     function updateTotalAmount() {
         const totalAmount = calculateTotalAmount();
-        const totalAmountElement = document.querySelector('.lg\\:col-span-5 .bg-rose-50 .text-3xl.font-extrabold');
+        const totalAmountElement = document.getElementById('totalAmountElement');
+        const discountElement = document.getElementById('discountElement');
+        const checkboxPromo = document.getElementById('checkboxPromo');
+        const totalFirstMonthB = document.getElementById('totalFirstMonthB');
+        const totalFirstMonth = document.getElementById('totalFirstMonth');
+        const totalSecondMonth = document.getElementById('totalSecondMonth');
+
         if (totalAmountElement) {
             totalAmountElement.textContent = formatNumber(totalAmount) + ' ₽';
+
+            if (checkboxPromo.checked && deliveryCounts[frequencyOutput.textContent] != 1) {
+                discountElement.className = 'text-xs text-gray-600 mt-1';
+                totalFirstMonth.className = 'text-base text-gray-800 mt-1';
+                totalSecondMonth.className = 'text-xs text-gray-600 mt-1';
+                discountElement.textContent = 'Скидка промо 1+1: -' + formatNumber(totalAmount / 2) + ' ₽';
+                totalFirstMonthB.textContent = formatNumber(totalAmount / 2) + ' ₽';
+                totalSecondMonth.textContent = 'Со 2-го месяца: ' + formatNumber(totalAmount) + ' ₽';
+            } else {
+                discountElement.className = 'hidden';
+                totalFirstMonth.className = 'hidden';
+                totalSecondMonth.className = 'hidden';
+            }
         }
     }
 
