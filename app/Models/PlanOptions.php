@@ -10,6 +10,7 @@ class PlanOptions extends Model {
         'price',
         'description',
         'subscription_id',
+        'is_every_delivery',
         'is_active',
         'type'
     ];

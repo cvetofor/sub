@@ -55,6 +55,10 @@ class EditPlanOptions extends EditRecord {
                         ])
                         ->required(),
 
+                    Toggle::make('is_every_delivery')
+                        ->label('Каждую доставку?')
+                        ->required(),
+
                     Toggle::make('is_active')
                         ->label('Активировать')
                 ])

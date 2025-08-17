@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const totalParagraph = card.querySelector("div.mt-4.p-3.rounded-2xl.bg-rose-100.border p.text-2xl.font-extrabold");
-        if (totalParagraph) totalParagraph.textContent = `${pricePerDelivery * deliveriesPerMonth + optionsSum} ₽`;
+        if (totalParagraph) totalParagraph.textContent = `${(pricePerDelivery + optionsSum) * deliveriesPerMonth } ₽`;
     };
 
     // Переключение "Готовые планы / Собрать самому"
@@ -138,15 +138,45 @@ document.addEventListener('DOMContentLoaded', function () {
     const rangeInput = document.getElementById('budgetRange');
     const budgetValueMain = document.getElementById('budgetValueMain');
     const budgetValueAside = document.getElementById('budgetValueAside');
+    const frequencyOutput = document.getElementById('frequencyOutputAside');
 
     // Функция для форматирования числа с пробелами
     function formatNumber(num) {
         return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
     }
 
+    // Функция для подсчета общей суммы с учетом опций
+    function calculateTotalAmount() {
+        const baseBudget = parseInt(rangeInput.value) || 2990;
+        let totalOptionsPrice = 0;
+
+        // Подсчитываем стоимость выбранных опций доставки
+        const deliveryOptions = document.querySelectorAll('input[type="checkbox"]');
+        deliveryOptions.forEach(checkbox => {
+            if (checkbox.checked) {
+                const optionPrice = parseInt(checkbox.dataset.optionPrice) || 0;
+                totalOptionsPrice += optionPrice;
+            }
+        });
+
+        let frequency = deliveryCounts[frequencyOutput.textContent]
+
+        return (baseBudget + totalOptionsPrice) * frequency;
+    }
+
+    // Функция для обновления отображения общей суммы
+    function updateTotalAmount() {
+        const totalAmount = calculateTotalAmount();
+        const totalAmountElement = document.querySelector('.lg\\:col-span-5 .bg-rose-50 .text-3xl.font-extrabold');
+        if (totalAmountElement) {
+            totalAmountElement.textContent = formatNumber(totalAmount) + ' ₽';
+        }
+    }
+
     rangeInput.addEventListener('input', () => {
         budgetValueMain.textContent = formatNumber(rangeInput.value) + ' ₽';
         budgetValueAside.textContent = formatNumber(rangeInput.value) + ' ₽';
+        updateTotalAmount(); // Обновляем общую сумму при изменении бюджета
     });
 
     const citySelect = document.getElementById('citySelect');
@@ -161,7 +191,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     const freqButtons = document.querySelectorAll('.toggle-btn');
-    const frequencyOutput = document.getElementById('frequencyOutput');
 
     // при загрузке выводим активную кнопку
     let activeBtn = document.querySelector('.toggle-btn.active');
@@ -178,13 +207,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // записываем текст
             frequencyOutput.textContent = this.textContent.trim();
+
+            updateTotalAmount();
         });
     });
 
     // ---- ЛОГИКА ДЛЯ ЧЕКБОКСОВ ОПЦИЙ ДОСТАВКИ ----
     const deliveryOptions = document.querySelectorAll('input[type="checkbox"]');
     const optionsList = document.querySelector('.lg\\:col-span-5 .text-sm.mt-1.space-y-1');
-    
+
     if (optionsList) {
         // Получаем все существующие опции из списка
         const existingOptions = optionsList.querySelectorAll('li');
@@ -204,8 +235,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Обработчик для всех чекбоксов
     deliveryOptions.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
+        checkbox.addEventListener('change', function () {
             updateDeliveryOptions();
+            updateTotalAmount(); // Обновляем общую сумму при изменении опций
         });
     });
 
@@ -214,19 +246,19 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!optionsList) return;
 
         const listItems = optionsList.querySelectorAll('li');
-        
+
         listItems.forEach(li => {
             const optionName = li.dataset.optionName;
             const optionPrice = li.dataset.optionPrice || '0';
-            
+
             if (!optionName) return;
-            
+
             // Ищем соответствующий чекбокс
             const checkbox = Array.from(deliveryOptions).find(cb => {
                 const label = cb.closest('label');
                 return label && label.textContent.includes(optionName);
             });
-            
+
             if (checkbox && checkbox.checked) {
                 // Опция выбрана
                 li.className = 'opacity-100';
@@ -239,6 +271,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Инициализация при загрузке страницы
     updateDeliveryOptions();
+    updateTotalAmount();
 });

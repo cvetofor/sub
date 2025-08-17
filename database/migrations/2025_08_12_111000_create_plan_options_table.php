@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->string('name');
             $table->float('price', 8, 2)->default(0.00);
             $table->string('type');
+            $table->boolean('is_every_delivery')->default(true);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });

@@ -98,7 +98,7 @@
                         </p>
                         <div class="mt-4 p-3 rounded-2xl bg-rose-100 border border-rose-200">
                             <p class="text-sm text-gray-700">Итого в месяц (с выбранными опциями):</p>
-                            <p class="text-2xl font-extrabold">123₽</p>
+                            <p class="text-2xl font-extrabold">₽</p>
                         </div>
                         <button class="mt-4 w-full px-4 py-2 rounded-2xl bg-rose-600 text-white">Выбрать план</button>
                     </div>
@@ -224,13 +224,12 @@
                                 <label class="flex items-center gap-2 text-sm text-gray-800">
                                     <input type="checkbox" name="addition_option_{{ $option->id }}"
                                         value="{{ $option->id }}" data-option-name="{{ $option->name }}"
-                                        data-option-price="{{ $option->price }}">{{ $option->name }} (
+                                        data-option-price="{{ $option->price }}">{{ $option->name }}
                                     @if ($option->price > 0)
-                                        +{{ $option->price }}₽
+                                        (+{{ $option->price }}₽{{ $option->is_every_delivery ? '/доставка' : ' — добавится в первый месяц' }})
                                     @else
-                                        бесплатно
+                                        (бесплатно)
                                     @endif
-                                    )
                                 </label>
                             @endforeach
                         </div>
@@ -246,18 +245,20 @@
                 <div class="sticky top-24 p-5 rounded-3xl border border-rose-300 bg-white shadow-md">
                     <h2 class="text-lg font-semibold">Ваш выбор</h2>
                     <p class="mt-2 text-sm text-gray-700">Город: <b id="cityOutput"></b></p>
-                    <p class="mt-2 text-sm text-gray-700">Частота: <b id="frequencyOutput"></b></p>
+                    <p class="mt-2 text-sm text-gray-700">Частота: <b id="frequencyOutputAside"></b></p>
                     <div class="mt-3">
-                        <label class="block text-sm text-gray-600 mb-2">
-                            Бюджет за доставку: <span id="budgetValueAside" class="font-medium text-gray-700">2 990
-                                ₽</span>
-                        </label>
+                        <p class="text-sm text-gray-600">Бюджет за доставку: </p>
+                        <p class="font-semibold text-gray-900" id="budgetValueAside">2 990 ₽</p> 
                     </div>
                     <div class="mt-4 border-t border-dashed pt-3">
                         <p class="text-sm text-gray-600">Опции за доставку</p>
-                        <ul class="text-sm mt-1 space-y-1">
+                        <ul class="text-sm mt-1 space-y-1" id="selectedOptions">
                             @foreach ($totalOptDel as $option)
-                                <li class="opacity-50" data-option-name="{{ $option['name'] }}" data-option-price="{{ $option['price'] }}">{{ $option['name'] }} +{{ $option['price'] }}₽</li>
+                                <li class="opacity-50" data-option-name="{{ $option['name'] }}"
+                                    data-option-price="{{ $option['price'] }}"
+                                    data-option-every-delivery="{{ $option['is_every_delivery'] ? 'true' : 'false' }}">
+                                    {{ $option['name'] }} +{{ $option['price'] }}₽
+                                </li>
                             @endforeach
                         </ul>
                     </div>

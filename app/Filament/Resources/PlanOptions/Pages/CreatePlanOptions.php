@@ -49,29 +49,9 @@ class CreatePlanOptions extends CreateRecord {
                         ])
                         ->required(),
 
-                    // Select::make('occasion')
-                    //     ->label('Тип')
-                    //     ->options([
-                    //         'love' => 'Любю безумно',
-                    //         'reason' => 'Без повода',
-                    //         'birthday' => 'День рождения',
-                    //         'anniversary' => 'Годовщина',
-                    //         'office' => 'В офис',
-                    //         'home' => 'В дом'
-                    //     ])
-                    //     ->required(),
-
-                    // Select::make('recipient')
-                    //     ->label('Тип')
-                    //     ->options([
-                    //         'myself' => 'Для себя',
-                    //         'partner' => 'Партнёру/супругу',
-                    //         'parents' => 'Родителям',
-                    //         'colleague' => 'Коллеге',
-                    //         'family' => 'Детям/семьям',
-                    //         'other' => 'Другое',
-                    //     ])
-                    //     ->required(),
+                    Toggle::make('is_every_delivery')
+                        ->label('Каждую доставку?')
+                        ->required(),
 
                     Toggle::make('is_active')
                         ->label('Активировать')
