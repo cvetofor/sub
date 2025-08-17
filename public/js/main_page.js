@@ -59,9 +59,21 @@ document.addEventListener('DOMContentLoaded', function () {
     // Переключение "Готовые планы / Собрать самому"
     const readyBtn = document.getElementById('readyBtn');
     const customBtn = document.getElementById('customBtn');
-    if (readyBtn && customBtn) {
-        readyBtn.addEventListener('click', () => setActive(readyBtn, customBtn));
-        customBtn.addEventListener('click', () => setActive(customBtn, readyBtn));
+    const readyPlansWrapper = document.getElementById('readyPlansWrapper'); // блок с готовыми планами
+    const customWrapper = document.getElementById('customWrapper'); // блок "Собрать самому"
+
+    if (readyBtn && customBtn && readyPlansWrapper && customWrapper) {
+        readyBtn.addEventListener('click', () => {
+            setActive(readyBtn, customBtn);
+            readyPlansWrapper.classList.remove('hidden');
+            customWrapper.classList.add('hidden');
+        });
+
+        customBtn.addEventListener('click', () => {
+            setActive(customBtn, readyBtn);
+            customWrapper.classList.remove('hidden');
+            readyPlansWrapper.classList.add('hidden');
+        });
     }
 
     // ---- СИНХРОНИЗАЦИЯ КНОПОК ЧАСТОТЫ ----

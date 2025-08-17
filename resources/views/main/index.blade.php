@@ -75,7 +75,7 @@
         </div>
 
 
-        <div class="plans-wrapper mt-6 swiper-container relative" id="plansSection">
+        <div class="plans-wrapper mt-6 swiper-container relative" id="readyPlansWrapper">
             <div class="swiper-wrapper">
                 @foreach ($plans as $plan)
                     <div class="swiper-slide rounded-3xl border p-5 shadow-sm border-rose-500 shadow-rose-100 shadow-lg">
@@ -109,7 +109,7 @@
             <div class="swiper-button swiper-button-prev"></div>
         </div>
 
-        <div class="mt-6 grid lg:grid-cols-12 gap-6">
+        <div class="mt-6 grid lg:grid-cols-12 gap-6 hidden" id="customWrapper">
             <div class="lg:col-span-7 xl:col-span-8 p-5 rounded-3xl border border-rose-200 bg-white shadow-sm">
                 <div class="grid md:grid-cols-2 gap-4">
                     <div>
@@ -279,7 +279,6 @@
                 </div>
             </aside>
         </div>
-
     </section>
 
     <section class="mx-auto max-w-7xl px-4 pb-14 grid md:grid-cols-2 gap-8">
