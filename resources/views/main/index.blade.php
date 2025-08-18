@@ -11,6 +11,8 @@
         $timeDeliveries = TimeDelivery::all();
 
         $totalOptDel = $options->where('type', 'delivery')->merge($options->where('type', 'addition'))->toArray();
+
+        $selectedCityId = session('city_id');
     @endphp
 
     <section class="flex mx-auto max-w-7xl px-4 pt-10 pb-8">
@@ -33,7 +35,8 @@
                     <button class="px-5 py-3 rounded-xl bg-rose-600 text-white shadow cursor-pointer" id="choosePlanBtn">
                         Выбрать план
                     </button>
-                    <button class="px-5 py-3 rounded-xl border border-rose-200 bg-white shadow-sm cursor-pointer" id="chooseCustomPlanBtn">
+                    <button class="px-5 py-3 rounded-xl border border-rose-200 bg-white shadow-sm cursor-pointer"
+                        id="chooseCustomPlanBtn">
                         Просто по бюджету
                     </button>
                 </div>
@@ -116,7 +119,9 @@
                         <label class="block text-sm text-gray-600 mb-1">Город</label>
                         <select id="citySelect" class="w-full px-3 py-2 rounded-xl border border-rose-200 cursor-pointer">
                             @foreach ($cities as $city)
-                                <option value="{{ $city->id }}">{{ $city->name }}</option>
+                                <option value="{{ $city->id }}" {{ $selectedCityId == $city->id ? 'selected' : '' }}>
+                                    {{ $city->name }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -248,7 +253,7 @@
                     <p class="mt-2 text-sm text-gray-700">Частота: <b id="frequencyOutputAside"></b></p>
                     <div class="mt-3">
                         <p class="text-sm text-gray-600">Бюджет за доставку: </p>
-                        <p class="font-semibold text-gray-900" id="budgetValueAside">2 990 ₽</p> 
+                        <p class="font-semibold text-gray-900" id="budgetValueAside">2 990 ₽</p>
                     </div>
                     <div class="mt-4 border-t border-dashed pt-3">
                         <p class="text-sm text-gray-600">Опции за доставку</p>
@@ -270,12 +275,17 @@
                         <p class="text-sm text-gray-700">1-й месяц (до промо)</p>
                         <h1 class="text-3xl font-extrabold" id="totalAmountElement">₽</h1>
                         <p class="text-xs text-gray-600 mt-1" id="discountElement"></p>
-                        <p class="text-base text-gray-800 mt-1" id="totalFirstMonth">К оплате в 1 месяц: <b id="totalFirstMonthB"></b></p>
+                        <p class="text-base text-gray-800 mt-1" id="totalFirstMonth">К оплате в 1 месяц: <b
+                                id="totalFirstMonthB"></b></p>
                         <p class="text-xs text-gray-600 mt-1" id="totalSecondMonth">Со второго месяца: </p>
-                        <p class="text-xs text-gray-600 mt-1">Расчёт: (база за доставку + опции за доставку) × доставок в месяц</p>
+                        <p class="text-xs text-gray-600 mt-1">Расчёт: (база за доставку + опции за доставку) × доставок в
+                            месяц</p>
                     </div>
-                    <button class="mt-4 w-full px-5 py-3 rounded-2xl bg-rose-400 cursor-not-allowed opacity-60 text-white shadow-lg">Оформить подписку</button>
-                    <p class="mt-2 text-xs text-gray-500">Спецпредложение: в первый месяц — второй букет бесплатно (для новых клиентов, при ≥ 2 доставках).</p>
+                    <button
+                        class="mt-4 w-full px-5 py-3 rounded-2xl bg-rose-400 cursor-not-allowed opacity-60 text-white shadow-lg">Оформить
+                        подписку</button>
+                    <p class="mt-2 text-xs text-gray-500">Спецпредложение: в первый месяц — второй букет бесплатно (для
+                        новых клиентов, при ≥ 2 доставках).</p>
                 </div>
             </aside>
         </div>

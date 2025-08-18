@@ -13,5 +13,3 @@ Route::get('/account', [UserController::class, 'index'])
 Route::get('/policy', function () {
     return view('information.policy');
 })->name('policy');
-
-require __DIR__ . '/auth.php';
