@@ -17,6 +17,11 @@
     background-color: #555;
 }
 
+input[type="checkbox"] {
+  accent-color: #ec003f; /* цвет галочки и рамки */
+  background-color: aqua;
+}
+
 .plan-btn {
     padding: 0.5rem 1rem;
     border-radius: 1rem;
