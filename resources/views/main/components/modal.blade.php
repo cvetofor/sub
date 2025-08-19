@@ -1,4 +1,4 @@
-<div id="subscription-modal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur bg-white/70">
+<div id="subscription-modal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur bg-white/70 hidden">
     <div class="bg-white w-full max-w-3xl p-6 overflow-auto rounded-3xl shadow-xl border border-rose-300">
         <h2 class="mb-4 text-center text-2xl font-semibold">Подтверждение оформления подписки</h2>
 
