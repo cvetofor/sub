@@ -36,12 +36,10 @@
                 })
                 .then(res => res.json())
                 .then(data => {
-                    if (data.success) {
-                        console.log("Город сохранён в сессию");
+                    if (data.success) { 
                         window.location.reload();
                     }
-                })
-                .catch(err => console.error(err));
+                }) 
         });
     </script>
 </header>

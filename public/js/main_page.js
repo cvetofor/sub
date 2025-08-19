@@ -315,6 +315,39 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Разлочить кнопку "Оформить подписку"
+    const inputDeliveryAddress = document.getElementById('deliveryAddress');
+    const asideSubscribeBtn = document.getElementById('asideSubscribeBtn');
+
+    inputDeliveryAddress.addEventListener('input', () => {
+        if (inputDeliveryAddress.value.trim() !== '') {
+            asideSubscribeBtn.disabled = false;
+            asideSubscribeBtn.classList.remove('cursor-not-allowed', 'opacity-60');
+            asideSubscribeBtn.classList.add('cursor-pointer', 'opacity-100');
+        } else {
+            asideSubscribeBtn.disabled = true;
+            asideSubscribeBtn.classList.add('cursor-not-allowed', 'opacity-60');
+            asideSubscribeBtn.classList.remove('cursor-pointer', 'opacity-100');
+        }
+    });
+
+    // Открыть модалку с оформлением подписки
+    const subscribeModal = this.getElementById('subscription-modal');
+    asideSubscribeBtn.addEventListener('click', () => {
+        subscribeModal.classList.remove('hidden');
+
+        const closeBtn = document.getElementById('closeBtn');
+        closeBtn.addEventListener('click', () => {
+            subscribeModal.classList.add('hidden');
+        });
+
+        subscribeModal.addEventListener('click', (e) => {
+            if (e.target === subscribeModal) {
+                subscribeModal.classList.add('hidden');
+            }
+        });
+    });
+
     updateDeliveryOptions();
     updateTotalAmount();
 });

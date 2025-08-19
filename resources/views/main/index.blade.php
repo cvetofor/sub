@@ -78,7 +78,7 @@
         </div>
 
 
-        <div class="plans-wrapper mt-6 swiper-container relative" id="readyPlansWrapper">
+        <div class="mt-6 grid md:grid-cols-4 gap-4 swiper-container relative" id="readyPlansWrapper">
             <div class="swiper-wrapper">
                 @foreach ($plans as $plan)
                     <div class="swiper-slide rounded-3xl border p-5 shadow-sm border-rose-500 shadow-rose-100 shadow-lg">
@@ -128,8 +128,8 @@
 
                     <div>
                         <label class="block text-sm text-gray-600 mb-1">Адрес доставки</label>
-                        <input class="w-full px-3 py-2 rounded-xl border border-rose-200" type="text"
-                            placeholder="Улица, дом, подъезд, комментарий">
+                        <input id="deliveryAddress" class="w-full px-3 py-2 rounded-xl border border-rose-200"
+                            type="text" placeholder="Улица, дом, подъезд, комментарий">
                     </div>
 
                     <div class="ml-auto flex flex-wrap items-center gap-2 text-sm btn-group">
@@ -278,11 +278,10 @@
                         <p class="text-base text-gray-800 mt-1" id="totalFirstMonth">К оплате в 1 месяц: <b
                                 id="totalFirstMonthB"></b></p>
                         <p class="text-xs text-gray-600 mt-1" id="totalSecondMonth">Со второго месяца: </p>
-                        <p class="text-xs text-gray-600 mt-1">Расчёт: (база за доставку + опции за доставку) × доставок в
-                            месяц</p>
+                        <p class="text-xs text-gray-600 mt-1">Расчёт: (база за доставку + опции за доставку) × доставок в месяц</p>
                     </div>
-                    <button
-                        class="mt-4 w-full px-5 py-3 rounded-2xl bg-rose-400 cursor-not-allowed opacity-60 text-white shadow-lg">Оформить
+                    <button id="asideSubscribeBtn"
+                        class="mt-4 w-full px-5 py-3 rounded-2xl bg-rose-600 cursor-not-allowed opacity-60 text-white shadow-lg" disabled>Оформить
                         подписку</button>
                     <p class="mt-2 text-xs text-gray-500">Спецпредложение: в первый месяц — второй букет бесплатно (для
                         новых клиентов, при ≥ 2 доставках).</p>
@@ -336,7 +335,8 @@
             </details>
         </div>
     </section>
-
+    
+    @include('main.components.modal')
 
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script>
