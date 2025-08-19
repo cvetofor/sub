@@ -51,12 +51,11 @@
                         <p class="text-gray-600 mt-2">Реальные примеры: Современный минимализм · Яркая классика ·
                             Эко/полевые · Авторский</p>
                         <div class="mt-4 grid grid-cols-3 gap-3">
-                            <img class="h-20 bg-rose-100/60 rounded-xl" src="" alt="example_photo_1">
-                            <img class="h-20 bg-rose-100/60 rounded-xl" src="" alt="example_photo_2">
-                            <img class="h-20 bg-rose-100/60 rounded-xl" src="" alt="example_photo_3">
-                            <img class="h-20 bg-rose-100/60 rounded-xl" src="" alt="example_photo_4">
-                            <img class="h-20 bg-rose-100/60 rounded-xl" src="" alt="example_photo_5">
-                            <img class="h-20 bg-rose-100/60 rounded-xl" src="" alt="example_photo_6">
+                            @foreach ($flowers as $flower)
+                                <img class="w-full h-32 object-cover rounded-xl bg-rose-100/60"
+                                    src="{{ asset('images/flowers/' . $flower->getFilename()) }}"
+                                    alt="{{ pathinfo($flower->getFilename(), PATHINFO_FILENAME) }}">
+                            @endforeach
                         </div>
                     </div>
                 </div>
@@ -163,7 +162,8 @@
                     <label class="block text-sm text-gray-600 mb-2">
                         Бюджет за доставку: <span id="budgetValueMain" class="font-medium text-gray-700">2 990 ₽</span>
                     </label>
-                    <input id="budgetRange" type="range" min="2990" max="50000" step="10" value="2990" class="w-full h-2 bg-rose-200 rounded-lg appearance-none">
+                    <input id="budgetRange" type="range" min="2990" max="50000" step="10" value="2990"
+                        class="w-full h-2 bg-rose-200 rounded-lg appearance-none">
                     <p class="text-sm text-gray-600 mt-1">
                         Диапазон: 2 990 – 50 000 ₽. Флористы подберут состав под ваш бюджет, без привязки к «количеству
                         стеблей».
@@ -277,10 +277,12 @@
                         <p class="text-base text-gray-800 mt-1" id="totalFirstMonth">К оплате в 1 месяц: <b
                                 id="totalFirstMonthB"></b></p>
                         <p class="text-xs text-gray-600 mt-1" id="totalSecondMonth">Со второго месяца: </p>
-                        <p class="text-xs text-gray-600 mt-1">Расчёт: (база за доставку + опции за доставку) × доставок в месяц</p>
+                        <p class="text-xs text-gray-600 mt-1">Расчёт: (база за доставку + опции за доставку) × доставок в
+                            месяц</p>
                     </div>
                     <button id="asideSubscribeBtn"
-                        class="mt-4 w-full px-5 py-3 rounded-2xl bg-rose-600 cursor-not-allowed opacity-60 text-white shadow-lg" disabled>Оформить
+                        class="mt-4 w-full px-5 py-3 rounded-2xl bg-rose-600 cursor-not-allowed opacity-60 text-white shadow-lg"
+                        disabled>Оформить
                         подписку</button>
                     <p class="mt-2 text-xs text-gray-500">Спецпредложение: в первый месяц — второй букет бесплатно (для
                         новых клиентов, при ≥ 2 доставках).</p>
@@ -334,7 +336,7 @@
             </details>
         </div>
     </section>
-    
+
     @include('main.components.modal')
 
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
