@@ -161,6 +161,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     const rangeInput = document.getElementById('budgetRange');
+
+    rangeInput.addEventListener('input', () => {
+        const value = ((rangeInput.value - rangeInput.min) / (rangeInput.max - rangeInput.min)) * 100;
+        rangeInput.style.background = `linear-gradient(to right, #f43f5e 0%, #f43f5e ${value}%, #fca5a5 ${value}%, #fca5a5 100%)`;
+    });
+
     const budgetValueMain = document.getElementById('budgetValueMain');
     const budgetValueAside = document.getElementById('budgetValueAside');
     const frequencyOutput = document.getElementById('frequencyOutputAside');

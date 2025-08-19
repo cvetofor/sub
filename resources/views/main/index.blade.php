@@ -78,7 +78,7 @@
         </div>
 
 
-        <div class="mt-6 grid md:grid-cols-4 gap-4 swiper-container relative" id="readyPlansWrapper">
+        <div class="plans-wrapper mt-6 grid md:grid-cols-4 gap-4 swiper-container relative" id="readyPlansWrapper">
             <div class="swiper-wrapper">
                 @foreach ($plans as $plan)
                     <div class="swiper-slide rounded-3xl border p-5 shadow-sm border-rose-500 shadow-rose-100 shadow-lg">
@@ -163,8 +163,7 @@
                     <label class="block text-sm text-gray-600 mb-2">
                         Бюджет за доставку: <span id="budgetValueMain" class="font-medium text-gray-700">2 990 ₽</span>
                     </label>
-                    <input id="budgetRange" type="range" min="2990" max="50000" step="10" value="2990"
-                        class="w-full h-2 bg-rose-200 rounded-lg appearance-none">
+                    <input id="budgetRange" type="range" min="2990" max="50000" step="10" value="2990" class="w-full h-2 bg-rose-200 rounded-lg appearance-none">
                     <p class="text-sm text-gray-600 mt-1">
                         Диапазон: 2 990 – 50 000 ₽. Флористы подберут состав под ваш бюджет, без привязки к «количеству
                         стеблей».

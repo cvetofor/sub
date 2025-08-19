@@ -111,3 +111,18 @@ input[type="checkbox"] {
     border-radius: 50%;
     cursor: pointer;
 }
+
+#budgetRange {
+    background: linear-gradient(to right, #f43f5e 0%, #f43f5e 0%, #fca5a5 0%, #fca5a5 100%);
+}
+
+/* Ползунок */
+#budgetRange::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background-color: #f43f5e;
+    border-radius: 50%;
+    cursor: pointer;
+}
