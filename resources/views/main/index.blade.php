@@ -82,7 +82,6 @@
             </div>
         </div>
 
-
         <div class="plans-wrapper mt-6 grid md:grid-cols-4 gap-4 swiper-container relative" id="readyPlansWrapper">
             <div class="swiper-wrapper">
                 @foreach ($plans as $plan)
@@ -108,7 +107,7 @@
                             <p class="text-sm text-gray-700">Итого в месяц (с выбранными опциями):</p>
                             <p class="text-2xl font-extrabold">₽</p>
                         </div>
-                        <button class="mt-4 w-full px-4 py-2 rounded-2xl bg-rose-600 text-white">Выбрать план</button>
+                        <button class="choosePlanBtnPSection mt-4 w-full px-4 py-2 rounded-2xl bg-rose-600 text-white">Выбрать план</button>
                     </div>
                 @endforeach
             </div>

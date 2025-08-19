@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (btn) {
                 btn.textContent = "Выбрать план";
-                btn.className = "mt-4 w-full px-4 py-2 rounded-2xl bg-white border border-rose-300 cursor-pointer";
+                btn.className = "choosePlanBtnPSection mt-4 w-full px-4 py-2 rounded-2xl bg-white border border-rose-300 cursor-pointer";
             }
             if (label) label.style.display = "none";
         });
@@ -338,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Открыть модалку с оформлением подписки
-    const subscribeModal = this.getElementById('subscription-modal');
+    const subscribeModal = document.getElementById('subscription-modal');
     asideSubscribeBtn.addEventListener('click', () => {
         subscribeModal.classList.remove('hidden');
 
@@ -351,6 +351,24 @@ document.addEventListener('DOMContentLoaded', function () {
             if (e.target === subscribeModal) {
                 subscribeModal.classList.add('hidden');
             }
+        });
+    });
+
+    const choosePlanBtnPSection = document.querySelectorAll('.choosePlanBtnPSection');
+    choosePlanBtnPSection.forEach(element => {
+        element.addEventListener('click', () => {
+            subscribeModal.classList.remove('hidden');
+
+            const closeBtn = document.getElementById('closeBtn');
+            closeBtn.addEventListener('click', () => {
+                subscribeModal.classList.add('hidden');
+            });
+
+            subscribeModal.addEventListener('click', (e) => {
+                if (e.target === subscribeModal) {
+                    subscribeModal.classList.add('hidden');
+                }
+            });
         });
     });
 
