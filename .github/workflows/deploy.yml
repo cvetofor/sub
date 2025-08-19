@@ -29,13 +29,16 @@ jobs:
       run: |
         # Установка rsync
         sudo apt-get update && sudo apt-get install -y rsync
-        
-        # Создание строки с измененными файлами
-        CHANGED_FILES=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | tr '\n' ' ')
-        
-        # Команда rsync для отправки только измененных файлов с исключением .github
-        rsync -avz --no-times --no-perms --no-owner --no-group --relative \
-          --exclude='.github' \
-          -e "ssh -o StrictHostKeyChecking=no" \
-          $CHANGED_FILES \
-          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.REMOTE_PATH }}
+
+        # Создание строки с измененными файлами, исключая .github
+        CHANGED_FILES=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -v '^.github/' | tr '\n' ' ')
+
+        # Если есть измененные файлы, синхронизируем
+        if [ -n "$CHANGED_FILES" ]; then
+          rsync -avz --no-times --no-perms --no-owner --no-group --relative \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            $CHANGED_FILES \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.REMOTE_PATH }}
+        else
+          echo "Нет измененных файлов для синхронизации"
+        fi
