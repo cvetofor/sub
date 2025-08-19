@@ -1,0 +1,40 @@
+name: Deploy Laravel via SSH
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  
+
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v42
+      with:
+        since_last_remote_commit: 'true'
+
+    - name: Install SSH key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+
+    - name: Rsync changed files
+      run: |
+        # Установка rsync
+        sudo apt-get update && sudo apt-get install -y rsync
+        
+        # Создание строки с измененными файлами
+        CHANGED_FILES=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | tr '\n' ' ')
+        
+        # Команда rsync для отправки только измененных файлов
+        rsync -avz --no-times --no-perms --no-owner --no-group --relative \
+          -e "ssh -o StrictHostKeyChecking=no" \
+          $CHANGED_FILES \
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.REMOTE_PATH }}
