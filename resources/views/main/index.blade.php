@@ -51,11 +51,17 @@
                         <p class="text-gray-600 mt-2">Реальные примеры: Современный минимализм · Яркая классика ·
                             Эко/полевые · Авторский</p>
                         <div class="mt-4 grid grid-cols-3 gap-3">
-                            @foreach ($flowers as $flower)
-                                <img class="w-full h-32 object-cover rounded-xl bg-rose-100/60"
-                                    src="{{ asset('images/flowers/' . $flower->getFilename()) }}"
-                                    alt="{{ pathinfo($flower->getFilename(), PATHINFO_FILENAME) }}">
-                            @endforeach
+                            @if ($flowers)
+                                @foreach ($flowers as $flower)
+                                    <img class="w-full h-32 object-cover rounded-xl bg-rose-100/60"
+                                        src="{{ asset('images/flowers/' . $flower->getFilename()) }}"
+                                        alt="{{ pathinfo($flower->getFilename(), PATHINFO_FILENAME) }}">
+                                @endforeach
+                            @else
+                                @for ($i = 0; $i < 6; $i++)
+                                    <div class="w-full h-32 object-cover rounded-xl bg-rose-100/60"></div>
+                                @endfor
+                            @endif
                         </div>
                     </div>
                 </div>
