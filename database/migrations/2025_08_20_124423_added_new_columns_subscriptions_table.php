@@ -17,7 +17,6 @@ return new class extends Migration {
             $table->string('frequency');
             $table->string('comment')->nullable();
             $table->boolean('using_promo')->default(false);
-            $table->boolean('is_custom')->default(false);
         });
     }
 
