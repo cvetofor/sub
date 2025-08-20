@@ -99,35 +99,3 @@ payBtn.addEventListener('click', (e) => {
         }
     });
 });
-
-
-
- // Проверяем количество баллов
-// udsButton.on('click', function(e) {
-//     e.preventDefault();
-//     udsResult.text('');
-//     const promo = udsInput.val().trim();
-//     udsButton.prop('disabled', true).text('Проверяем...');
-//     $.ajax({
-//         url: '/uds/check',
-//         method: 'POST',
-//         data: {
-//             uds_promo: promo,
-//             total: $('.cart__summary-total').attr('data-total'),
-//             _token: $('meta[name="csrf-token"]').attr('content')
-//         },
-//         success: function(resp) {
-//             if (resp.success) {
-//                 udsResult.html('<span style="color:#71be38;">Доступно баллов: ' + resp.points + '</span>' + renderUdsActions(resp.points, promo));
-//             } else {
-//                 udsResult.html('<span style="color:red;">' + (resp.message || 'Ошибка проверки') + '</span>');
-//             }
-//         },
-//         error: function() {
-//             udsResult.html('<span style="color:red;">Ошибка соединения с сервером</span>');
-//         },
-//         complete: function() {
-//             udsButton.prop('disabled', false).text('Проверить баллы');
-//         }
-//     });
-// });
