@@ -2,7 +2,6 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Pages\Auth\Login;
 use Filament\Facades\Filament;
 use Filament\Pages\Dashboard;
 use Filament\Http\Middleware\Authenticate;

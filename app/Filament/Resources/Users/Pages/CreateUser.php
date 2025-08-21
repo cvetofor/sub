@@ -37,6 +37,7 @@ class CreateUser extends CreateRecord {
                     TextInput::make('password')
                         ->label('Пароль')
                         ->password()
+                        ->revealable(true)
                         ->required()
                         ->dehydrated(fn($state) => filled($state))
                         ->trim(),

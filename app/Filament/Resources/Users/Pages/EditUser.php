@@ -46,6 +46,7 @@ class EditUser extends EditRecord {
             $fields[] = TextInput::make('password')
                 ->label('Пароль')
                 ->password()
+                ->revealable(true)
                 ->dehydrated(fn($state) => filled($state))
                 ->trim();
 

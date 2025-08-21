@@ -15,9 +15,10 @@ class Plan extends Model {
 
     ];
 
-    public function subscription() {
-        return $this->belongsTo(Subscription::class);
+    public function city() {
+        return $this->belongsTo(City::class);
     }
+
 
     public function options() {
         return $this->belongsToMany(

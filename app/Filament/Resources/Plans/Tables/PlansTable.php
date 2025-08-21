@@ -48,8 +48,6 @@ class PlansTable {
 
                         return $query;
                     })
-
-
             ])
             ->recordActions([
                 EditAction::make(),
