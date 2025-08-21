@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class PlanOptions extends Model {
+class PlanOption extends Model {
     protected $fillable = [
         'name',
         'price',
@@ -20,6 +20,6 @@ class PlanOptions extends Model {
     }
 
     public function plans() {
-        return $this->belongsToMany(Plan::class, 'plan_plan_option');
+        return $this->belongsToMany(Plan::class, 'plan_plan_options');
     }
 }

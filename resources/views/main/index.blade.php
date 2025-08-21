@@ -75,17 +75,20 @@
             <button id="customBtn" class="plan-btn flex-1 sm:flex-none">Собрать самому</button>
             <div class="ml-auto flex flex-wrap items-center gap-2 text-sm btn-group">
                 <p class="text-gray-600 w-full sm:w-auto">Частота:</p>
-                <button
-                    class="toggle-btn px-3 py-1 rounded-xl border bg-rose-100 border-rose-400 text-rose-700 active">Еженедельно</button>
-                <button class="toggle-btn px-3 py-1 rounded-xl border bg-white border-rose-200">Раз в 2 недели</button>
-                <button class="toggle-btn px-3 py-1 rounded-xl border bg-white border-rose-200">Раз в месяц</button>
+                <button class="toggle-btn px-3 py-1 rounded-xl border bg-rose-100 border-rose-400 text-rose-700 active"
+                    data-frequency-code="weekly">Еженедельно</button>
+                <button class="toggle-btn px-3 py-1 rounded-xl border bg-white border-rose-200"
+                    data-frequency-code="biweekly">Раз в 2 недели</button>
+                <button class="toggle-btn px-3 py-1 rounded-xl border bg-white border-rose-200"
+                    data-frequency-code="monthly">Раз в месяц</button>
             </div>
         </div>
 
         <div class="plans-wrapper mt-6 grid md:grid-cols-4 gap-4 swiper-container relative" id="readyPlansWrapper">
             <div class="swiper-wrapper">
                 @foreach ($plans as $plan)
-                    <div class="swiper-slide rounded-3xl border p-5 shadow-sm border-rose-500 shadow-rose-100 shadow-lg">
+                    <div class="swiper-slide rounded-3xl border p-5 shadow-sm border-rose-500 shadow-rose-100 shadow-lg"
+                        data-plan-id="{{ $plan->id }}">
                         <div class="flex items-baseline justify-between mb-2">
                             <h1 class="flex items-baseline justify-between mb-2 text-xl font-semibold">{{ $plan->name }}
                             </h1>
@@ -107,7 +110,9 @@
                             <p class="text-sm text-gray-700">Итого в месяц (с выбранными опциями):</p>
                             <p class="text-2xl font-extrabold">₽</p>
                         </div>
-                        <button class="choosePlanBtnPSection mt-4 w-full px-4 py-2 rounded-2xl bg-rose-600 text-white">Выбрать план</button>
+                        <button
+                            class="choosePlanBtnPSection mt-4 w-full px-4 py-2 rounded-2xl bg-rose-600 text-white">Выбрать
+                            план</button>
                     </div>
                 @endforeach
             </div>
@@ -136,25 +141,26 @@
                             type="text" placeholder="Улица, дом, подъезд, комментарий">
                     </div>
 
-                    <div class="ml-auto flex flex-wrap items-center gap-2 text-sm btn-group">
-                        <p class="text-gray-600 w-full sm:w-auto">Частота:</p>
+                    <div class=" gap-2 text-sm btn-group">
+                        <label class="block text-sm text-gray-600 mb-1">Частота</label>
                         <button
-                            class="toggle-btn px-3 py-2 rounded-xl border bg-rose-100 border-rose-400 text-rose-700 active">Еженедельно</button>
-                        <button class="toggle-btn px-3 py-2 rounded-xl border bg-white border-rose-200">
+                            class="toggle-btn px-3 py-1 rounded-xl border bg-rose-100 border-rose-400 text-rose-700 active">Еженедельно</button>
+                        <button class="toggle-btn px-3 py-1 rounded-xl border bg-white border-rose-200">
                             Раз в 2 недели</button>
-                        <button class="toggle-btn px-3 py-2 rounded-xl border bg-white border-rose-200">Раз в месяц</button>
+                        <button class="toggle-btn px-3 py-1 rounded-xl border bg-white border-rose-200">Раз в месяц</button>
                     </div>
 
                     <div>
                         <label class="block text-sm text-gray-600 mb-1">Окно доставки</label>
-                        <select class="w-full px-3 py-2 rounded-xl border border-rose-200" name="" id="">
+                        <select id="timeSelect" class="w-full px-3 py-2 rounded-xl border border-rose-200" name=""
+                            id="">
                             @foreach ($timeDeliveries as $time)
                                 <option value="{{ $time->id }}">{{ $time->from }}—{{ $time->to }}</option>
                             @endforeach
                         </select>
                         @foreach ($options->where('type', 'delivery') as $option)
                             <label class="mt-2 flex items-center gap-2 text-sm text-gray-700">
-                                <input type="checkbox" name="delivery_option_{{ $option->id }}"
+                                <input class="option" type="checkbox" name="delivery_option_{{ $option->id }}"
                                     value="{{ $option->id }}" data-option-name="{{ $option->name }}"
                                     data-option-price="{{ $option->price }}">{{ $option->name }}
                                 (+{{ $option->price }}₽/доставка)
@@ -181,7 +187,7 @@
                             <div class="text-sm text-gray-600 mb-1">Стиль букетов</div>
                             @foreach ($options->where('type', 'style') as $option)
                                 <label class="flex items-center gap-2 text-sm text-gray-800 mb-1">
-                                    <input type="checkbox" name="style_option_{{ $option->id }}"
+                                    <input class="option" type="checkbox" name="style_option_{{ $option->id }}"
                                         value="{{ $option->id }}" data-option-name="{{ $option->name }}"
                                         data-option-price="{{ $option->price }}">{{ $option->name }}
                                 </label>
@@ -193,7 +199,7 @@
                             <div class="text-sm text-gray-600 mb-1">Предпочтения</div>
                             @foreach ($options->where('type', 'preference') as $option)
                                 <label class="flex items-center gap-2 text-sm text-gray-800 mb-1">
-                                    <input type="checkbox" name="preference_option_{{ $option->id }}"
+                                    <input class="option" type="checkbox" name="preference_option_{{ $option->id }}"
                                         value="{{ $option->id }}" data-option-name="{{ $option->name }}"
                                         data-option-price="{{ $option->price }}">{{ $option->name }}
                                 </label>
@@ -206,7 +212,7 @@
                     @if ($options->where('type', 'occasion')->isNotEmpty())
                         <div>
                             <label class="block text-sm text-gray-600 mb-1">Повод</label>
-                            <select class="w-full px-3 py-2 rounded-xl border border-rose-200">
+                            <select class="w-full px-3 py-2 rounded-xl border border-rose-200 option">
                                 @foreach ($options->where('type', 'occasion') as $option)
                                     <option value="{{ $option->id }}">{{ $option->name }}</option>
                                 @endforeach
@@ -216,7 +222,7 @@
                     @if ($options->where('type', 'recipient')->isNotEmpty())
                         <div>
                             <label class="block text-sm text-gray-600 mb-1">Кому дарится букет</label>
-                            <select class="w-full px-3 py-2 rounded-xl border border-rose-200">
+                            <select class="w-full px-3 py-2 rounded-xl border border-rose-200 option">
                                 @foreach ($options->where('type', 'recipient') as $option)
                                     <option value="{{ $option->id }}">{{ $option->name }}</option>
                                 @endforeach
@@ -231,7 +237,7 @@
                         <div class="grid sm:grid-cols-2 gap-3">
                             @foreach ($options->where('type', 'addition') as $option)
                                 <label class="flex items-center gap-2 text-sm text-gray-800">
-                                    <input type="checkbox" name="addition_option_{{ $option->id }}"
+                                    <input class="option" type="checkbox" name="addition_option_{{ $option->id }}"
                                         value="{{ $option->id }}" data-option-name="{{ $option->name }}"
                                         data-option-price="{{ $option->price }}">{{ $option->name }}
                                     @if ($option->price > 0)
@@ -257,7 +263,8 @@
                     <p class="mt-2 text-sm text-gray-700">Частота: <b id="frequencyOutputAside"></b></p>
                     <div class="mt-3">
                         <p class="text-sm text-gray-600">Бюджет за доставку: </p>
-                        <p class="font-semibold text-gray-900" id="budgetValueAside">2 990 ₽</p>
+                        <p class="font-semibold text-gray-900" data-total-delivery="2990" id="budgetValueAside">2 990 ₽
+                        </p>
                     </div>
                     <div class="mt-4 border-t border-dashed pt-3">
                         <p class="text-sm text-gray-600">Опции за доставку</p>
@@ -272,12 +279,12 @@
                         </ul>
                     </div>
                     <label class="mt-3 flex items-center gap-2 text-sm text-gray-700">
-                        <input type="checkbox" name="" id="checkboxPromo">
+                        <input type="checkbox" id="checkboxPromo">
                         Я новый клиент (применить промо 1+1)
                     </label>
                     <div class="mt-4 p-3 rounded-2xl bg-rose-50 border border-rose-200">
                         <p class="text-sm text-gray-700">1-й месяц (до промо)</p>
-                        <h1 class="text-3xl font-extrabold" id="totalAmountElement">₽</h1>
+                        <h1 class="text-3xl font-extrabold" data-total="" id="totalAmountElement">₽</h1>
                         <p class="text-xs text-gray-600 mt-1" id="discountElement"></p>
                         <p class="text-base text-gray-800 mt-1" id="totalFirstMonth">К оплате в 1 месяц: <b
                                 id="totalFirstMonthB"></b></p>

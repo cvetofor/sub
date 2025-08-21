@@ -1,101 +1,115 @@
-const sameCustomerCheckbox = document.getElementById('same_customer');
-const recipientFio = document.getElementById('recipientFio');
-const recipientPhone = document.getElementById('recipientPhone');
+$(document).ready(function () { 
+    const sameCustomerCheckbox = $('#same_customer');
+    const recipientFio = $('#recipientFio');
+    const recipientPhone = $('#recipientPhone');
 
-sameCustomerCheckbox.addEventListener('change', (e) => {
-    if (e.target.checked) {
-        [recipientFio, recipientPhone].forEach(el => {
-            el.classList.add('max-h-0', 'opacity-0', 'overflow-hidden');
-            el.classList.remove('max-h-40', 'opacity-100');
+    sameCustomerCheckbox.on('change', function () {
+        const isChecked = $(this).is(':checked');
+        const fields = [recipientFio, recipientPhone];
+
+        fields.forEach(el => {
+            if (isChecked) {
+                el.addClass('max-h-0 opacity-0 overflow-hidden')
+                    .removeClass('max-h-40 opacity-100');
+                const input = el.find('input');
+                input.val('');
+            } else {
+                el.removeClass('max-h-0 opacity-0 overflow-hidden')
+                    .addClass('max-h-40 opacity-100');
+            }
         });
-    } else {
-        [recipientFio, recipientPhone].forEach(el => {
-            el.classList.remove('max-h-0', 'opacity-0');
-            el.classList.add('max-h-40', 'opacity-100');
-        });
-    }
-});
- 
-const payBtn = document.getElementById('payBtn'); 
+    });
 
-function showError(input, message) {
-    // Удаляем старое сообщение
-    let oldError = input.parentElement.querySelector(".error-text");
-    if (oldError) oldError.remove();
+    const payBtn = $('#payBtn');
+    const senderFio = $('#senderFio input');
+    const recipientFioInput = $('#recipientFio input');
+    const senderPhone = $('#senderPhone input');
+    const recipientPhoneInput = $('#recipientPhone input');
+    const comment = $('#textAreaCommentSub');
 
-    if (message) {
-        // Создаем новый элемент ошибки под инпутом
-        let errorEl = document.createElement("p");
-        errorEl.className = "error-text text-xs text-red-500 mt-1";
-        errorEl.innerText = message;
-        input.parentElement.appendChild(errorEl);
-        input.classList.add("border-red-400");
-    } else {
-        input.classList.remove("border-red-400");
-    }
-}
+    payBtn.on('click', function () {
+        const frequency = $('.toggle-btn.active').data('frequency-code');
+        const isVsiblePlan = !$('#readyPlansWrapper').hasClass('hidden');
+        let requestData = {};
 
-function validatePhone(phone) {
-    const phonePattern = /^\+7\s?\(\d{3}\)\s?\d{3}-\d{2}-\d{2}$/;
-    return phonePattern.test(phone.trim());
-}
+        if (isVsiblePlan) {
+            const activePlan = $('.active-plan');
 
-function validateForm() {
-    let valid = true;
+            requestData = {
+                sender_name: senderFio.val(),
+                receiving_name: recipientFioInput.val(),
+                sender_phone: senderPhone.val(),
+                receiving_phone: recipientPhoneInput.val(),
+                frequency: frequency,
+                comment: comment.val(),
+                is_custom: false,
+                plan_id: activePlan.length ? activePlan.data('plan-id') : ''
+            };
+        } else {
+            const timeDelivery = $('#timeSelect');
+            const address = $('#deliveryAddress');
+            const using_promo = $('#checkboxPromo');
+            const totalPrice = $('#totalAmountElement');
+            const city = $('#citySelect');
+            const options = $('.option');
+            const optionsValue = options.map(function () {
+                if ($(this).is(':checkbox')) {
+                    if ($(this).is(':checked')) {
+                        return $(this).val();
+                    } else {
+                        return null;
+                    }
+                } else {
+                    return $(this).val();
+                }
+            }).get();
 
-    const customerFio = document.querySelector('input[placeholder="ФИО"]');
-    const customerPhone = document.querySelectorAll('#inputPhone')[0];
-    const recipientFio = document.querySelector('#recipientFio input');
-    const recipientPhone = document.querySelectorAll('#inputPhone')[1];
-
-    // проверка заказчика
-    if (customerFio.value.trim().length < 3) {
-        showError(customerFio, "Введите корректное ФИО");
-        valid = false;
-    } else showError(customerFio, "");
-
-    if (!validatePhone(customerPhone.value)) {
-        showError(customerPhone, "Введите корректный номер телефона");
-        valid = false;
-    } else showError(customerPhone, "");
-
-    // проверка получателя (если заказчик != получатель)
-    if (!sameCustomerCheckbox.checked) {
-        if (recipientFio.value.trim().length < 3) {
-            showError(recipientFio, "Введите корректное ФИО");
-            valid = false;
-        } else showError(recipientFio, "");
-
-        if (!validatePhone(recipientPhone.value)) {
-            showError(recipientPhone, "Введите корректный номер телефона");
-            valid = false;
-        } else showError(recipientPhone, "");
-    }
-
-    return valid;
-}
-
-payBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-
-    if (!validateForm()) return; // если есть ошибки — не отправляем
-
-    $.ajax({
-        url: '/api/subscription/create',
-        method: 'POST',
-        data: {
-            customer_fio: customerFio.value.trim(),
-            customer_phone: customerPhone.value.trim(),
-            recipient_fio: sameCustomerCheckbox.checked ? customerFio.value.trim() : recipientFio.value.trim(),
-            recipient_phone: sameCustomerCheckbox.checked ? customerPhone.value.trim() : recipientPhone.value.trim(),
-            comment: document.querySelector('#story').value.trim()
-        },
-        success: function(res){
-            console.log(res);
-            alert("Подписка успешно оформлена!");
-        },
-        error: function() {
-            alert('Ошибка подтверждения подписки.');
+            requestData = {
+                time_delivery: timeDelivery.val(),
+                sender_name: senderFio.val(),
+                receiving_name: recipientFioInput.val(),
+                sender_phone: senderPhone.val(),
+                receiving_phone: recipientPhoneInput.val(),
+                address: address.val(),
+                frequency: frequency,
+                comment: comment.val(),
+                using_promo: using_promo.is(':checked'),
+                is_custom: true,
+                plan_id: null,
+                price: totalPrice.data('total'),
+                city_id: city.val(),
+                option_ids: optionsValue
+            };
         }
+
+        $.ajax({
+            url: '/api/subscription/create',
+            method: 'POST',
+            data: requestData,
+            success: function (response) {
+                console.log(response);
+                alert("Подписка успешно оформлена!");
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.log('jqXHR:', jqXHR);
+                console.log('textStatus:', textStatus);
+
+                if (jqXHR.responseJSON && jqXHR.responseJSON.errors) {
+                    const errors = jqXHR.responseJSON.errors;
+                    let errorMessages = '';
+
+                    for (let field in errors) {
+                        if (errors.hasOwnProperty(field)) {
+                            errorMessages += `${field}: ${errors[field].join(', ')}\n`;
+                        }
+                    }
+
+                    console.error('Ошибки валидации:\n' + errorMessages);
+                    alert('Ошибка: \n' + errorMessages);
+                } else {
+                    alert('Ошибка подтверждения подписки: ' + errorThrown);
+                }
+            }
+        });
     });
 });

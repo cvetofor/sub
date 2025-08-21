@@ -21,8 +21,8 @@ class Plan extends Model {
 
     public function options() {
         return $this->belongsToMany(
-            PlanOptions::class,
-            'plan_plan_option',
+            PlanOption::class,
+            'plan_plan_options',
             'plan_id',
             'plan_option_id'
         );

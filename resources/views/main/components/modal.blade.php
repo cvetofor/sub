@@ -6,14 +6,14 @@
             <div class="md:col-span-2">
                 <h3 class="text-xl font-semibold">Контактная информация</h3>
             </div>
-            <div>
+            <div id="senderFio">
                 <label class="block text-sm text-gray-600 mb-1">ФИО заказчика</label>
                 <input type="text" placeholder="ФИО" class="w-full px-3 py-2 rounded-xl border border-rose-200"
                     required>
             </div>
-            <div>
+            <div id="senderPhone">
                 <label class="block text-sm text-gray-600 mb-1">Номер телефона</label>
-                <input id="inputPhone" type="text" placeholder="+7 (123) 456-78-90"
+                <input type="text" placeholder="+7 (123) 456-78-90"
                     class="w-full px-3 py-2 rounded-xl border border-rose-200" required>
             </div>
             <div id="recipientFio" class="transition-all duration-300 ease-in-out max-h-40 opacity-100 overflow-hidden">
@@ -36,7 +36,7 @@
 
         <div class="mb-4">
             <label class="block text-sm text-gray-600 mb-1">Комментарий</label>
-            <textarea id="story" class="w-full px-3 py-2 rounded-xl border border-rose-200" name="textAreaCommentSub"
+            <textarea id="textAreaCommentSub" class="w-full px-3 py-2 rounded-xl border border-rose-200" name="textAreaCommentSub"
                 placeholder="Начните писать..." rows="3"></textarea>
         </div>
 
@@ -54,19 +54,11 @@
 </div>
 
 <script>
-    const phoneInput = document.getElementById('inputPhone');
-
-    phoneInput.addEventListener('input', function(e) {
-        let x = e.target.value.replace(/\D/g, '');
-        if (x.startsWith('7')) x = x.slice(1);
-        let formatted = '+7 ';
-
-        if (x.length > 0) formatted += '(' + x.substring(0, 3);
-        if (x.length >= 4) formatted += ') ' + x.substring(3, 6);
-        if (x.length >= 7) formatted += '-' + x.substring(6, 8);
-        if (x.length >= 9) formatted += '-' + x.substring(8, 10);
-
-        e.target.value = formatted;
+    $(function() {
+        $("#senderPhone input").mask("+7 (999) 999-9999");
+    });
+    $(function() {
+        $("#recipientPhone input").mask("+7 (999) 999-9999");
     });
 </script>
 

@@ -12,7 +12,7 @@ return new class extends Migration {
         Schema::create('plans', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->float('price', 8, 2)->default(0.00);
+            $table->float('price', 8, 2)->default(0.00)->comment('стоимость за 1 доставку');
             $table->string('description')->nullable();
             $table->boolean('is_active')->default(true);
             $table->boolean('is_custom')->default(false);

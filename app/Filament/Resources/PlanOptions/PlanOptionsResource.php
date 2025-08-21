@@ -7,7 +7,7 @@ use App\Filament\Resources\PlanOptions\Pages\EditPlanOptions;
 use App\Filament\Resources\PlanOptions\Pages\ListPlanOptions;
 use App\Filament\Resources\PlanOptions\Schemas\PlanOptionsForm;
 use App\Filament\Resources\PlanOptions\Tables\PlanOptionsTable;
-use App\Models\PlanOptions;
+use App\Models\PlanOption;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -16,7 +16,7 @@ use Filament\Tables\Table;
 use UnitEnum;
 
 class PlanOptionsResource extends Resource {
-    protected static ?string $model = PlanOptions::class;
+    protected static ?string $model = PlanOption::class;
 
     protected static bool $hasTitleCaseModelLabel = false;
 

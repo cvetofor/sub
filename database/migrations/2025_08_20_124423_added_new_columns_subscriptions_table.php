@@ -11,9 +11,10 @@ return new class extends Migration {
     public function up(): void {
         Schema::table('subscriptions', function (Blueprint $table) {
             $table->string('sender_name');
+            $table->string('sender_phone');
             $table->string('receiving_name');
+            $table->string('receiving_phone');
             $table->string('address');
-            $table->float('budget_for_delivery', 8, 2)->default(0.00);
             $table->string('frequency');
             $table->string('comment')->nullable();
             $table->boolean('using_promo')->default(false);

@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const btn = p.querySelector("button");
             const label = p.querySelector("p.text-rose-600");
 
-            p.classList.remove("border-rose-500", "shadow-rose-100", "shadow-lg");
+            p.classList.remove("border-rose-500", "shadow-rose-100", "shadow-lg", 'active-plan');
             p.classList.add("border-rose-200");
 
             if (btn) {
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const button = plan.querySelector("button");
         const selectedLabel = plan.querySelector("p.text-rose-600");
 
-        plan.classList.add("border-rose-500", "shadow-rose-100", "shadow-lg");
+        plan.classList.add("border-rose-500", "shadow-rose-100", "shadow-lg", 'active-plan');
         plan.classList.remove("border-rose-200");
 
         if (button) {
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (totalAmountElement) {
             totalAmountElement.textContent = formatNumber(totalAmount) + ' ₽';
-
+            totalAmountElement.dataset.total = totalAmount;
             if (checkboxPromo.checked && deliveryCounts[frequencyOutput.textContent] != 1) {
                 discountElement.className = 'text-xs text-gray-600 mt-1';
                 totalFirstMonth.className = 'text-base text-gray-800 mt-1';
@@ -226,6 +226,7 @@ document.addEventListener('DOMContentLoaded', function () {
     rangeInput.addEventListener('input', () => {
         budgetValueMain.textContent = formatNumber(rangeInput.value) + ' ₽';
         budgetValueAside.textContent = formatNumber(rangeInput.value) + ' ₽';
+        budgetValueAside.dataset.totalDelivery = rangeInput.value;
         updateTotalAmount(); // Обновляем общую сумму при изменении бюджета
     });
 
