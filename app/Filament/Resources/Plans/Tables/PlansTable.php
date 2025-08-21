@@ -6,9 +6,9 @@ use App\Models\City;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
@@ -34,7 +34,22 @@ class PlansTable {
                     ]),
                 SelectFilter::make('city_id')
                     ->label('Город')
-                    ->options(fn() => City::active()->pluck('name', 'id'))
+                    ->options(fn() => City::active()->pluck('name', 'id')),
+
+                Filter::make('is_custom')
+                    ->label('Пользовательский план')
+                    ->toggle()
+                    ->query(function ($query, array $data) {
+                        if ($data['value'] === true) {
+                            $query->where('is_custom', false);
+                        } elseif ($data['value'] === false) {
+                            $query->where('is_custom', true);
+                        }
+
+                        return $query;
+                    })
+
+
             ])
             ->recordActions([
                 EditAction::make(),
