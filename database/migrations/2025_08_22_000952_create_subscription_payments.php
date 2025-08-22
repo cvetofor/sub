@@ -11,7 +11,7 @@ return new class extends Migration {
     public function up(): void {
         Schema::create('subscription_payments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('subscription_id')->constrained('subscription')->onDelete('cascade');
+            $table->foreignId('subscription_id')->constrained('subscriptions')->onDelete('cascade');
             $table->foreignId('payment_id')->constrained('payments')->onDelete('cascade');
             $table->timestamps();
         });

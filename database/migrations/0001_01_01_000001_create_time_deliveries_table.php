@@ -11,8 +11,8 @@ return new class extends Migration {
     public function up(): void {
         Schema::create('time_deliveries', function (Blueprint $table) {
             $table->id();
-            $table->time('from_time');
-            $table->time('to_time');
+            $table->time('from');
+            $table->time('to');
             $table->timestamps();
         });
     }
