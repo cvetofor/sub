@@ -8,13 +8,14 @@ use App\Models\Payment;
 class PaymentController extends Controller {
     public static function create($subscription) {
         $yookassa = new Yookassa();
-        $paymentLink = $yookassa->getPaymentLink($subscription->id);
-        $paymentRecord = Payment::create([
-            'payment_status_id' => 1,
+        $paymentYookassa = $yookassa->createPayment($subscription->id);
+        $paymentModel = Payment::create([
+            'payment_status_id' => Payment::IN_PROGRESS,
+            'payment_gateway_transaction' =>  $paymentYookassa->id
         ]);
 
-        $subscription->payments()->attach($paymentRecord->id);
+        $subscription->payments()->attach($paymentModel->id);
 
-        return $paymentLink;
+        return $paymentYookassa->getConfirmation()->getConfirmationUrl();
     }
 }

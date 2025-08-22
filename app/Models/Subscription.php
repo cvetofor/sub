@@ -53,4 +53,9 @@ class Subscription extends Model {
 
         return $totalPrice;
     }
+
+    public function payments() {
+        return $this->belongsToMany(Payment::class, 'subscription_payments', 'subscription_id', 'payment_id')
+            ->withTimestamps();
+    }
 }
