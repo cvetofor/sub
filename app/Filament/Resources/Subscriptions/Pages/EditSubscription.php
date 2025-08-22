@@ -3,11 +3,17 @@
 namespace App\Filament\Resources\Subscriptions\Pages;
 
 use App\Filament\Resources\Subscriptions\SubscriptionResource;
+use App\Http\Controllers\PaymentController;
 use App\Models\Plan;
+use Filament\Actions\Action;
+use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\KeyValueEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Schemas\Components\FusedGroup;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
@@ -15,6 +21,10 @@ use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Schemas\Components\Text;
+use Filament\Schemas\Components\View;
+use Filament\Support\View\Components\ButtonComponent;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
 
 class EditSubscription extends EditRecord {
     protected static string $resource = SubscriptionResource::class;
@@ -41,7 +51,6 @@ class EditSubscription extends EditRecord {
         }
 
         $frequency = \App\Enums\Frequency::getFrequencyElem($subscription->frequency);
-        $subPrice = ($plan->price + $optPrice) * $frequency['count'] + $optPriceOneTime;
 
         return $schema->components([
             Section::make('Контактная информация')
@@ -77,7 +86,6 @@ class EditSubscription extends EditRecord {
                         ->label('Опции')
                         ->default($optName),
                 ]),
-
 
             Tabs::make('tabs')->tabs([
                 Tab::make('Общая информация')
@@ -122,7 +130,35 @@ class EditSubscription extends EditRecord {
                     ]),
                 Tab::make('Платежи')
                     ->icon(Heroicon::Banknotes)
-                    ->schema([])
+                    ->schema([
+                        Section::make()->schema([
+                            TextEntry::make('payment_link')
+                                ->label('Сгенерированная ссылка на оплату:')
+                                ->copyable()
+                                ->color('primary')
+                                ->reactive()
+                                ->visible(fn($get) => !empty($get('payment_link')))
+                                ->hintIcon('heroicon-o-information-circle', tooltip: 'Скопируйте ссылку, т.к. после перезагрузки страницы — она пропадет!'),
+
+
+                            View::make('filament.schemas.components.payments-table')
+                                ->viewData([
+                                    'payments' => $subscription->payments,
+                                ])
+                                ->reactive(),
+                        ])
+                            ->afterHeader([
+                                Action::make('generate_payment_link')
+                                    ->label('Сгенерировать ссылку на оплату')
+                                    ->action(function (callable $set): void {
+                                        $paymentController = app()->make(PaymentController::class);
+
+                                        $link = $paymentController->create($this->record);
+
+                                        $set('payment_link', $link);
+                                    }),
+                            ])
+                    ])
             ])
                 ->columns(1)
                 ->columnSpan('full'),
