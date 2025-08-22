@@ -112,7 +112,7 @@ class EditSubscription extends EditRecord {
                                 TextEntry::make('total_price')
                                     ->label('Общая сумма подписки')
                                     ->suffix('₽')
-                                    ->default($subPrice),
+                                    ->default($subscription->totalAmount()),
 
                                 Text::make('Расчёт: (база за доставку + опции за доставку) × доставок в месяц + сумма одноразовых опций')
                                     ->color('warning')

@@ -7,7 +7,6 @@ use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class SubscriptionController extends Controller {
     public function create(Request $request): JsonResponse {
@@ -49,7 +48,7 @@ class SubscriptionController extends Controller {
         }
 
         $subscription = Subscription::create([
-            'is_active' => true,
+            'is_active' => false,
             'plan_id' => $plan->id,
             'time_delivery_id' => $request->time_delivery ?? null,
             'sender_name' => $request->sender_name,

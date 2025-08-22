@@ -113,13 +113,13 @@ class CreateSubscription extends CreateRecord {
                             ->disabled(fn(callable $get) => !$get('plan_id'))
                             ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                 if ($state) {
-                                    $planPrice = $get('plan_price');
                                     $frequencyCount = \App\Enums\Frequency::getFrequencyElem($state)['count'] ?? 0;
                                     $planId = $get('plan_id');
                                     $plan = Plan::find($planId);
                                     $sumPlanOptons = $plan->options->where('is_every_delivery', true)->sum('price');
                                     $sumOncePlanOptons = $plan->options->where('is_every_delivery', false)->sum('price');
 
+                                    $planPrice = $get('plan_price');
                                     $totalPrice = ($planPrice + $sumPlanOptons) * $frequencyCount + $sumOncePlanOptons;
                                     $set('total_price', $totalPrice ?? 0);
                                     $set('plan_opt_price',  $sumPlanOptons + $sumOncePlanOptons ?? 0);
