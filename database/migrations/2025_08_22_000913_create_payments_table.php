@@ -11,6 +11,7 @@ return new class extends Migration {
     public function up(): void {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
+            $table->string('payment_gateway_transaction');
             $table->foreignId('payment_status_id')->constrained('payment_statuses');
             $table->timestamps();
         });
