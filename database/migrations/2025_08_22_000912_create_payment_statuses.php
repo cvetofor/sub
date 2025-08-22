@@ -9,9 +9,9 @@ return new class extends Migration {
      * Run the migrations.
      */
     public function up(): void {
-        Schema::create('payments', function (Blueprint $table) {
+        Schema::create('payment_statuses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('payment_status_id')->constrained('payment_statuses');
+            $table->string('name');
             $table->timestamps();
         });
     }
@@ -20,6 +20,6 @@ return new class extends Migration {
      * Reverse the migrations.
      */
     public function down(): void {
-        Schema::dropIfExists('payments');
+        Schema::dropIfExists('payment_statuses');
     }
 };
