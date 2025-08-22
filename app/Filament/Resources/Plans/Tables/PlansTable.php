@@ -40,10 +40,10 @@ class PlansTable {
                     ->label('Пользовательский план')
                     ->toggle()
                     ->query(function ($query, array $data) {
-                        if ($data['value'] === true) {
-                            $query->where('is_custom', false);
-                        } elseif ($data['value'] === false) {
+                        if ($data['isActive'] === true) {
                             $query->where('is_custom', true);
+                        } elseif ($data['isActive'] === false) {
+                            $query->where('is_custom', false);
                         }
 
                         return $query;

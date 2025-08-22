@@ -22,4 +22,7 @@ class PlanOption extends Model {
     public function plans() {
         return $this->belongsToMany(Plan::class, 'plan_plan_options');
     }
+
+    public function sumOneDeliveryOpt() {
+    }
 }

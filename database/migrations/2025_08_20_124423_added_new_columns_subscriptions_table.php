@@ -18,6 +18,7 @@ return new class extends Migration {
             $table->string('frequency');
             $table->string('comment')->nullable();
             $table->boolean('using_promo')->default(false);
+            $table->timestamp('next_date_payment');
         });
     }
 

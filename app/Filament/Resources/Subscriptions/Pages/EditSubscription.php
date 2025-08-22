@@ -4,23 +4,17 @@ namespace App\Filament\Resources\Subscriptions\Pages;
 
 use App\Filament\Resources\Subscriptions\SubscriptionResource;
 use App\Models\Plan;
-use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Pages\EditRecord;
-use Filament\Schemas\Components\Flex;
-use Filament\Schemas\Components\FusedGroup;
 use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Components\Icon;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Schemas\Components\Text;
-use Filament\Support\Enums\TextSize;
 
 class EditSubscription extends EditRecord {
     protected static string $resource = SubscriptionResource::class;
@@ -110,15 +104,9 @@ class EditSubscription extends EditRecord {
                                     ->hintIcon('heroicon-o-information-circle', tooltip: 'Стоимость указана за 1 доставку'),
 
                                 TextEntry::make('options_price_every_delivery')
-                                    ->label('Сумма опций')
+                                    ->label('Сумма опций плана')
                                     ->suffix('₽')
-                                    ->default($optPrice)
-                                    ->hintIcon('heroicon-o-information-circle', tooltip: 'Стоимость указана за 1 доставку'),
-
-                                TextEntry::make('options_price_one_time')
-                                    ->label('Сумма одноразовых опций')
-                                    ->suffix('₽')
-                                    ->default($optPriceOneTime)
+                                    ->default($optPrice + $optPriceOneTime)
                                     ->hintIcon('heroicon-o-information-circle', tooltip: 'Стоимость указана за 1 доставку'),
 
                                 TextEntry::make('total_price')

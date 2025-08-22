@@ -18,11 +18,15 @@ use UnitEnum;
 class SubscriptionResource extends Resource {
     protected static ?string $model = Subscription::class;
 
+    protected static bool $hasTitleCaseModelLabel = false;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::CurrencyDollar;
 
     protected static ?string $navigationLabel = 'Подписки';
 
     protected static ?string $pluralModelLabel = 'Подписки';
+
+    protected static ?string $modelLabel = 'подписку';
 
     protected static string | UnitEnum | null $navigationGroup = 'Подписки пользователей';
 
@@ -46,9 +50,5 @@ class SubscriptionResource extends Resource {
             'create' => CreateSubscription::route('/create'),
             'edit' => EditSubscription::route('/{record}/edit'),
         ];
-    }
-
-    public static function getNavigationBadge(): ?string {
-        return static::getModel()::count();
     }
 }

@@ -18,12 +18,16 @@ enum Frequency: string {
         ], self::cases());
     }
 
-    public static function getFrequencyElem(string $frequencyName): array {
+    public static function getFrequencyElem(?string $frequencyName = null): array {
         return match ($frequencyName) {
-            self::WEEKLY->value => ['count' => 4, 'translate' => 'Еженедельно'],
-            self::BIWEEKLY->value => ['count' => 2, 'translate' => 'Каждые 2 недели'],
-            self::MONTHLY->value => ['count' => 1, 'translate' => 'Ежемесячно'],
-            default => 0,
+            self::WEEKLY->value =>  ['count' => 4, 'code' => 'weekly', 'translate' => 'Еженедельно'],
+            self::BIWEEKLY->value => ['count' => 2, 'code' => 'biweekly', 'translate' => 'Каждые 2 недели'],
+            self::MONTHLY->value => ['count' => 1, 'code' => 'monthly', 'translate' => 'Ежемесячно'],
+            default => [
+                ['count' => 4, 'code' => 'weekly', 'translate' => 'Еженедельно'],
+                ['count' => 2, 'code' => 'biweekly', 'translate' => 'Каждые 2 недели'],
+                ['count' => 1, 'code' => 'monthly', 'translate' => 'Ежемесячно'],
+            ],
         };
     }
 }

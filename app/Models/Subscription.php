@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 
 class Subscription extends Model {
@@ -19,13 +20,17 @@ class Subscription extends Model {
         'receiving_phone',
     ];
 
-    public function plans() {
-        return $this->hasMany(Plan::class, 'subscription_id');
-    }
+    protected static function boot() {
+        parent::boot();
 
-    protected static function booted() {
-        static::deleting(function ($subscription) {
-            $subscription->plans()->update(['is_active' => false]);
+        static::saving(function ($subscription) {
+            if (empty($subscription->receiving_name)) {
+                $subscription->receiving_name = $subscription->sender_name;
+            }
+
+            if (empty($subscription->receiving_phone)) {
+                $subscription->receiving_phone = $subscription->sender_phone;
+            }
         });
     }
 }
