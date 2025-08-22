@@ -1,4 +1,4 @@
-$(document).ready(function () { 
+$(document).ready(function () {
     const sameCustomerCheckbox = $('#same_customer');
     const recipientFio = $('#recipientFio');
     const recipientPhone = $('#recipientPhone');
@@ -87,8 +87,7 @@ $(document).ready(function () {
             method: 'POST',
             data: requestData,
             success: function (response) {
-                console.log(response);
-                alert("Подписка успешно оформлена!");
+                response.payment_link ? window.location.href = response.payment_link : alert(message);
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 console.log('jqXHR:', jqXHR);
