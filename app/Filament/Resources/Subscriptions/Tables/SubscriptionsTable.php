@@ -51,7 +51,6 @@ class SubscriptionsTable {
             ])
             ->recordActions([
                 EditAction::make(),
-                DeleteAction::make()
             ])
             ->filtersTriggerAction(
                 fn(Action $action) => $action
