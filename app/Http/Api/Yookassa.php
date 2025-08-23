@@ -3,8 +3,11 @@
 namespace App\Http\Api;
 
 use App\Models\Plan;
+use App\Models\Subscription;
+use Exception;
 use YooKassa\Client;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class Yookassa {
     private static $client;
@@ -14,54 +17,47 @@ class Yookassa {
         self::$client->setAuth(config('yookassa.shopId'), config('yookassa.secretKey'));
     }
 
-    public function getPaymentLink($planId) {
+    public function createPayment(?int $subId = null) {
         try {
-            $plan = Plan::find($planId);
+            $sub = Subscription::find($subId);
+
+            if (!isset($sub)) {
+                throw new Exception("Подписка не найдена. \$subId=$subId");
+            }
 
             $idempotenceKey = uniqid('', true);
             $response = self::$client->createPayment(
                 [
                     'amount' => [
-                        'value' => $plan->totalAmount,
+                        'value' => $sub->totalAmount(),
                         'currency' => 'RUB',
                     ],
                     'confirmation' => [
                         'type' => 'redirect',
                         'locale' => 'ru_RU',
-                        'return_url' => 'https://merchant-site.ru/return_url',
+                        'return_url' => url('/'),
                     ],
                     'capture' => true,
-                    'description' => 'Заказ №72',
+                    'description' => 'Оплата подписки #' . $sub->id,
                     'metadata' => [
-                        'orderNumber' => 1001
+                        'sub_id' => $sub->id
                     ],
                     'receipt' => [
                         'customer' => [
-                            'full_name' => 'Ivanov Ivan Ivanovich',
-                            'email' => 'email@email.ru',
-                            'phone' => '79211234567',
-                            'inn' => '6321341814'
+                            'full_name' => $sub->sender_name,
+                            'phone' => preg_replace('/\D+/', '', $sub->sender_phone),
                         ],
                         'items' => [
                             [
-                                'description' => 'Переносное зарядное устройство Хувей',
+                                'description' => 'Подписка "' . $sub->plan->name . '"',
                                 'quantity' => '1.00',
                                 'amount' => [
-                                    'value' => 1000,
+                                    'value' => $sub->totalAmount(),
                                     'currency' => 'RUB'
                                 ],
-                                'vat_code' => '2',
+                                'vat_code' => '7',
                                 'payment_mode' => 'full_payment',
                                 'payment_subject' => 'commodity',
-                                'country_of_origin_code' => 'CN',
-                                'product_code' => '44 4D 01 00 21 FA 41 00 23 05 41 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 12 00 AB 00',
-                                'customs_declaration_number' => '10714040/140917/0090376',
-                                'excise' => '20.00',
-                                'supplier' => [
-                                    'name' => 'string',
-                                    'phone' => 'string',
-                                    'inn' => 'string'
-                                ]
                             ],
                         ]
                     ]
@@ -69,13 +65,27 @@ class Yookassa {
                 $idempotenceKey
             );
 
-            //получаем confirmationUrl для дальнейшего редиректа
-            $confirmationUrl = $response->getConfirmation()->getConfirmationUrl();
+            return $response;
         } catch (\Exception $e) {
-            $response = $e;
+            // Log::info();
         }
     }
 
     public function callback(Request $request) {
+        $data = $request->json()->all();
+
+        $factory = new \YooKassa\Model\Notification\NotificationFactory();
+        $notificationObj = $factory->factory($data);
+        $responseObj = $notificationObj->getObject();
+        Log::info('DEBUG', [$responseObj]);
+        Log::info('DEBUG', [$responseObj->getMetadata()]);
+
+        if (!self::$client->isNotificationIPTrusted($request->ip())) {
+            return response('IP not trusted', 403);
+        }
+
+        if ($notificationObj->getEvent() === \YooKassa\Model\Notification\NotificationEventType::PAYMENT_SUCCEEDED) {
+            $subId = $responseObj->getMetadata();
+        }
     }
 }

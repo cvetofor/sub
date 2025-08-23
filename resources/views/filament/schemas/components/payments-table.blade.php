@@ -4,16 +4,18 @@
             <tr>
                 <th>ID</th>
                 <th>Статус оплаты</th>
+                <th>Сумма</th>
                 <th>ID оплаты в платежной системе</th>
                 <th>Дата создания</th>
                 <th>Дата обновления</th>
             </tr>
         </thead>
         <tbody>
-            @foreach ($payments as $payment)
+            @foreach ($payments->sortByDesc('created_at') as $payment)
                 <tr>
                     <td>{{ $payment->id }}</td>
                     <td>{{ $payment->statusName() }}</td>
+                    <td>{{ $payment->amount }}</td>
                     <td>{{ $payment->payment_gateway_transaction }}</td>
                     <td>{{ $payment->created_at }}</td>
                     <td>{{ $payment->updated_at }}</td>

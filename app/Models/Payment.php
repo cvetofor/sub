@@ -10,6 +10,7 @@ class Payment extends Model {
 
     protected $fillable = [
         'payment_status_id',
+        'amount',
         'payment_gateway_transaction'
     ];
 
@@ -19,5 +20,9 @@ class Payment extends Model {
 
     public function statusName(): string {
         return $this->status?->name ?? 'Неизвестный статус';
+    }
+
+    public static function totalPaid(): float {
+        return self::where('payment_status_id', self::PAYED)->sum('amount');
     }
 }
