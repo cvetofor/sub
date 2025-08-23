@@ -2,6 +2,9 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Dashboard as PagesDashboard;
+use App\Filament\Widgets\StatsOverview;
+use App\Filament\Widgets\SubscriptionsChart;
 use Filament\Facades\Filament;
 use Filament\Pages\Dashboard;
 use Filament\Http\Middleware\Authenticate;
@@ -54,6 +57,10 @@ class AdminPanelProvider extends PanelProvider {
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->pages([
                 Dashboard::class,
+            ])
+            ->widgets([
+                StatsOverview::class,
+                SubscriptionsChart::class
             ])
             ->navigationGroups([
                 'Подписки пользователей',
