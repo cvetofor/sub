@@ -31,7 +31,18 @@ class EditSubscription extends EditRecord {
 
     protected function getHeaderActions(): array {
         return [
-            DeleteAction::make(),
+            Action::make('disable_activate_button')
+                ->label($this->record->is_active ? 'Деактивировать' : 'Активировать')
+                ->color($this->record->is_active ? 'danger' : 'success')
+                ->action(function (): void {
+                    if ($this->record->is_active) {
+                        $this->record->update(['is_active' => false]);
+                    } else {
+                        $this->record->update(['is_active' => true]);
+                    }
+
+                    $this->redirect(request()->header('Referer'));
+                })
         ];
     }
 
@@ -103,6 +114,11 @@ class EditSubscription extends EditRecord {
 
                                 TextEntry::make('next_date_payment')
                                     ->label('Следующий платеж'),
+
+                                TextEntry::make('is_activee')
+                                    ->label('Активирована')
+                                    ->default($this->record->is_active ? 'Да' : 'Нет')
+                                    ->color($this->record->is_active ? 'success' : 'danger'),
                             ]),
                             Section::make('')->schema([
                                 TextEntry::make('plan_price')
@@ -128,6 +144,7 @@ class EditSubscription extends EditRecord {
                             ])
                         ]),
                     ]),
+
                 Tab::make('Платежи')
                     ->icon(Heroicon::Banknotes)
                     ->schema([
