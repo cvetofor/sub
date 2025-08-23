@@ -14,14 +14,7 @@ use Filament\Tables\Table;
 
 class UsersTable {
     public static function configure(Table $table): Table {
-        $currentUser = Filament::auth()->user();
 
-        $action = $currentUser && $currentUser->role_id === 1 ? [
-            EditAction::make(),
-            DeleteAction::make()
-        ] : [
-            EditAction::make()
-        ];
 
         return $table
             ->columns([
@@ -43,7 +36,7 @@ class UsersTable {
                     ->label('Роль')
                     ->options(fn() => Role::pluck('name', 'id')->toArray())
             ])
-            ->recordActions($action)
+            ->recordActions(\App\Filament\AvailableActions::get())
             ->filtersTriggerAction(
                 fn(Action $action) => $action
                     ->button()

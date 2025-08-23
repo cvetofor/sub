@@ -37,7 +37,7 @@ class PlansTable {
                     ->options(fn() => City::active()->pluck('name', 'id')),
 
                 Filter::make('is_custom')
-                    ->label('Пользовательский план')
+                    ->label('Показывать только пользовательский план')
                     ->toggle()
                     ->query(function ($query, array $data) {
                         if ($data['isActive'] === true) {
@@ -49,10 +49,7 @@ class PlansTable {
                         return $query;
                     })
             ])
-            ->recordActions([
-                EditAction::make(),
-                DeleteAction::make()
-            ])
+            ->recordActions(\App\Filament\AvailableActions::get())
             ->filtersTriggerAction(
                 fn(Action $action) => $action
                     ->button()

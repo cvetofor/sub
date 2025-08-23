@@ -18,12 +18,6 @@ use Filament\Schemas\Schema;
 class EditPlan extends EditRecord {
     protected static string $resource = PlanResource::class;
 
-    protected function getHeaderActions(): array {
-        return [
-            DeleteAction::make(),
-        ];
-    }
-
     public function form(Schema $schema): Schema {
         return $schema->components([
             Grid::make(1)->schema([

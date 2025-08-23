@@ -44,10 +44,7 @@ class PlanOptionsTable {
                     ->label('Тип')
                     ->options(self::typeOptions),
             ])
-            ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
-            ])
+            ->recordActions(\App\Filament\AvailableActions::get())
             ->filtersTriggerAction(
                 fn(Action $action) => $action
                     ->button()

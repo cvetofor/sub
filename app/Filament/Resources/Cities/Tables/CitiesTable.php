@@ -17,10 +17,7 @@ class CitiesTable {
                     ->searchable(),
                 IconColumn::make('is_active')->label('Активирован')->boolean()->alignCenter(),
             ])
-            ->recordActions([
-                EditAction::make(),
-                DeleteAction::make()
-            ])
+            ->recordActions(\App\Filament\AvailableActions::get())
             ->toolbarActions([]);
     }
 }

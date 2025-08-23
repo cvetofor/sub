@@ -17,12 +17,6 @@ use Filament\Support\RawJs;
 class EditPlanOptions extends EditRecord {
     protected static string $resource = PlanOptionsResource::class;
 
-    protected function getHeaderActions(): array {
-        return [
-            DeleteAction::make(),
-        ];
-    }
-
     public function form(Schema $schema): Schema {
         return $schema->components([
             Grid::make(1)->schema([

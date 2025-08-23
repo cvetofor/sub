@@ -49,9 +49,7 @@ class SubscriptionsTable {
                         return $query;
                     })
             ])
-            ->recordActions([
-                EditAction::make(),
-            ])
+            ->recordActions(\App\Filament\AvailableActions::get())
             ->filtersTriggerAction(
                 fn(Action $action) => $action
                     ->button()

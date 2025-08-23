@@ -16,13 +16,6 @@ use Filament\Schemas\Schema;
 class EditCity extends EditRecord {
     protected static string $resource = CityResource::class;
 
-
-    protected function getHeaderActions(): array {
-        $currentUser = Filament::auth()->user();
-
-        return $currentUser && $currentUser->role_id === 1 ? [DeleteAction::make()] : [];
-    }
-
     public function form(Schema $schema): Schema {
         return $schema->components([
             Grid::make(1)->schema([

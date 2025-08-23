@@ -19,12 +19,6 @@ use Filament\Schemas\Components\Section;
 class EditUser extends EditRecord {
     protected static string $resource = UserResource::class;
 
-    protected function getHeaderActions(): array {
-        $currentUser = Filament::auth()->user();
-
-        return $currentUser && $currentUser->role_id === 1 ? [DeleteAction::make()] : [];
-    }
-
     public function form(Schema $schema): Schema {
         $currentUser = Filament::auth()->user();
 
