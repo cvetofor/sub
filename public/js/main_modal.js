@@ -90,21 +90,15 @@ $(document).ready(function () {
                 response.payment_link ? window.location.href = response.payment_link : alert(message);
             },
             error: function (jqXHR, textStatus, errorThrown) {
-                console.log('jqXHR:', jqXHR);
-                console.log('textStatus:', textStatus);
-
                 if (jqXHR.responseJSON && jqXHR.responseJSON.errors) {
                     const errors = jqXHR.responseJSON.errors;
-                    let errorMessages = '';
+                    let errorMessages = 'Пожалуйста, исправьте следующие ошибки:\n\n';
 
                     for (let field in errors) {
-                        if (errors.hasOwnProperty(field)) {
-                            errorMessages += `${field}: ${errors[field].join(', ')}\n`;
-                        }
+                            errorMessages += `${errors[field].join(', ')}\n`;
                     }
 
-                    console.error('Ошибки валидации:\n' + errorMessages);
-                    alert('Ошибка: \n' + errorMessages);
+                    alert(errorMessages);
                 } else {
                     alert('Ошибка подтверждения подписки: ' + errorThrown);
                 }

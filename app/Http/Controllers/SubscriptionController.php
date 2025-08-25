@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Plan;
 use App\Models\Subscription;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class SubscriptionController extends Controller {
@@ -29,8 +29,6 @@ class SubscriptionController extends Controller {
                 'frequency' => 'required|string'
             ]);
         }
-
-        DB::beginTransaction();
 
         if ($request->boolean('is_custom')) {
             $plan = Plan::create([
@@ -61,7 +59,14 @@ class SubscriptionController extends Controller {
             'receiving_phone' => $request->receiving_phone ?? $request->sender_phone,
         ]);
 
-        DB::commit();
+        Log::channel('shop')->info('Создана новая подписка.', [
+            'subscription_id' => $subscription->id,
+            'plan_id' => $plan->id,
+            'plan' => $plan->name,
+            'sender_name' => $request->sender_name,
+            'sender_phone' => $request->sender_phone,
+            'city' => $plan->city->name
+        ]);
 
         $paymentLink = PaymentController::create($subscription);
         $validatePaymentLink = Validator::make(
@@ -70,16 +75,12 @@ class SubscriptionController extends Controller {
         );
 
         if ($validatePaymentLink->fails()) {
-            DB::rollBack();
-
-            // todo: залогировать созданую подписку и оплату
             return response()->json([
                 'success' => false,
                 'message' => 'Ошибка создания платежа, повторите позже.'
             ], 400);
         }
 
-        // todo: залогировать ошибку
         return response()->json([
             'success'      => true,
             'payment_link' => $paymentLink

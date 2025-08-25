@@ -2,6 +2,7 @@
 
 namespace App\Http\Api;
 
+use App\Models\Payment;
 use App\Models\Plan;
 use App\Models\Subscription;
 use Exception;
@@ -67,25 +68,52 @@ class Yookassa {
 
             return $response;
         } catch (\Exception $e) {
-            // Log::info();
+            Log::error('Ошибка при создании платежа', [
+                'subscription_id' => $subId,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return null;
         }
     }
 
     public function callback(Request $request) {
-        $data = $request->json()->all();
+        try {
+            $data = $request->json()->all();
+            $factory = new \YooKassa\Model\Notification\NotificationFactory();
+            $notificationObj = $factory->factory($data);
+            $responseObj = $notificationObj->getObject();
 
-        $factory = new \YooKassa\Model\Notification\NotificationFactory();
-        $notificationObj = $factory->factory($data);
-        $responseObj = $notificationObj->getObject();
-        Log::info('DEBUG', [$responseObj]);
-        Log::info('DEBUG', [$responseObj->getMetadata()]);
+            if (!self::$client->isNotificationIPTrusted($request->ip())) {
+                Log::error('Уведомление с недоверенного IP.', ['IP' => $request->ip()]);
+                return response()->noContent(200);
+            }
 
-        if (!self::$client->isNotificationIPTrusted($request->ip())) {
-            return response('IP not trusted', 403);
-        }
+            if ($notificationObj->getEvent() === \YooKassa\Model\Notification\NotificationEventType::PAYMENT_SUCCEEDED) {
+                $subId = $responseObj->getMetadata()->sub_id;
+                $transactionId = $responseObj->id;
 
-        if ($notificationObj->getEvent() === \YooKassa\Model\Notification\NotificationEventType::PAYMENT_SUCCEEDED) {
-            $subId = $responseObj->getMetadata();
+                Payment::where('payment_gateway_transaction', $transactionId)->update(['payment_status_id' => Payment::PAYED]);
+
+                $subscription =  Subscription::find($subId);
+                if ($subscription) {
+                    $subscription->is_active = true;
+                    $subscription->next_date_payment = \Carbon\Carbon::now()->addMonth();
+                    $subscription->save();
+
+                    Log::channel('shop')->info('Оплачена подписка.', [$responseObj]);
+
+                    return response()->noContent(200);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Ошибка во время обработки уведомления ЮКассы.', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->noContent(400);
         }
     }
 }

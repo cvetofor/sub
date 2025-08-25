@@ -7,18 +7,28 @@ use App\Models\Payment;
 use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller {
-    public static function create($subscription) {
+    public static function create($subscription): string {
         $yookassa = new Yookassa();
         $paymentYookassa = $yookassa->createPayment($subscription->id);
 
-        $paymentModel = Payment::create([
-            'payment_status_id' => Payment::IN_PROGRESS,
-            'amount' => $paymentYookassa->amount->value,
-            'payment_gateway_transaction' =>  $paymentYookassa->id
-        ]);
+        if (isset($paymentYookassa)) {
+            $paymentModel = Payment::create([
+                'payment_status_id' => Payment::IN_PROGRESS,
+                'amount' => $paymentYookassa->amount->value,
+                'payment_gateway_transaction' =>  $paymentYookassa->id
+            ]);
 
-        $subscription->payments()->attach($paymentModel->id);
+            $subscription->payments()->attach($paymentModel->id);
 
-        return $paymentYookassa->getConfirmation()->getConfirmationUrl();
+            Log::channel('shop')->info('Создана новая оплата через Yookassa.', [
+                'subscription_id' => $subscription->id,
+                'amount' => $paymentYookassa->amount->value,
+                'payment_gateway_transaction' =>  $paymentYookassa->id
+            ]);
+
+            return $paymentYookassa->getConfirmation()->getConfirmationUrl();
+        }
+
+        return '';
     }
 }
