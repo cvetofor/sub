@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Api\Yookassa;
 use App\Models\Payment;
+use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -52,6 +53,22 @@ class PaymentController extends Controller {
     }
 
     public function redirect(Request $request) {
-        return view('payment.success');
+        if ($request->has('subscription_id')) {
+            $subscriptionId = $request->subscription_id;
+            $subscription = Subscription::find($subscriptionId);
+
+            // sleep(1);
+            $payment = $subscription->payments()
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            if ($payment && $payment->payment_status_id === Payment::PAYED) {
+                return view('payment.success', compact('subscription'));
+            }
+
+            return view('payment.fail');
+        }
+
+        return url('/');
     }
 }
