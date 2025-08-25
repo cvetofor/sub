@@ -4,14 +4,35 @@ namespace App\Http\Controllers;
 
 use App\Http\Api\Yookassa;
 use App\Models\Payment;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller {
-    public static function create($subscription): string {
-        $yookassa = new Yookassa();
-        $paymentYookassa = $yookassa->createPayment($subscription->id);
+    public static function create($subscription) {
+        $payment = $subscription->payments()
+            ->orderBy('created_at', 'desc')
+            ->first();
 
-        if (isset($paymentYookassa)) {
+        if ($payment && $payment->payment_status_id === Payment::IN_PROGRESS) {
+            return 'https://yoomoney.ru/checkout/payments/v2/contract?orderId=' . $payment->payment_gateway_transaction;
+        }
+
+        if ($payment && $payment->payment_status_id === Payment::PAYED) {
+            return 'Уже есть оплаченная транзакция. По ней будут рекурентные списания.';
+        }
+
+        if (!$payment) {
+            $yookassa = new Yookassa();
+            $paymentYookassa = $yookassa->createPayment($subscription->id);
+
+            if (!$paymentYookassa) {
+                Log::channel('shop')->error('Ошибка при создании платежа через Yookassa', [
+                    'subscription_id' => $subscription->id,
+                ]);
+
+                return 'Ошибка создания операции в платежном сервисе.';
+            }
+
             $paymentModel = Payment::create([
                 'payment_status_id' => Payment::IN_PROGRESS,
                 'amount' => $paymentYookassa->amount->value,
@@ -28,7 +49,9 @@ class PaymentController extends Controller {
 
             return $paymentYookassa->getConfirmation()->getConfirmationUrl();
         }
+    }
 
-        return '';
+    public function redirect(Request $request) {
+        return view('payment.success');
     }
 }

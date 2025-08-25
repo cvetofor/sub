@@ -11,7 +11,8 @@ class Payment extends Model {
     protected $fillable = [
         'payment_status_id',
         'amount',
-        'payment_gateway_transaction'
+        'payment_gateway_transaction',
+        'recurrent_token'
     ];
 
     public function status() {

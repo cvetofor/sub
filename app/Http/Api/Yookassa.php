@@ -36,12 +36,14 @@ class Yookassa {
                     'confirmation' => [
                         'type' => 'redirect',
                         'locale' => 'ru_RU',
-                        'return_url' => url('/'),
+                        'return_url' => route('payment.yookassa.redirect', ['subscription_id' => $subId]),
                     ],
                     'capture' => true,
+                    "save_payment_method" => true,
                     'description' => 'Оплата подписки #' . $sub->id,
                     'metadata' => [
-                        'sub_id' => $sub->id
+                        'sub_id' => $sub->id,
+                        'is_reccurent' => '0'
                     ],
                     'receipt' => [
                         'customer' => [
@@ -78,6 +80,27 @@ class Yookassa {
         }
     }
 
+    public function recurrentPayment($token, $sub) {
+        $idempotenceKey = uniqid('', true);
+        $response = self::$client->createPayment(
+            array(
+                'amount' => array(
+                    'value' => $sub->totalAmount(),
+                    'currency' => 'RUB',
+                ),
+                'capture' => true,
+                'payment_method_id' => $token,
+                'description' => 'Рекурентное списание за подписку #"' . $sub->id . '"',
+                'metadata' => [
+                    'is_reccurent' => '1'
+                ],
+            ),
+            $idempotenceKey
+        );
+
+        return $response;
+    }
+
     public function callback(Request $request) {
         try {
             $data = $request->json()->all();
@@ -90,19 +113,25 @@ class Yookassa {
                 return response()->noContent(200);
             }
 
-            if ($notificationObj->getEvent() === \YooKassa\Model\Notification\NotificationEventType::PAYMENT_SUCCEEDED) {
-                $subId = $responseObj->getMetadata()->sub_id;
-                $transactionId = $responseObj->id;
+            if ($responseObj->getMetadata()->is_reccurent !== "1") {
+                if ($notificationObj->getEvent() === \YooKassa\Model\Notification\NotificationEventType::PAYMENT_SUCCEEDED) {
+                    $subId = $responseObj->getMetadata()->sub_id;
+                    $transactionId = $responseObj->id;
+                    $recurrentToken = $responseObj->getPaymentMethod()->saved ? $responseObj->getPaymentMethod()->id : '';
+                    Payment::where('payment_gateway_transaction', $transactionId)
+                        ->update([
+                            'payment_status_id' => Payment::PAYED,
+                            'recurrent_token' => $recurrentToken
+                        ]);
 
-                Payment::where('payment_gateway_transaction', $transactionId)->update(['payment_status_id' => Payment::PAYED]);
+                    $subscription =  Subscription::find($subId);
+                    if ($subscription) {
+                        $subscription->is_active = true;
+                        $subscription->next_date_payment = \Carbon\Carbon::now()->addMonth();
+                        $subscription->save();
 
-                $subscription =  Subscription::find($subId);
-                if ($subscription) {
-                    $subscription->is_active = true;
-                    $subscription->next_date_payment = \Carbon\Carbon::now()->addMonth();
-                    $subscription->save();
-
-                    Log::channel('shop')->info('Оплачена подписка.', [$responseObj]);
+                        Log::channel('shop')->info('Оплачена подписка.', [$responseObj]);
+                    }
 
                     return response()->noContent(200);
                 }

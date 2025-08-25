@@ -15,7 +15,7 @@
                 <tr>
                     <td>{{ $payment->id }}</td>
                     <td>{{ $payment->statusName() }}</td>
-                    <td>{{ $payment->amount }}</td>
+                    <td>{{ $payment->amount }}₽</td>
                     <td>{{ $payment->payment_gateway_transaction }}</td>
                     <td>{{ $payment->created_at }}</td>
                     <td>{{ $payment->updated_at }}</td>
