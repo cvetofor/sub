@@ -110,7 +110,7 @@ class Yookassa {
 
             if (!self::$client->isNotificationIPTrusted($request->ip())) {
                 Log::error('Уведомление с недоверенного IP.', ['IP' => $request->ip()]);
-                return response()->noContent(200);
+                return response()->noContent(403);
             }
 
             if ($responseObj->getMetadata()->is_reccurent !== "1") {
@@ -138,8 +138,7 @@ class Yookassa {
             }
         } catch (\Exception $e) {
             Log::error('Ошибка во время обработки уведомления ЮКассы.', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'message' => $e->getMessage()
             ]);
 
             return response()->noContent(400);
