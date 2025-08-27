@@ -82,6 +82,17 @@ input[type="checkbox"] {
     border-radius: 5px;
 }
 
+.swiper-slide {
+    display: flex !important;
+    flex-direction: column;
+    height: auto; /* Важно для растягивания */
+}
+
+/* Или для всех слайдов в Swiper */
+.swiper-wrapper {
+    align-items: stretch; /* Растягивает слайды по высоте */
+} 
+
 /* Для WebKit (Chrome, Safari) */
 #budgetRange::-webkit-slider-thumb {
     -webkit-appearance: none;

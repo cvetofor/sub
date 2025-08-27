@@ -87,32 +87,37 @@
         <div class="plans-wrapper mt-6 grid md:grid-cols-4 gap-4 swiper-container relative" id="readyPlansWrapper">
             <div class="swiper-wrapper">
                 @foreach ($plans as $plan)
-                    <div class="swiper-slide rounded-3xl border p-5 shadow-sm border-rose-500 shadow-rose-100 shadow-lg"
+                    <div class="swiper-slide flex flex-col justify-between rounded-3xl border p-5 shadow-sm border-rose-500 shadow-rose-100 shadow-lg"
                         data-plan-id="{{ $plan->id }}">
-                        <div class="flex items-baseline justify-between mb-2">
-                            <h1 class="flex items-baseline justify-between mb-2 text-xl font-semibold">{{ $plan->name }}
-                            </h1>
-                            <p class="text-rose-600 text-xs font-semibold">выбрано</p>
+                        <div>
+                            <div class="flex items-baseline justify-between mb-2">
+                                <h1 class="flex items-baseline justify-between mb-2 text-xl font-semibold">
+                                    {{ $plan->name }}
+                                </h1>
+                                <p class="text-rose-600 text-xs font-semibold">выбрано</p>
+                            </div>
+                            <div class="text-3xl font-bold">{{ $plan->price }} ₽ <span
+                                    class="text-base font-medium text-gray-600">за
+                                    доставку</span></div>
+                            <p class="mt-1 text-sm text-gray-600">≈ 4 доставк(и) в месяц</p>
+                            <p class="mt-3 text-sm text-gray-700 min-h-[48px]">{{ $plan->description }}</p>
+                            <p class="mt-3 text-sm text-gray-600">Опции:
+                                @foreach ($plan->options as $option)
+                                    <span>{{ $option->name }} +{{ $option->price }}₽ @if (!$loop->last)
+                                            ,
+                                        @endif </span>
+                                @endforeach
+                            </p>
                         </div>
-                        <div class="text-3xl font-bold">{{ $plan->price }} ₽ <span
-                                class="text-base font-medium text-gray-600">за
-                                доставку</span></div>
-                        <p class="mt-1 text-sm text-gray-600">≈ 4 доставк(и) в месяц</p>
-                        <p class="mt-3 text-sm text-gray-700 min-h-[48px]">{{ $plan->description }}</p>
-                        <p class="mt-3 text-sm text-gray-600">Опции:
-                            @foreach ($plan->options as $option)
-                                <span>{{ $option->name }} +{{ $option->price }}₽ @if (!$loop->last)
-                                        ,
-                                    @endif </span>
-                            @endforeach
-                        </p>
-                        <div class="mt-4 p-3 rounded-2xl bg-rose-100 border border-rose-200">
-                            <p class="text-sm text-gray-700">Итого в месяц (с выбранными опциями):</p>
-                            <p class="text-2xl font-extrabold">₽</p>
+                        <div>
+                            <div class="mt-4 p-3 rounded-2xl bg-rose-100 border border-rose-200">
+                                <p class="text-sm text-gray-700">Итого в месяц (с выбранными опциями):</p>
+                                <p class="text-2xl font-extrabold">₽</p>
+                            </div>
+                            <button
+                                class="choosePlanBtnPSection mt-4 w-full px-4 py-2 rounded-2xl bg-rose-600 text-white">Выбрать
+                                план</button>
                         </div>
-                        <button
-                            class="choosePlanBtnPSection mt-4 w-full px-4 py-2 rounded-2xl bg-rose-600 text-white">Выбрать
-                            план</button>
                     </div>
                 @endforeach
             </div>
