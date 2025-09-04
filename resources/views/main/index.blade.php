@@ -64,10 +64,11 @@
             <button id="readyBtn" class="plan-btn active flex-1 sm:flex-none">Готовые планы</button>
         </div>
 
-        <div class="plans-wrapper mt-6 grid md:grid-cols-4 gap-4 swiper-container relative" id="readyPlansWrapper">
+        <div class="plans-wrapper mt-6 grid md:grid-cols-4 gap-4 swiper-container relative"
+            style="overflow: visible !important;" id="readyPlansWrapper">
             <div class="swiper-wrapper">
                 @foreach ($plans as $plan)
-                    <div class="swiper-slide flex flex-col justify-between rounded-3xl border p-5 shadow-sm border-rose-500 shadow-rose-100 shadow-lg"
+                    <div class="swiper-slide flex flex-col justify-between rounded-3xl border p-5 border-rose-500 shadow-rose-100 shadow-lg"
                         data-plan-id="{{ $plan->id }}">
                         <div>
                             <div class="flex items-baseline justify-between mb-2">
