@@ -1,5 +1,7 @@
 <footer class="border-t border-rose-200 bg-white">
     <div class="mx-auto max-w-7xl px-4 py-6 text-sm text-gray-600 grid md:grid-cols-3 gap-4">
+        <iframe frameborder="0" width="150px" height="50px"
+            src="https://widget.2gis.ru/api/widget?org_id=70000001047408570&amp;branch_id=70000001094519097&amp;size=medium&amp;theme=light"></iframe>
         <div>
             <h3 class="font-semibold text-gray-800">Контакты</h3>
             <div class="flex gap-4">
