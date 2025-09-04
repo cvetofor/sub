@@ -308,7 +308,7 @@
         </div>
     </section>
 
-    <section class="mx-auto max-w-7xl px-4 pb-14 grid md:grid-cols-2 gap-8">
+    <section class="mx-auto max-w-7xl px-4 pb-10 grid md:grid-cols-2 gap-8">
         <div class="p-6 rounded-3xl border border-rose-200 bg-white shadow-sm">
             <h2 class="text-xl font-semibold mb-2">Гарантии и условия</h2>
             <ul class="space-y-2 text-gray-700 text-sm">
@@ -354,6 +354,7 @@
         </div>
     </section>
 
+    @include('main.components.map')
     @include('main.components.modal')
 
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
