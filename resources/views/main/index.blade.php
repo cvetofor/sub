@@ -13,7 +13,7 @@
         $totalOptDel = $options->where('type', 'delivery')->merge($options->where('type', 'addition'))->toArray();
 
         $selectedCityId = session('city_id') ?? 2;
-    @endphp 
+    @endphp
 
     <section class="flex mx-auto max-w-7xl px-4 pt-10 pb-8">
         <div class="grid md:grid-cols-2 gap-8 items-center">
@@ -62,8 +62,6 @@
     <section class="mx-auto max-w-7xl px-4 pt-2 pb-10" id="plansSection">
         <div class="flex flex-wrap items-center gap-2">
             <button id="readyBtn" class="plan-btn active flex-1 sm:flex-none">Готовые планы</button>
-            <button id="customBtn" class="plan-btn flex-1 sm:flex-none">Собрать самому</button>
-             
         </div>
 
         <div class="plans-wrapper mt-6 grid md:grid-cols-4 gap-4 swiper-container relative" id="readyPlansWrapper">
@@ -96,6 +94,9 @@
                                 <p class="text-sm text-gray-700">Итого в месяц (с выбранными опциями):</p>
                                 <p class="text-2xl font-extrabold">₽</p>
                             </div>
+                            <button id="customBtn"
+                                class="plan-btn flex-1 sm:flex-none mt-4 w-full px-4 py-2 rounded-2xl ">Собрать
+                                самому</button>
                             <button
                                 class="choosePlanBtnPSection mt-4 w-full px-4 py-2 rounded-2xl bg-rose-600 text-white">Выбрать
                                 план</button>

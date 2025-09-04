@@ -5,32 +5,37 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     const selectPlan = (plan, plans) => {
-        plans.forEach(p => {
-            const btn = p.querySelector("button");
-            const label = p.querySelector("p.text-rose-600");
+    plans.forEach(p => {
+        const btn = p.querySelector(".choosePlanBtnPSection");
+        const label = p.querySelector("p.text-rose-600");
+        const customBtn = p.querySelector(".plan-btn");
 
-            p.classList.remove("border-rose-500", "shadow-rose-100", "shadow-lg", 'active-plan');
-            p.classList.add("border-rose-200");
+        p.classList.remove("border-rose-500", "shadow-rose-100", "shadow-lg", 'active-plan');
+        p.classList.add("border-rose-200");
 
-            if (btn) {
-                btn.textContent = "Выбрать план";
-                btn.className = "choosePlanBtnPSection mt-4 w-full px-4 py-2 rounded-2xl bg-white border border-rose-300 cursor-pointer";
-            }
-            if (label) label.style.display = "none";
-        });
-
-        const button = plan.querySelector("button");
-        const selectedLabel = plan.querySelector("p.text-rose-600");
-
-        plan.classList.add("border-rose-500", "shadow-rose-100", "shadow-lg", 'active-plan');
-        plan.classList.remove("border-rose-200");
-
-        if (button) {
-            button.textContent = "План выбран";
-            button.className = "choosePlanBtnPSection mt-4 w-full px-4 py-2 rounded-2xl bg-rose-600 text-white cursor-pointer";
+        if (btn) {
+            btn.textContent = "Выбрать план";
+            btn.className = "choosePlanBtnPSection mt-4 w-full px-4 py-2 rounded-2xl bg-white border border-rose-300 cursor-pointer";
         }
-        if (selectedLabel) selectedLabel.style.display = "inline";
-    };
+        if (label) label.style.display = "none";
+        if (customBtn) customBtn.style.display = "none"; // скрываем "Собрать самому" у остальных
+    });
+
+    const button = plan.querySelector(".choosePlanBtnPSection");
+    const selectedLabel = plan.querySelector("p.text-rose-600");
+    const customBtn = plan.querySelector(".plan-btn");
+
+    plan.classList.add("border-rose-500", "shadow-rose-100", "shadow-lg", 'active-plan');
+    plan.classList.remove("border-rose-200");
+
+    if (button) {
+        button.textContent = "План выбран";
+        button.className = "choosePlanBtnPSection mt-4 w-full px-4 py-2 rounded-2xl bg-rose-600 text-white cursor-pointer";
+    }
+    if (selectedLabel) selectedLabel.style.display = "inline";
+    if (customBtn) customBtn.style.display = "block"; // показываем кнопку только у активного плана
+};
+
 
     const updatePlan = (card, deliveriesPerMonth) => {
         const deliveryText = card.querySelector("p.mt-1.text-sm.text-gray-600");
