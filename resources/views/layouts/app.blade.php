@@ -18,6 +18,8 @@
 <body>
     @include('layouts.header')
 
+    @include('layouts.components.modal')
+
     <main class="bg-linear-to-t from-rose-50 to-neutral-50">
         @yield('content')
 

@@ -2,7 +2,7 @@
   <div class="mx-auto max-w-7xl px-4 py-6 text-sm text-gray-600 grid gap-6 md:grid-cols-2">
 
     <!-- Левая часть: контакты + виджет -->
-    <div class="flex flex-col md:flex-row gap-4">
+    <div class="flex flex-col md:flex-row gap-4 content-center">
       <iframe frameborder="0" class="h-[50px] md:w-40 md:h-16 flex-shrink-0"
         src="https://widget.2gis.ru/api/widget?org_id=70000001047408570&amp;branch_id=70000001094519097&amp;size=medium&amp;theme=light"></iframe>
       

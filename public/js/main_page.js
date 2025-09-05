@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const label = p.querySelector("p.text-rose-600");
             const customBtn = p.querySelector(".plan-btn");
 
-            p.classList.remove("border-rose-500", "shadow-rose-100", "shadow-lg", 'active-plan', "shadow-xl/30",);
+            p.classList.remove("border-rose-500", "shadow-rose-500", "shadow-lg", 'active-plan', "shadow-xl/30",);
             p.classList.add("border-rose-200");
 
             if (btn) {
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const selectedLabel = plan.querySelector("p.text-rose-600");
         const customBtn = plan.querySelector(".plan-btn");
 
-        plan.classList.add("border-rose-500", "shadow-rose-400", "shadow-xl/30", 'active-plan',);
+        plan.classList.add("border-rose-500", "shadow-rose-500", "shadow-xl/30", 'active-plan',);
         plan.classList.remove("border-rose-200");
 
         if (button) {

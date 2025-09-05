@@ -59,12 +59,13 @@
         </div>
     </section>
 
-    <section class="mx-auto max-w-7xl px-4 pt-2 pb-10" id="plansSection">
-        <div class="flex flex-wrap items-center gap-2">
-            <button id="readyBtn" class="plan-btn active flex-1 sm:flex-none">Готовые планы</button>
+    <section class="mx-auto max-w-7xl px-1 pt-2" id="plansSection">
+        <div class="flex flex-wrap px-4 items-center gap-2">
+            <button id="readyBtn" class="plan-btn active px-4 flex-1 sm:flex-none">Готовые планы</button>
         </div>
 
-        <div class="plans-wrapper mt-6 grid md:grid-cols-4 gap-4 swiper-container relative" id="readyPlansWrapper">
+        <div class="plans-wrapper pt-5 pb-9 px-4 grid md:grid-cols-4 gap-4 swiper-container relative"
+            id="readyPlansWrapper">
             <div class="swiper-wrapper">
                 @foreach ($plans as $plan)
                     <div class="swiper-slide flex flex-col justify-between rounded-3xl border p-5 border-rose-500 shadow-rose-100 shadow-lg"
@@ -83,7 +84,7 @@
                             <p class="mt-3 text-sm text-gray-700 min-h-[48px]">{{ $plan->description }}</p>
                             <p class="mt-3 text-sm text-gray-600">Опции:
                                 @foreach ($plan->options as $option)
-                                    <span>{{ $option->name }} +{{ $option->price }}₽ @if (!$loop->last)
+                                    <span>{{ $option->name }}@if (!$loop->last)
                                             ,
                                         @endif </span>
                                 @endforeach
@@ -95,11 +96,11 @@
                                 <p class="text-2xl font-extrabold">₽</p>
                             </div>
                             <button
-                                class="customBtn plan-btn flex-1 sm:flex-none mt-4 w-full px-4 py-2 rounded-2xl ">Собрать
-                                самому</button>
-                            <button
                                 class="choosePlanBtnPSection mt-4 w-full px-4 py-2 rounded-2xl bg-rose-600 text-white">Выбрать
                                 план</button>
+                            <button
+                                class="customBtn plan-btn flex-1 sm:flex-none mt-4 w-full px-4 py-2 rounded-2xl ">Собрать
+                                самому</button>
                         </div>
                     </div>
                 @endforeach
