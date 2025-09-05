@@ -49,7 +49,7 @@
         </div>
 
         <p class="mt-4 text-sm text-gray-600">*Нажимая на "Перейти к оплате" вы соглашаетесь с <a
-                href="{{ route('policy') }}" target="_blank" class="text-rose-700">публичной офертой</a>.</p>
+                href="{{ route('user_agreement') }}" target="_blank" class="text-rose-700">публичной офертой</a>.</p>
     </div>
 </div>
 
