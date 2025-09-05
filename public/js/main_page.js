@@ -1,7 +1,12 @@
 document.addEventListener('DOMContentLoaded', function () {
-    const setActive = (activeBtn, inactiveBtn) => {
-        activeBtn.classList.add('active');
-        inactiveBtn.classList.remove('active');
+    const setActive = (activeBtn, ...otherBtns) => {
+        // Сначала снимаем "active" у всех
+        otherBtns.forEach(btn => {
+            if (btn) btn.classList.remove('active');
+        });
+
+        // Потом выделяем активную кнопку
+        if (activeBtn) activeBtn.classList.add('active');
     };
 
     const selectPlan = (plan, plans) => {
@@ -63,21 +68,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Переключение "Готовые планы / Собрать самому"
     const readyBtn = document.getElementById('readyBtn');
-    const customBtn = document.getElementById('customBtn');
+    const customBtns = document.querySelectorAll('.customBtn');
     const readyPlansWrapper = document.getElementById('readyPlansWrapper'); // блок с готовыми планами
     const customWrapper = document.getElementById('customWrapper'); // блок "Собрать самому"
 
-    if (readyBtn && customBtn && readyPlansWrapper && customWrapper) {
+    if (readyBtn && customBtns.length && readyPlansWrapper && customWrapper) {
+        // Клик по "Готовые планы"
         readyBtn.addEventListener('click', () => {
-            setActive(readyBtn, customBtn);
+            setActive(readyBtn, ...customBtns);
             readyPlansWrapper.classList.remove('hidden');
             customWrapper.classList.add('hidden');
         });
 
-        customBtn.addEventListener('click', () => {
-            setActive(customBtn, readyBtn);
-            customWrapper.classList.remove('hidden');
-            readyPlansWrapper.classList.add('hidden');
+        // Клик по любой кнопке "Собрать самому"
+        customBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                setActive(btn, readyBtn, ...customBtns);
+                customWrapper.classList.remove('hidden');
+                readyPlansWrapper.classList.add('hidden');
+            });
         });
     }
 

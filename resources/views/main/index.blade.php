@@ -95,8 +95,7 @@
                                 <p class="text-sm text-gray-700">Итого в месяц (с выбранными опциями):</p>
                                 <p class="text-2xl font-extrabold">₽</p>
                             </div>
-                            <button id="customBtn"
-                                class="plan-btn flex-1 sm:flex-none mt-4 w-full px-4 py-2 rounded-2xl ">Собрать
+                            <button class="customBtn plan-btn flex-1 sm:flex-none mt-4 w-full px-4 py-2 rounded-2xl ">Собрать
                                 самому</button>
                             <button
                                 class="choosePlanBtnPSection mt-4 w-full px-4 py-2 rounded-2xl bg-rose-600 text-white">Выбрать
