@@ -64,8 +64,7 @@
             <button id="readyBtn" class="plan-btn active flex-1 sm:flex-none">Готовые планы</button>
         </div>
 
-        <div class="plans-wrapper mt-6 grid md:grid-cols-4 gap-4 swiper-container relative"
-            style="overflow: visible !important;" id="readyPlansWrapper">
+        <div class="plans-wrapper mt-6 grid md:grid-cols-4 gap-4 swiper-container relative" id="readyPlansWrapper">
             <div class="swiper-wrapper">
                 @foreach ($plans as $plan)
                     <div class="swiper-slide flex flex-col justify-between rounded-3xl border p-5 border-rose-500 shadow-rose-100 shadow-lg"
@@ -95,7 +94,8 @@
                                 <p class="text-sm text-gray-700">Итого в месяц (с выбранными опциями):</p>
                                 <p class="text-2xl font-extrabold">₽</p>
                             </div>
-                            <button class="customBtn plan-btn flex-1 sm:flex-none mt-4 w-full px-4 py-2 rounded-2xl ">Собрать
+                            <button
+                                class="customBtn plan-btn flex-1 sm:flex-none mt-4 w-full px-4 py-2 rounded-2xl ">Собрать
                                 самому</button>
                             <button
                                 class="choosePlanBtnPSection mt-4 w-full px-4 py-2 rounded-2xl bg-rose-600 text-white">Выбрать
@@ -241,7 +241,7 @@
 
                 <div class="mt-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-sm text-gray-700">
                     Оплата — только рекуррентные платежи с карты. Отмена/пауза по заявке без штрафов. Для адресов за городом
-                    — доплата 899 ₽ за каждую доставку (до 20 км).
+                    — доплата за каждую доставку (до 20 км).
                 </div>
             </div>
             <aside class="lg:col-span-5 xl:col-span-4">
@@ -298,8 +298,8 @@
                 <li>48 часов гарантия свежести — заменим букет, если увял.</li>
                 <li>Не понравилось при получении — сделаем замену сразу.</li>
                 <li>Пауза по заявке — без штрафов.</li>
-                <li>Доставка: город и до 20 км за пределами (+899 ₽).</li>
-                <li>Фото-подтверждение по желанию (+199 ₽ за доставку).</li>
+                <li>Доставка: город и до 20 км за пределами.</li>
+                <li>Фото-подтверждение по желанию.</li>
             </ul>
         </div>
         <div class="p-6 rounded-3xl border border-rose-200 bg-white shadow-sm">
@@ -343,23 +343,19 @@
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const swiper = new Swiper('.swiper-container', {
-                slidesPerView: 1,
+            const swiper = new Swiper('#readyPlansWrapper', {
+                slidesPerView: 1.1,
                 spaceBetween: 16,
                 navigation: {
                     nextEl: '.swiper-button-next',
                     prevEl: '.swiper-button-prev',
                 },
                 breakpoints: {
-                    640: {
-                        slidesPerView: 2,
-                        spaceBetween: 20,
-                    },
                     768: {
                         slidesPerView: 4,
                         spaceBetween: 24,
-                    }
-                }
+                    },
+                },
             });
         });
     </script>

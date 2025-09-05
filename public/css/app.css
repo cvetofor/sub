@@ -17,8 +17,15 @@
     background-color: #555;
 }
 
+@media (max-width: 640px) {
+    header iframe {
+        display: none;
+    }
+}
+
 input[type="checkbox"] {
-  accent-color: #ec003f; /* цвет галочки и рамки */
+    accent-color: #ec003f;
+    /* цвет галочки и рамки */
 }
 
 .plan-btn {
@@ -85,13 +92,15 @@ input[type="checkbox"] {
 .swiper-slide {
     display: flex !important;
     flex-direction: column;
-    height: auto; /* Важно для растягивания */
+    height: auto;
+    /* Важно для растягивания */
 }
 
 /* Или для всех слайдов в Swiper */
 .swiper-wrapper {
-    align-items: stretch; /* Растягивает слайды по высоте */
-} 
+    align-items: stretch;
+    /* Растягивает слайды по высоте */
+}
 
 /* Для WebKit (Chrome, Safari) */
 #budgetRange::-webkit-slider-thumb {
