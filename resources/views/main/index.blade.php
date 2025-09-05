@@ -16,7 +16,7 @@
     @endphp
 
     <section class="flex mx-auto max-w-7xl px-4 pt-10 pb-8">
-        <div class="grid md:grid-cols-2 gap-8 items-center">
+        <div class="grid md:grid-cols-2 gap-8">
             <div class="flex flex-col">
                 <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">Подписка на цветы: свежий букет
                     по расписанию с доставкой</h1>
@@ -160,7 +160,7 @@
 
                 <div class="mt-6">
                     <label class="block text-sm text-gray-600 mb-2">
-                        Бюджет за доставку: <span id="budgetValueMain" class="font-medium text-gray-700">2 990 ₽</span>
+                        Бюджет на 1 букет: <span id="budgetValueMain" class="font-medium text-gray-700">2 990 ₽</span>
                     </label>
                     <input id="budgetRange" type="range" min="2990" max="50000" step="10" value="2990"
                         class="w-full h-2 bg-rose-200 rounded-lg appearance-none">
@@ -251,7 +251,7 @@
                     <p class="mt-2 text-sm text-gray-700">Город: <b id="cityOutput"></b></p>
                     <p class="mt-2 text-sm text-gray-700">Частота: <b id="frequencyOutputAside"></b></p>
                     <div class="mt-3">
-                        <p class="text-sm text-gray-600">Бюджет за доставку: </p>
+                        <p class="text-sm text-gray-600">Бюджет на 1 букет: </p>
                         <p class="font-semibold text-gray-900" data-total-delivery="2990" id="budgetValueAside">2 990 ₽
                         </p>
                     </div>

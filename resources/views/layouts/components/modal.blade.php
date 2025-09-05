@@ -4,7 +4,7 @@
     $selectedCityId = session('city_id') ?? null;
 @endphp
 
-<div id="subscription-modal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur bg-white/70 hidden">
+<div id="city-modal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur bg-white/70 hidden">
     <div class="bg-white h-[350px] w-full max-w-3xl p-6 rounded-3xl shadow-xl border border-rose-300 relative">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-2xl font-semibold">Выбор города</h2>
@@ -31,23 +31,23 @@
 
 <script>
     function openCityModal() {
-        $('#subscription-modal').removeClass('hidden');
+        $('#city-modal').removeClass('hidden');
     }
 
     function closeCityModal() {
-        $('#subscription-modal').addClass('hidden');
+        $('#city-modal').addClass('hidden');
     }
 
     function filterCities() {
         const filter = $('#city-search').val().toLowerCase();
 
-        $('#subscription-modal ul li').each(function() {
+        $('#city-modal ul li').each(function() {
             const cityName = $(this).text().toLowerCase();
             $(this).toggle(cityName.indexOf(filter) > -1);
         });
     }
 
-    $('#subscription-modal .city').on('click', function() {
+    $('#city-modal .city').on('click', function() {
         const cityId = $(this).data('city-id');
 
         $.ajax({

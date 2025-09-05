@@ -25,7 +25,7 @@
             </button>
 
             <button class="px-4 py-2 rounded-xl bg-rose-600 text-white shadow cursor-pointer" id="subscribeBtn"
-                type="button">Собрать подписку</button>
+                type="button">Войти в ЛК</button>
         </div>
     </div>
 </header>
