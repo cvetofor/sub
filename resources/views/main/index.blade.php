@@ -68,7 +68,7 @@
             id="readyPlansWrapper">
             <div class="swiper-wrapper">
                 @foreach ($plans as $plan)
-                    <div class="swiper-slide flex flex-col justify-between rounded-3xl border p-5 border-rose-500 shadow-rose-100 shadow-lg"
+                    <div class="swiper-slide flex flex-col justify-between rounded-3xl border p-5 border-rose-500 shadow-rose-100 shadow-lg cursor-pointer hover:shadow-xl hover:shadow-rose-200 transition-shadow duration-300 [&.active-plan]:shadow-rose-500 [&.active-plan:hover]:shadow-rose-500"
                         data-plan-id="{{ $plan->id }}">
                         <div>
                             <div class="flex items-baseline justify-between mb-2">
@@ -80,7 +80,7 @@
                             <div class="text-3xl font-bold">{{ $plan->price }} ₽ <span
                                     class="text-base font-medium text-gray-600">за
                                     доставку</span></div>
-                            <p class="mt-1 text-sm text-gray-600">≈ 4 доставк(и) в месяц</p>
+                            <p class="frequency_per_month mt-1 text-sm text-gray-600">≈ 4 доставк(и) в месяц</p>
                             <p class="mt-3 text-sm text-gray-700 min-h-[48px]">{{ $plan->description }}</p>
                             <p class="mt-3 text-sm text-gray-600">Опции:
                                 @foreach ($plan->options as $option)
@@ -93,8 +93,14 @@
                         <div>
                             <div class="mt-4 p-3 rounded-2xl bg-rose-100 border border-rose-200">
                                 <p class="text-sm text-gray-700">Итого в месяц (с выбранными опциями):</p>
-                                <p class="text-2xl font-extrabold">₽</p>
+                                <p class="total_ready_plan text-2xl font-extrabold">₽</p>
                             </div>
+                            <select class="frequency mt-4 p-2 w-full rounded-2xl bg-white border border-rose-200"
+                                name="frequency">
+                                <option value="{{ \App\Enums\Frequency::WEEKLY }}">Еженедельно</option>
+                                <option value="{{ \App\Enums\Frequency::BIWEEKLY }}">Раз в 2 недели</option>
+                                <option value="{{ \App\Enums\Frequency::MONTHLY }}">Раз в месяц</option>
+                            </select>
                             <button
                                 class="choosePlanBtnPSection mt-4 w-full px-4 py-2 rounded-2xl bg-rose-600 text-white">Выбрать
                                 план</button>
@@ -129,14 +135,17 @@
                         <input id="deliveryAddress" class="w-full px-3 py-2 rounded-xl border border-rose-200"
                             type="text" placeholder="Улица, дом, подъезд, комментарий">
                     </div>
-
-                    <div class=" gap-2 text-sm btn-group">
+                    <div class="gap-2 text-sm btn-group">
                         <label class="block text-sm text-gray-600 mb-1">Частота</label>
                         <button
-                            class="toggle-btn px-3 py-1 rounded-xl border bg-rose-100 border-rose-400 text-rose-700 active">Еженедельно</button>
-                        <button class="toggle-btn px-3 py-1 rounded-xl border bg-white border-rose-200">
+                            class="toggle-btn px-3 py-1 rounded-xl border bg-rose-100 border-rose-400 text-rose-700 active"
+                            data-frequency="{{ \App\Enums\Frequency::WEEKLY }}">Еженедельно</button>
+
+                        <button class="toggle-btn px-3 py-1 rounded-xl border bg-white border-rose-200"
+                            data-frequency="{{ \App\Enums\Frequency::BIWEEKLY }}">
                             Раз в 2 недели</button>
-                        <button class="toggle-btn px-3 py-1 rounded-xl border bg-white border-rose-200">Раз в месяц</button>
+                        <button class="toggle-btn px-3 py-1 rounded-xl border bg-white border-rose-200"
+                            data-frequency="{{ \App\Enums\Frequency::MONTHLY }}">Раз в месяц</button>
                     </div>
 
                     <div>
@@ -249,7 +258,8 @@
                 <div class="sticky top-24 p-5 rounded-3xl border border-rose-300 bg-white shadow-md">
                     <h2 class="text-lg font-semibold">Ваш выбор</h2>
                     <p class="mt-2 text-sm text-gray-700">Город: <b id="cityOutput"></b></p>
-                    <p class="mt-2 text-sm text-gray-700">Частота: <b id="frequencyOutputAside"></b></p>
+                    <p class="mt-2 text-sm text-gray-700">Частота: <b id="frequencyOutputAside"
+                            data-frequency="weekly"></b></p>
                     <div class="mt-3">
                         <p class="text-sm text-gray-600">Бюджет на 1 букет: </p>
                         <p class="font-semibold text-gray-900" data-total-delivery="2990" id="budgetValueAside">2 990 ₽

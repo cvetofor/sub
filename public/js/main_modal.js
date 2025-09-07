@@ -28,7 +28,7 @@ $(document).ready(function () {
     const comment = $('#textAreaCommentSub');
 
     payBtn.on('click', function () {
-        const frequency = $('.toggle-btn.active').data('frequency-code');
+        const frequency = $('.frequencyOutputAside').data('frequency') ?? $('.frequency').val();
         const isVsiblePlan = !$('#readyPlansWrapper').hasClass('hidden');
         let requestData = {};
 

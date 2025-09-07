@@ -9,6 +9,13 @@ document.addEventListener('DOMContentLoaded', function () {
         if (activeBtn) activeBtn.classList.add('active');
     };
 
+    // ---- СИНХРОНИЗАЦИЯ КНОПОК ЧАСТОТЫ ----
+    const deliveryCounts = {
+        "weekly": 4,
+        "biweekly": 2,
+        "monthly": 1
+    };
+
     const selectPlan = (plan, plans) => {
         plans.forEach(p => {
             const btn = p.querySelector(".choosePlanBtnPSection");
@@ -44,7 +51,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const updatePlan = (card, deliveriesPerMonth) => {
         const deliveryText = card.querySelector("p.mt-1.text-sm.text-gray-600");
-        if (deliveryText) deliveryText.textContent = `≈ ${deliveriesPerMonth} доставк(и) в месяц`;
+        if (deliveryText) {
+            deliveryText.textContent = `≈ ${deliveriesPerMonth} доставк(и) в месяц`;
+        }
 
         let optionsSum = 0;
         const optionsParagraph = card.querySelector("p.mt-3.text-sm.text-gray-600");
@@ -62,9 +71,27 @@ document.addEventListener('DOMContentLoaded', function () {
             if (match) pricePerDelivery = parseInt(match[1]);
         }
 
-        const totalParagraph = card.querySelector("div.mt-4.p-3.rounded-2xl.bg-rose-100.border p.text-2xl.font-extrabold");
-        if (totalParagraph) totalParagraph.textContent = `${(pricePerDelivery + optionsSum) * deliveriesPerMonth} ₽`;
+        const totalParagraph = card.querySelector(".total_ready_plan");
+        if (totalParagraph) {
+            totalParagraph.textContent = `${(pricePerDelivery + optionsSum) * deliveriesPerMonth} ₽`;
+        }
     };
+
+    const allSelects = document.querySelectorAll(".frequency");
+    allSelects.forEach(select => {
+        select.addEventListener("change", function () {
+            const card = this.closest(".swiper-slide");
+            const value = this.value;
+            const count = deliveryCounts[value] || 1;
+            updatePlan(card, count);
+        });
+
+        // при загрузке сразу обновляем
+        const value = select.value;
+        const card = select.closest(".swiper-slide");
+        const count = deliveryCounts[value] || 1;
+        updatePlan(card, count);
+    });
 
     // Переключение "Готовые планы / Собрать самому"
     const readyBtn = document.getElementById('readyBtn');
@@ -89,13 +116,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     }
-
-    // ---- СИНХРОНИЗАЦИЯ КНОПОК ЧАСТОТЫ ----
-    const deliveryCounts = {
-        "Еженедельно": 4,
-        "Раз в 2 недели": 2,
-        "Раз в месяц": 1
-    };
 
     const allFrequencyButtons = document.querySelectorAll(".toggle-btn");
 
@@ -204,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        let frequency = deliveryCounts[frequencyOutput.textContent];
+        let frequency = deliveryCounts[frequencyOutput.dataset.frequency];
 
         return (baseBudget + totalOptionsPrice) * frequency;
     }
@@ -265,17 +285,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // обработчик клика по кнопкам
     freqButtons.forEach(btn => {
-        btn.addEventListener('click', function () {
-            // выделяем текущую
-            this.classList.add('active', 'bg-rose-100', 'border-rose-400', 'text-rose-700');
-            this.classList.remove('bg-white', 'border-rose-200');
-
-            // записываем текст
-            frequencyOutput.textContent = this.textContent.trim();
-
-            updateTotalAmount();
+    btn.addEventListener('click', function () {
+        // снять active у всех
+        freqButtons.forEach(b => {
+            b.classList.remove('active', 'bg-rose-100', 'border-rose-400', 'text-rose-700');
+            b.classList.add('bg-white', 'border-rose-200');
         });
+
+        // выделить текущую
+        this.classList.add('active', 'bg-rose-100', 'border-rose-400', 'text-rose-700');
+        this.classList.remove('bg-white', 'border-rose-200');
+
+        // дублируем в output и data, и текст
+        frequencyOutputAside.dataset.frequency = this.dataset.frequency;
+        frequencyOutputAside.textContent = this.textContent.trim();
+
+        updateTotalAmount();
     });
+});
 
     // ---- ЛОГИКА ДЛЯ ЧЕКБОКСОВ ОПЦИЙ ДОСТАВКИ ----
     const deliveryOptions = document.querySelectorAll('input[type="checkbox"]');
