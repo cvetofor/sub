@@ -269,7 +269,7 @@
                         <p class="text-sm text-gray-600">Опции за доставку</p>
                         <ul class="text-sm mt-1 space-y-1" id="selectedOptions">
                             @foreach ($totalOptDel as $option)
-                                <li class="opacity-50" data-option-name="{{ $option['name'] }}"
+                                <li class="hidden" data-option-name="{{ $option['name'] }}"
                                     data-option-price="{{ $option['price'] }}"
                                     data-option-every-delivery="{{ $option['is_every_delivery'] ? 'true' : 'false' }}">
                                     {{ $option['name'] }} +{{ $option['price'] }}₽

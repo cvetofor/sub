@@ -357,7 +357,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 li.innerHTML = `${optionName} +${optionPrice}₽`;
             } else {
                 // Опция не выбрана
-                li.className = 'opacity-50';
+                li.className = 'hidden';
                 li.innerHTML = `${optionName} (не выбрано)`;
             }
         });
