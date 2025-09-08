@@ -26,7 +26,7 @@
                 </span>
             </button>
 
-            <a class="px-4 py-2 rounded-xl bg-rose-600 text-white shadow cursor-pointer"
+            <a class="px-4 py-2 rounded-xl bg-rose-600 text-white font-semibold shadow cursor-pointer"
                 href="{{ $isAuth && request()->is('profile') ? route('logout') : route('profile') }}">
                 {{ $isAuth && request()->is('profile') ? 'Выйти' : 'Войти в ЛК' }}
             </a>

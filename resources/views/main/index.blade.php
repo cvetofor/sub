@@ -43,7 +43,7 @@
                         <div class="mt-4 grid grid-cols-3 gap-3">
                             @if ($flowers)
                                 @foreach ($flowers as $flower)
-                                    <img class="w-full h-32 object-cover rounded-xl bg-rose-100/60"
+                                    <img class="w-full h-45 object-cover rounded-xl bg-rose-100/60"
                                         src="{{ asset('images/flowers/' . $flower->getFilename()) }}"
                                         alt="{{ pathinfo($flower->getFilename(), PATHINFO_FILENAME) }}">
                                 @endforeach
