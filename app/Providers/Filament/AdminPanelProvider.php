@@ -40,7 +40,7 @@ class AdminPanelProvider extends PanelProvider {
         return $panel
             ->default()
             ->id('admin')
-            ->path('admin')
+            ->path('hub')
             ->login()
             ->colors([
                 'danger'   => '#f43f5e',

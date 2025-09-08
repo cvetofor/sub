@@ -27,7 +27,7 @@ class SubscriptionsTable {
                 TextColumn::make('plan_id')
                     ->label('Название плана')
                     ->formatStateUsing(fn($state) => Plan::find($state)?->name ?? 'План не найден')
-                    ->url(fn($record) => '/admin/plans/' . $record->plan_id . '/edit')
+                    ->url(fn($record) => '/hub/plans/' . $record->plan_id . '/edit')
                     ->color('primary'),
                 IconColumn::make('using_promo')
                     ->label('Использован промо')
