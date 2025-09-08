@@ -26,11 +26,13 @@ class Yookassa {
                 throw new Exception("Подписка не найдена. \$subId=$subId");
             }
 
+            $amount = $sub->is_custom ? $sub->totalAmount() : $sub->plan->price * \App\Enums\Frequency::getFrequencyElem($sub->frequency)['count'];
+
             $idempotenceKey = uniqid('', true);
             $response = self::$client->createPayment(
                 [
                     'amount' => [
-                        'value' => $sub->totalAmount(),
+                        'value' => $amount,
                         'currency' => 'RUB',
                     ],
                     'confirmation' => [
@@ -55,7 +57,7 @@ class Yookassa {
                                 'description' => 'Подписка "' . $sub->plan->name . '"',
                                 'quantity' => '1.00',
                                 'amount' => [
-                                    'value' => $sub->totalAmount(),
+                                    'value' => $amount,
                                     'currency' => 'RUB'
                                 ],
                                 'vat_code' => '7',

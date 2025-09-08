@@ -203,22 +203,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Функция для подсчета общей суммы с учетом опций
     function calculateTotalAmount() {
-        const baseBudget = parseInt(rangeInput.value) || 2990;
-        let totalOptionsPrice = 0;
+    const baseBudget = parseInt(rangeInput.value) || 2990;
+    let totalOptionsPrice = 0;
 
-        // Подсчитываем стоимость выбранных опций доставки
-        const deliveryOptions = document.querySelectorAll('input[type="checkbox"]');
-        deliveryOptions.forEach(checkbox => {
-            if (checkbox.checked) {
-                const optionPrice = parseInt(checkbox.dataset.optionPrice) || 0;
+    const deliveryOptions = document.querySelectorAll('input[type="checkbox"]');
+    deliveryOptions.forEach(checkbox => {
+        if (checkbox.checked) {
+            const optionPrice = parseInt(checkbox.dataset.optionPrice) || 0;
+            const isEveryDelivery = checkbox.dataset.optionIsEveryDelivery === "1" || checkbox.dataset.optionIsEveryDelivery === "true";
+
+            if (isEveryDelivery) {
+                // Если опция применяется каждый раз, прибавляем цену за каждую доставку
+                const frequency = deliveryCounts[frequencyOutput.dataset.frequency] || 1;
+                totalOptionsPrice += optionPrice * frequency;
+            } else {
+                // Если опция только один раз, добавляем один раз
                 totalOptionsPrice += optionPrice;
             }
-        });
+        }
+    });
 
-        let frequency = deliveryCounts[frequencyOutput.dataset.frequency];
+    let frequency = deliveryCounts[frequencyOutput.dataset.frequency] || 1;
 
-        return (baseBudget + totalOptionsPrice) * frequency;
-    }
+    return baseBudget * frequency + totalOptionsPrice;
+}
 
     // Функция для обновления отображения общей суммы
     function updateTotalAmount() {

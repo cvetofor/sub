@@ -160,7 +160,7 @@
                             <label class="mt-2 flex items-center gap-2 text-sm text-gray-700">
                                 <input class="option" type="checkbox" name="delivery_option_{{ $option->id }}"
                                     value="{{ $option->id }}" data-option-name="{{ $option->name }}"
-                                    data-option-price="{{ $option->price }}">{{ $option->name }}
+                                    data-option-price="{{ $option->price }}" data-option-is-every-delivery="{{ $option->is_every_delivery }}">{{ $option->name }}
                                 (+{{ $option->price }}₽/доставка)
                             </label>
                         @endforeach
@@ -237,7 +237,8 @@
                                 <label class="flex items-center gap-2 text-sm text-gray-800">
                                     <input class="option" type="checkbox" name="addition_option_{{ $option->id }}"
                                         value="{{ $option->id }}" data-option-name="{{ $option->name }}"
-                                        data-option-price="{{ $option->price }}">{{ $option->name }}
+                                        data-option-price="{{ $option->price }}"
+                                        data-option-is-every-delivery="{{ $option->is_every_delivery }}">
                                     @if ($option->price > 0)
                                         (+{{ $option->price }}₽{{ $option->is_every_delivery ? '/доставка' : ' — добавится в первый месяц' }})
                                     @else
