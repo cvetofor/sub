@@ -68,7 +68,7 @@ class AuthController extends Controller {
 
         $phone = preg_replace('/\D/', '', $phone);
         $smsc = new SMSC($phone);
-        $message = 'Ваш пароль для входа в личный кабинет на подписка.цветофор.рф - ' . $generatedPassword;
+        $message = 'Пароль для входа в личный кабинет на подписка.цветофор.рф - ' . $generatedPassword;
         $response = $smsc->sendSMS($message);
 
         Log::channel('shop')->info('Новый пользователь зарегистрирован и получен пароль.', [
