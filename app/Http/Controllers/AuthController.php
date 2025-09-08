@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Api\SMSC;
 use App\Models\Role;
+use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,7 +13,13 @@ use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller {
     public function index() {
-        return view('profile.index');
+        $user = Auth::user();
+
+        $subscriptions = Subscription::where('sender_phone', $user->phone)
+            ->orderByDesc('created_at')
+            ->get();
+
+        return view('profile.index', compact('subscriptions'));
     }
 
     public function authView() {

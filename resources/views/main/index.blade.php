@@ -80,7 +80,7 @@
                             <div class="text-3xl font-bold">{{ $plan->price }} ₽ <span
                                     class="text-base font-medium text-gray-600">за
                                     доставку</span></div>
-                            <p class="frequency_per_month mt-1 text-sm text-gray-600">≈ 4 доставк(и) в месяц</p>
+                            <p class="frequency_per_month mt-1 text-sm text-gray-600">≈ 4 доставки в месяц</p>
                             <p class="mt-3 text-sm text-gray-700 min-h-[48px]">{{ $plan->description }}</p>
                             <p class="mt-3 text-sm text-gray-600">Опции:
                                 @foreach ($plan->options as $option)
@@ -97,9 +97,9 @@
                             </div>
                             <select class="frequency mt-4 p-2 w-full rounded-2xl bg-white border border-rose-200"
                                 name="frequency">
-                                <option value="{{ \App\Enums\Frequency::WEEKLY }}">Еженедельно</option>
-                                <option value="{{ \App\Enums\Frequency::BIWEEKLY }}">Раз в 2 недели</option>
                                 <option value="{{ \App\Enums\Frequency::MONTHLY }}">Раз в месяц</option>
+                                <option value="{{ \App\Enums\Frequency::BIWEEKLY }}">Раз в 2 недели</option>
+                                <option value="{{ \App\Enums\Frequency::WEEKLY }}">Еженедельно</option>
                             </select>
                             <button
                                 class="choosePlanBtnPSection mt-4 w-full px-4 py-2 rounded-2xl bg-rose-600 text-white">Выбрать

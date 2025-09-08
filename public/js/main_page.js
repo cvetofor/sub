@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const updatePlan = (card, deliveriesPerMonth) => {
         const deliveryText = card.querySelector("p.mt-1.text-sm.text-gray-600");
         if (deliveryText) {
-            deliveryText.textContent = `≈ ${deliveriesPerMonth} доставк(и) в месяц`;
+            deliveryText.textContent = `≈ ${deliveriesPerMonth} доставки в месяц`;
         }
 
         let optionsSum = 0;

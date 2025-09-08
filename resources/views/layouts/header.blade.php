@@ -2,6 +2,8 @@
     use App\Models\City;
     $cities = City::active()->get();
     $selectedCityId = session('city_id') ?? 2;
+
+    $isAuth = Auth::check();
 @endphp
 
 <header class="sticky top-0 z-30 backdrop-blur bg-white/70 border-b border-rose-100">
@@ -24,7 +26,11 @@
                 </span>
             </button>
 
-            <a class="px-4 py-2 rounded-xl bg-rose-600 text-white shadow cursor-pointer" href="{{ route('profile') }}">Войти в ЛК</a>
+            <a class="px-4 py-2 rounded-xl bg-rose-600 text-white shadow cursor-pointer"
+                href="{{ $isAuth && request()->is('profile') ? route('logout') : route('profile') }}">
+                {{ $isAuth && request()->is('profile') ? 'Выйти' : 'Войти в ЛК' }}
+            </a>
+            </a>
         </div>
     </div>
 </header>
