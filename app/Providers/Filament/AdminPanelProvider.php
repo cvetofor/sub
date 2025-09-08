@@ -2,9 +2,9 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Pages\Dashboard as PagesDashboard;
 use App\Filament\Widgets\StatsOverview;
 use App\Filament\Widgets\SubscriptionsChart;
+use App\Models\Role;
 use Filament\Facades\Filament;
 use Filament\Pages\Dashboard;
 use Filament\Http\Middleware\Authenticate;
@@ -26,7 +26,7 @@ class AdminPanelProvider extends PanelProvider {
         Filament::serving(function () {
             $user = Auth::user();
 
-            if ($user && $user->role_id === 3) {
+            if ($user && $user->role_id === Role::CLIENT) {
                 Auth::logout();
                 request()->session()->invalidate();
                 request()->session()->regenerateToken();

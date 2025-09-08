@@ -2,8 +2,8 @@
 
 namespace App\Http\Api;
 
+use App\Http\Controllers\AuthController;
 use App\Models\Payment;
-use App\Models\Plan;
 use App\Models\Subscription;
 use Exception;
 use YooKassa\Client;
@@ -132,6 +132,9 @@ class Yookassa {
 
                         Log::channel('shop')->info('Оплачена подписка.', [$responseObj]);
                     }
+
+                    $authController = new AuthController();
+                    $_ = $authController->registerUser($subscription->sender_phone, $subscription->sender_name);
 
                     return response()->noContent(200);
                 }

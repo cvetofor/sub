@@ -57,7 +57,7 @@ class PaymentController extends Controller {
             $subscriptionId = $request->subscription_id;
             $subscription = Subscription::find($subscriptionId);
 
-            // sleep(1);
+            sleep(1);
             $payment = $subscription->payments()
                 ->orderBy('created_at', 'desc')
                 ->first();

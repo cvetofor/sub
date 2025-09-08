@@ -176,15 +176,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    const subscribeBtn = document.getElementById('subscribeBtn');
-    if (subscribeBtn) {
-        subscribeBtn.addEventListener('click', () => {
-            readyPlansWrapper.classList.remove('hidden');
-            customWrapper.classList.add('hidden');
-            plansSection.scrollIntoView({ behavior: 'smooth' });
-        });
-    }
-
     const chooseCustomPlanBtn = document.getElementById('chooseCustomPlanBtn');
     if (chooseCustomPlanBtn) {
         chooseCustomPlanBtn.addEventListener('click', () => {

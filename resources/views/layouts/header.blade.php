@@ -24,8 +24,7 @@
                 </span>
             </button>
 
-            <button class="px-4 py-2 rounded-xl bg-rose-600 text-white shadow cursor-pointer" id="subscribeBtn"
-                type="button">Войти в ЛК</button>
+            <a class="px-4 py-2 rounded-xl bg-rose-600 text-white shadow cursor-pointer" href="{{ route('profile') }}">Войти в ЛК</a>
         </div>
     </div>
 </header>

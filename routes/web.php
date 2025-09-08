@@ -16,3 +16,5 @@ Route::group(['prefix' => '/payment', 'as' => 'payment.'], function () {
         Route::get('/redirect', [PaymentController::class, 'redirect'])->name('redirect');
     });
 });
+
+require __DIR__ . '/auth.php';
