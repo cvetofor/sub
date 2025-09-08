@@ -39,6 +39,4 @@ Schedule::call(function () {
             Log::channel('shop')->info('Не удалось продлить подписку.', [$subscription, $paymentYookassa]);
         }
     }
-})
-    ->dailyAt('00:00')
-    ->timezone('Europe/Moscow');
+})->everyTwoHours($minutes = 0);
