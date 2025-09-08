@@ -104,6 +104,9 @@ class EditSubscription extends EditRecord {
                     ->schema([
                         Grid::make(2)->schema([
                             Section::make('')->schema([
+                                TextEntry::make('comment')
+                                    ->label('Комментарий'),
+
                                 TextEntry::make('created_at')
                                     ->label('Дата начала подписки')
                                     ->dateTime(),
