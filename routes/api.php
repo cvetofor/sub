@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::group(['prefix' => '/subscription', 'as' => 'subscription.'], function () {
     Route::post('/create', [SubscriptionController::class, 'create'])->name('create');
+    Route::post('/disable/{id}', [SubscriptionController::class, 'disable'])->name('disable');
+    Route::post('/active/{id}', [SubscriptionController::class, 'active'])->name('active');
 });
 
 Route::group(['prefix' => '/payment', 'as' => 'payment.'], function () {

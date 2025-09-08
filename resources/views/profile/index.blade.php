@@ -53,9 +53,8 @@
 
                             <div class="mt-6 flex flex-col gap-3">
                                 @if ($sub->is_active)
-                                    <form action="{{ route('home', $sub->id) }}" method="POST" class="relative group">
-                                        @csrf
-                                        @method('PATCH')
+                                    <form action="{{ route('subscription.disable', $sub->id) }}" method="POST" class="relative group">
+                                        @csrf 
                                         <button type="submit"
                                             class="w-full bg-rose-500 text-white font-semibold py-3 rounded-xl hover:bg-rose-600 transition-colors duration-300 cursor-pointer">
                                             Остановить подписку
@@ -68,9 +67,8 @@
                                         </span>
                                     </form>
                                 @else
-                                    <form action="{{ route('home') }}" method="POST">
-                                        @csrf
-                                        @method('PATCH')
+                                    <form action="{{ route('subscription.active', $sub->id) }}" method="POST">
+                                        @csrf 
                                         <button type="submit"
                                             class="w-full bg-green-500 text-white font-semibold py-3 rounded-xl hover:bg-green-600 transition-colors duration-300 cursor-pointer">
                                             Возобновить подписку

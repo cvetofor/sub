@@ -86,4 +86,20 @@ class SubscriptionController extends Controller {
             'payment_link' => $paymentLink
         ], 201);
     }
+
+    public function disable(Request $request, $id) {
+        $subscription = Subscription::findOrFail($id);
+        $subscription->is_active = false;
+        $subscription->save();
+
+        return redirect()->back();
+    }
+
+    public function active(Request $request, $id) {
+        $subscription = Subscription::findOrFail($id);
+        $subscription->is_active = true;
+        $subscription->save();
+
+        return redirect()->back();
+    }
 }

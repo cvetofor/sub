@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Api\SMSC;
+use App\Models\Payment;
 use App\Models\Role;
 use App\Models\Subscription;
 use App\Models\User;
@@ -16,6 +17,9 @@ class AuthController extends Controller {
         $user = Auth::user();
 
         $subscriptions = Subscription::where('sender_phone', $user->phone)
+            ->whereHas('payments', function ($query) {
+                $query->where('payment_status_id', Payment::PAYED);
+            })
             ->orderByDesc('created_at')
             ->get();
 
