@@ -239,8 +239,9 @@
                                         value="{{ $option->id }}" data-option-name="{{ $option->name }}"
                                         data-option-price="{{ $option->price }}"
                                         data-option-is-every-delivery="{{ $option->is_every_delivery }}">
+                                     {{ $option->name }}
                                     @if ($option->price > 0)
-                                        (+{{ $option->price }}₽{{ $option->is_every_delivery ? '/доставка' : ' — добавится в первый месяц' }})
+                                      (+{{ $option->price }}₽{{ $option->is_every_delivery ? '/доставка' : ' — добавится в первый месяц' }})
                                     @else
                                         (бесплатно)
                                     @endif
