@@ -169,12 +169,12 @@
 
                 <div class="mt-6">
                     <label class="block text-sm text-gray-600 mb-2">
-                        Бюджет на 1 букет: <span id="budgetValueMain" class="font-medium text-gray-700">2 990 ₽</span>
+                        Бюджет на 1 букет: <span id="budgetValueMain" class="font-medium text-gray-700">1 000 ₽</span>
                     </label>
-                    <input id="budgetRange" type="range" min="2990" max="50000" step="10" value="2990"
+                    <input id="budgetRange" type="range" min="1000" max="50000" step="10" value="1000"
                         class="w-full h-2 bg-rose-200 rounded-lg appearance-none">
                     <p class="text-sm text-gray-600 mt-1">
-                        Диапазон: 2 990 – 50 000 ₽. Флористы подберут состав под ваш бюджет, без привязки к «количеству
+                        Диапазон: 1 000 – 50 000 ₽. Флористы подберут состав под ваш бюджет, без привязки к «количеству
                         стеблей».
                     </p>
                 </div>
@@ -263,7 +263,7 @@
                             data-frequency="weekly"></b></p>
                     <div class="mt-3">
                         <p class="text-sm text-gray-600">Бюджет на 1 букет: </p>
-                        <p class="font-semibold text-gray-900" data-total-delivery="2990" id="budgetValueAside">2 990 ₽
+                        <p class="font-semibold text-gray-900" data-total-delivery="2990" id="budgetValueAside">1 000 ₽
                         </p>
                     </div>
                     <div class="mt-4 border-t border-dashed pt-3">
