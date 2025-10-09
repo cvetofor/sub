@@ -280,16 +280,12 @@
                         </ul>
                     </div>
                     <label class="mt-3 flex items-center gap-2 text-sm text-gray-700">
-                        <input type="checkbox" id="checkboxPromo">
-                        Я новый клиент (применить промо 1+1)
+                        Если эта ваша первая подписка - второй букет вы получите БЕСПЛАТНО!
                     </label>
                     <div class="mt-4 p-3 rounded-2xl bg-rose-50 border border-rose-200">
                         <p class="text-sm text-gray-700">1-й месяц (до промо)</p>
                         <h1 class="text-3xl font-extrabold" data-total="" id="totalAmountElement">₽</h1>
                         <p class="text-xs text-gray-600 mt-1" id="discountElement"></p>
-                        <p class="text-base text-gray-800 mt-1" id="totalFirstMonth">К оплате в 1 месяц: <b
-                                id="totalFirstMonthB"></b></p>
-                        <p class="text-xs text-gray-600 mt-1" id="totalSecondMonth">Со второго месяца: </p>
                         <p class="text-xs text-gray-600 mt-1">Расчёт: (база за доставку + опции за доставку) × доставок в
                             месяц</p>
                     </div>
