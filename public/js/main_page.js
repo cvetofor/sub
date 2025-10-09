@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function () {
         plan.classList.remove("border-rose-200");
 
         if (button) {
-            button.textContent = "План выбран";
+            button.textContent = "Оформить подписку";
             button.className = "choosePlanBtnPSection mt-4 w-full px-4 py-2 rounded-2xl bg-rose-600 text-white cursor-pointer";
         }
         if (selectedLabel) selectedLabel.style.display = "inline";
