@@ -16,6 +16,14 @@ document.addEventListener('DOMContentLoaded', function () {
         "monthly": 1
     };
 
+    // «1 доставка», «2 доставки», «5 доставок»
+    const deliveriesWord = (n) => {
+        const mod10 = n % 10, mod100 = n % 100;
+        if (mod10 === 1 && mod100 !== 11) return 'доставка';
+        if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'доставки';
+        return 'доставок';
+    };
+
     const selectPlan = (plan, plans) => {
         plans.forEach(p => {
             const btn = p.querySelector(".choosePlanBtnPSection");
@@ -50,9 +58,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     const updatePlan = (card, deliveriesPerMonth) => {
-        const deliveryText = card.querySelector("p.mt-1.text-sm.text-gray-600");
+        const deliveryText = card.querySelector(".frequency_per_month");
         if (deliveryText) {
-            deliveryText.textContent = `≈ ${deliveriesPerMonth} доставки в месяц`;
+            deliveryText.textContent = `≈ ${deliveriesPerMonth} ${deliveriesWord(deliveriesPerMonth)} в месяц`;
         }
 
         let optionsSum = 0;
@@ -117,36 +125,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    const allFrequencyButtons = document.querySelectorAll(".toggle-btn");
-
-    allFrequencyButtons.forEach(btn => {
-        btn.addEventListener("click", () => {
-            const value = btn.textContent.trim();
-
-            // снять active у всех
-            allFrequencyButtons.forEach(b => {
-                b.classList.remove("bg-rose-100", "border-rose-400", "text-rose-700", "active");
-                b.classList.add("bg-white", "border-rose-200", "text-gray-600");
-            });
-
-            // активировать во всех группах ту же частоту
-            allFrequencyButtons.forEach(b => {
-                if (b.textContent.trim() === value) {
-                    b.classList.add("bg-rose-100", "border-rose-400", "text-rose-700", "active");
-                    b.classList.remove("bg-white", "border-rose-200", "text-gray-600");
-                }
-            });
-
-            // обновляем планы
-            const count = deliveryCounts[value] || 1;
-            const plansContainer = document.querySelector(".swiper-wrapper");
-            if (plansContainer) {
-                const plans = Array.from(plansContainer.querySelectorAll(".swiper-slide"));
-                plans.forEach(card => updatePlan(card, count));
-            }
-        });
-    });
-
     // ---- ЛОГИКА ДЛЯ ПЛАНОВ ----
     const plansContainer = document.querySelector(".swiper-wrapper");
     if (plansContainer) {
@@ -156,13 +134,6 @@ document.addEventListener('DOMContentLoaded', function () {
             plan.addEventListener("click", () => selectPlan(plan, plans));
             if (index === 0) selectPlan(plan, plans);
         });
-
-        // при загрузке активная частота
-        const activeBtn = document.querySelector(".toggle-btn.active");
-        if (activeBtn) {
-            const count = deliveryCounts[activeBtn.textContent.trim()] || 1;
-            plans.forEach(card => updatePlan(card, count));
-        }
     }
 
     // Скролл к планам
@@ -203,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Функция для подсчета общей суммы с учетом опций
     function calculateTotalAmount() {
-    const baseBudget = parseInt(rangeInput.value) || 2990;
+    const baseBudget = parseInt(rangeInput.value) || parseInt(rangeInput.min) || 1000;
     let totalOptionsPrice = 0;
 
     const deliveryOptions = document.querySelectorAll('input[type="checkbox"]');
@@ -232,27 +203,14 @@ document.addEventListener('DOMContentLoaded', function () {
     function updateTotalAmount() {
         const totalAmount = calculateTotalAmount();
         const totalAmountElement = document.getElementById('totalAmountElement');
-        const discountElement = document.getElementById('discountElement');
-        const checkboxPromo = document.getElementById('checkboxPromo');
-        const totalFirstMonthB = document.getElementById('totalFirstMonthB');
-        const totalFirstMonth = document.getElementById('totalFirstMonth');
-        const totalSecondMonth = document.getElementById('totalSecondMonth');
+        const mobileTotal = document.getElementById('mobileTotal');
 
         if (totalAmountElement) {
             totalAmountElement.textContent = formatNumber(totalAmount) + ' ₽';
             totalAmountElement.dataset.total = totalAmount;
-            if (checkboxPromo.checked && deliveryCounts[frequencyOutput.textContent] != 1) {
-                discountElement.className = 'text-xs text-gray-600 mt-1';
-                totalFirstMonth.className = 'text-base text-gray-800 mt-1';
-                totalSecondMonth.className = 'text-xs text-gray-600 mt-1';
-                discountElement.textContent = 'Скидка промо 1+1: -' + formatNumber(totalAmount / 2) + ' ₽';
-                totalFirstMonthB.textContent = formatNumber(totalAmount / 2) + ' ₽';
-                totalSecondMonth.textContent = 'Со 2-го месяца: ' + formatNumber(totalAmount) + ' ₽';
-            } else {
-                discountElement.className = 'hidden';
-                totalFirstMonth.className = 'hidden';
-                totalSecondMonth.className = 'hidden';
-            }
+        }
+        if (mobileTotal) {
+            mobileTotal.textContent = formatNumber(totalAmount) + ' ₽';
         }
     }
 
@@ -362,55 +320,46 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Разлочить кнопку "Оформить подписку"
+    // Разлочить кнопки "Оформить подписку" (в боковой панели и в нижней панели на телефоне)
     const inputDeliveryAddress = document.getElementById('deliveryAddress');
     const asideSubscribeBtn = document.getElementById('asideSubscribeBtn');
+    const mobileSubscribeBtn = document.getElementById('mobileSubscribeBtn');
+    const subscribeButtons = [asideSubscribeBtn, mobileSubscribeBtn].filter(Boolean);
+    const subscribeHints = document.querySelectorAll('.subscribe-hint');
+
+    const setSubscribeEnabled = (enabled) => {
+        subscribeButtons.forEach(btn => {
+            btn.disabled = !enabled;
+            btn.classList.toggle('cursor-not-allowed', !enabled);
+            btn.classList.toggle('opacity-60', !enabled);
+            btn.classList.toggle('cursor-pointer', enabled);
+        });
+        subscribeHints.forEach(h => h.classList.toggle('hidden', enabled));
+    };
 
     inputDeliveryAddress.addEventListener('input', () => {
-        if (inputDeliveryAddress.value.trim() !== '') {
-            asideSubscribeBtn.disabled = false;
-            asideSubscribeBtn.classList.remove('cursor-not-allowed', 'opacity-60');
-            asideSubscribeBtn.classList.add('cursor-pointer', 'opacity-100');
-        } else {
-            asideSubscribeBtn.disabled = true;
-            asideSubscribeBtn.classList.add('cursor-not-allowed', 'opacity-60');
-            asideSubscribeBtn.classList.remove('cursor-pointer', 'opacity-100');
-        }
+        setSubscribeEnabled(inputDeliveryAddress.value.trim() !== '');
     });
+    setSubscribeEnabled(inputDeliveryAddress.value.trim() !== '');
 
-    // Открыть модалку с оформлением подписки
+    // Открыть/закрыть модалку с оформлением подписки
     const subscribeModal = document.getElementById('subscription-modal');
-    asideSubscribeBtn.addEventListener('click', () => {
-        subscribeModal.classList.remove('hidden');
+    const closeBtn = document.getElementById('closeBtn');
+    const openSubscribeModal = () => subscribeModal.classList.remove('hidden');
+    const closeSubscribeModal = () => subscribeModal.classList.add('hidden');
 
-        const closeBtn = document.getElementById('closeBtn');
-        closeBtn.addEventListener('click', () => {
-            subscribeModal.classList.add('hidden');
-        });
-
-        subscribeModal.addEventListener('click', (e) => {
-            if (e.target === subscribeModal) {
-                subscribeModal.classList.add('hidden');
-            }
-        });
+    closeBtn.addEventListener('click', closeSubscribeModal);
+    subscribeModal.addEventListener('click', (e) => {
+        if (e.target === subscribeModal) closeSubscribeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeSubscribeModal();
     });
 
-    const choosePlanBtnPSection = document.querySelectorAll('.choosePlanBtnPSection');
-    choosePlanBtnPSection.forEach(element => {
-        element.addEventListener('click', () => {
-            subscribeModal.classList.remove('hidden');
+    subscribeButtons.forEach(btn => btn.addEventListener('click', openSubscribeModal));
 
-            const closeBtn = document.getElementById('closeBtn');
-            closeBtn.addEventListener('click', () => {
-                subscribeModal.classList.add('hidden');
-            });
-
-            subscribeModal.addEventListener('click', (e) => {
-                if (e.target === subscribeModal) {
-                    subscribeModal.classList.add('hidden');
-                }
-            });
-        });
+    document.querySelectorAll('.choosePlanBtnPSection').forEach(element => {
+        element.addEventListener('click', openSubscribeModal);
     });
 
     updateDeliveryOptions();

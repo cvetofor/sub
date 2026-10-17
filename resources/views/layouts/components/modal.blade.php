@@ -2,9 +2,11 @@
     use App\Models\City;
     $cities = City::active()->get();
     $selectedCityId = session('city_id') ?? null;
+    // Спрашиваем город только когда есть из чего выбирать.
+    $askCity = !$selectedCityId && $cities->count() > 1;
 @endphp
 
-<div id="city-modal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur bg-white/70 hidden">
+<div id="city-modal" class="fixed inset-0 z-[1100] flex items-center justify-center backdrop-blur bg-white/70 hidden">
     <div class="bg-white h-[350px] w-full max-w-3xl p-6 rounded-3xl shadow-xl border border-rose-300 relative">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-2xl font-semibold">Выбор города</h2>
@@ -69,7 +71,7 @@
         });
     });
 
-    @if (!$selectedCityId)
+    @if ($askCity)
         window.addEventListener('DOMContentLoaded', () => {
             openCityModal();
         });

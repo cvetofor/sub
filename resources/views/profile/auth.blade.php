@@ -5,7 +5,9 @@
 @section('content')
     <section class="flex h-screen items-center justify-center m-4">
         <div class="form_auth flex flex-col w-md p-6 bg-white rounded-3xl shadow-xl border border-rose-300 gap-4">
-            <h1 class="text-2xl font-semibold mb-4">Вход в личный кабинет</h1>
+            <h1 class="text-2xl font-semibold mb-2">Вход в личный кабинет</h1>
+            <p class="text-sm text-gray-600 mb-2">Пароль приходит по СМС после первой оплаты подписки. Не получили
+                или забыли — введите номер и нажмите «Забыл пароль», мы пришлём новый.</p>
 
             @if (session('success'))
                 <div class="p-3 mb-4 text-green-700 bg-green-100 rounded-2xl">
@@ -24,7 +26,7 @@
 
                 <div id="phone">
                     <label class="block text-sm text-gray-600 mb-1" for="phone_input">Номер телефона</label>
-                    <input id="phone_input" name="phone" type="text" placeholder="+7 (123) 456-78-90"
+                    <input id="phone_input" name="phone" type="tel" placeholder="+7 (999) 123-4567"
                         class="w-full px-3 py-2 rounded-xl border border-rose-200" required autocomplete="username">
                 </div>
 

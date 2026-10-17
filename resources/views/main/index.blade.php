@@ -12,7 +12,8 @@
 
         $totalOptDel = $options->where('type', 'delivery')->merge($options->where('type', 'addition'))->toArray();
 
-        $selectedCityId = session('city_id') ?? 2;
+        $selectedCityId = session('city_id') ?? $cities->first()?->id;
+        $selectedCity = $cities->firstWhere('id', $selectedCityId) ?? $cities->first();
     @endphp
 
     <section class="flex mx-auto max-w-7xl px-4 pt-10 pb-8">
@@ -21,7 +22,7 @@
                 <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">Подписка на цветы: свежий букет
                     по расписанию с доставкой</h1>
                 <p class="mt-4 text-lg text-gray-700">Доставка по г.
-                    {{ $cities->where('id', $selectedCityId)->first()->name }}. Вы выбираете частоту
+                    {{ $selectedCity?->name }}. Вы выбираете частоту
                     и
                     бюджет — мы собираем идеальные букеты под ваши предпочтения. Гарантия свежести 48 часов.</p>
                 <div class="mt-5 flex flex-wrap items-center gap-2">
@@ -62,6 +63,7 @@
     <section class="mx-auto max-w-7xl px-1 pt-2" id="plansSection">
         <div class="flex flex-wrap px-4 items-center gap-2">
             <button id="readyBtn" class="plan-btn active px-4 flex-1 sm:flex-none">Готовые планы</button>
+            <button id="customTopBtn" class="customBtn plan-btn px-4 flex-1 sm:flex-none">Собрать самому</button>
         </div>
 
         <div class="plans-wrapper pt-5 pb-9 px-4 grid md:grid-cols-4 gap-4 swiper-container relative"
@@ -80,19 +82,21 @@
                             <div class="text-3xl font-bold">{{ $plan->price }} ₽ <span
                                     class="text-base font-medium text-gray-600">за
                                     доставку</span></div>
-                            <p class="frequency_per_month mt-1 text-sm text-gray-600">≈ 4 доставки в месяц</p>
+                            <p class="frequency_per_month mt-1 text-sm text-gray-600">≈ 1 доставка в месяц</p>
                             <p class="mt-3 text-sm text-gray-700 min-h-[48px]">{{ $plan->description }}</p>
-                            <p class="mt-3 text-sm text-gray-600">Опции:
-                                @foreach ($plan->options as $option)
-                                    <span>{{ $option->name }}@if (!$loop->last)
-                                            ,
-                                        @endif </span>
-                                @endforeach
-                            </p>
+                            @if ($plan->options->isNotEmpty())
+                                <p class="mt-3 text-sm text-gray-600">Опции:
+                                    @foreach ($plan->options as $option)
+                                        <span>{{ $option->name }}@if (!$loop->last)
+                                                ,
+                                            @endif </span>
+                                    @endforeach
+                                </p>
+                            @endif
                         </div>
                         <div>
                             <div class="mt-4 p-3 rounded-2xl bg-rose-100 border border-rose-200">
-                                <p class="text-sm text-gray-700">Итого в месяц (с выбранными опциями):</p>
+                                <p class="text-sm text-gray-700">Итого в месяц:</p>
                                 <p class="total_ready_plan text-2xl font-extrabold">₽</p>
                             </div>
                             <select class="frequency mt-4 p-2 w-full rounded-2xl bg-white border border-rose-200"
@@ -116,7 +120,7 @@
             <div class="swiper-button swiper-button-prev"></div>
         </div>
 
-        <div class="mt-6 grid lg:grid-cols-12 gap-6 hidden" id="customWrapper">
+        <div class="mt-6 grid lg:grid-cols-12 gap-6 hidden pb-28 lg:pb-0" id="customWrapper">
             <div class="lg:col-span-7 xl:col-span-8 p-5 rounded-3xl border border-rose-200 bg-white shadow-sm">
                 <div class="grid md:grid-cols-2 gap-4">
                     <div>
@@ -131,9 +135,10 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm text-gray-600 mb-1">Адрес доставки</label>
+                        <label class="block text-sm text-gray-600 mb-1" for="deliveryAddress">Адрес доставки <span
+                                class="text-rose-600">*</span></label>
                         <input id="deliveryAddress" class="w-full px-3 py-2 rounded-xl border border-rose-200"
-                            type="text" placeholder="Улица, дом, подъезд, комментарий">
+                            type="text" placeholder="Улица, дом, подъезд, квартира" autocomplete="street-address">
                     </div>
                     <div class="gap-2 text-sm btn-group">
                         <label class="block text-sm text-gray-600 mb-1">Частота</label>
@@ -283,20 +288,35 @@
                         Если эта ваша первая подписка - второй букет вы получите БЕСПЛАТНО!
                     </label>
                     <div class="mt-4 p-3 rounded-2xl bg-rose-50 border border-rose-200">
-                        <p class="text-sm text-gray-700">1-й месяц (до промо)</p>
-                        <h1 class="text-3xl font-extrabold" data-total="" id="totalAmountElement">₽</h1>
-                        <p class="text-xs text-gray-600 mt-1" id="discountElement"></p>
+                        <p class="text-sm text-gray-700">Итого в месяц</p>
+                        <p class="text-3xl font-extrabold" data-total="" id="totalAmountElement">₽</p>
                         <p class="text-xs text-gray-600 mt-1">Расчёт: (база за доставку + опции за доставку) × доставок в
-                            месяц</p>
+                            месяц + разовые дополнения</p>
                     </div>
                     <button id="asideSubscribeBtn"
                         class="mt-4 w-full px-5 py-3 rounded-2xl bg-rose-600 cursor-not-allowed opacity-60 text-white shadow-lg"
                         disabled>Оформить
                         подписку</button>
+                    <p class="subscribe-hint mt-2 text-xs text-rose-700">Укажите адрес доставки, чтобы продолжить.</p>
                     <p class="mt-2 text-xs text-gray-500">Спецпредложение: в первый месяц — второй букет бесплатно (для
                         новых клиентов, при ≥ 2 доставках).</p>
                 </div>
             </aside>
+
+            {{-- Закреплённая панель с итогом для телефонов: «Ваш выбор» на них уезжает под форму --}}
+            <div id="mobileSummaryBar"
+                class="lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-rose-200 bg-white/95 backdrop-blur px-4 py-3 shadow-[0_-4px_16px_rgba(244,63,94,0.12)]">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="min-w-0">
+                        <p class="text-xs text-gray-600">Итого в месяц</p>
+                        <p class="text-xl font-extrabold leading-tight" id="mobileTotal">₽</p>
+                        <p class="subscribe-hint text-[11px] text-rose-700 leading-tight">Укажите адрес доставки</p>
+                    </div>
+                    <button id="mobileSubscribeBtn"
+                        class="shrink-0 px-5 py-3 rounded-2xl bg-rose-600 text-white font-semibold shadow cursor-not-allowed opacity-60"
+                        disabled>Оформить</button>
+                </div>
+            </div>
         </div>
     </section>
 

@@ -28,12 +28,13 @@ $(document).ready(function () {
     const comment = $('#textAreaCommentSub');
 
     payBtn.on('click', function () {
-        const frequency = $('.frequencyOutputAside').data('frequency') ?? $('.frequency').val();
         const isVsiblePlan = !$('#readyPlansWrapper').hasClass('hidden');
         let requestData = {};
 
         if (isVsiblePlan) {
             const activePlan = $('.active-plan');
+            // Частота берётся из выпадающего списка именно выбранной карточки
+            const frequency = activePlan.find('.frequency').val() ?? $('.frequency').first().val();
 
             requestData = {
                 sender_name: senderFio.val(),
@@ -46,6 +47,8 @@ $(document).ready(function () {
                 plan_id: activePlan.length ? activePlan.data('plan-id') : ''
             };
         } else {
+            // В конструкторе частота хранится в data-атрибуте блока «Ваш выбор»
+            const frequency = $('#frequencyOutputAside').data('frequency') ?? 'weekly';
             const timeDelivery = $('#timeSelect');
             const address = $('#deliveryAddress');
             const using_promo = $('#checkboxPromo');
@@ -73,7 +76,7 @@ $(document).ready(function () {
                 address: address.val(),
                 frequency: frequency,
                 comment: comment.val(),
-                using_promo: using_promo.is(':checked'),
+                using_promo: using_promo.length ? using_promo.is(':checked') : false,
                 is_custom: true,
                 plan_id: null,
                 price: totalPrice.data('total'),
@@ -87,7 +90,11 @@ $(document).ready(function () {
             method: 'POST',
             data: requestData,
             success: function (response) {
-                response.payment_link ? window.location.href = response.payment_link : alert(message);
+                if (response.payment_link) {
+                    window.location.href = response.payment_link;
+                } else {
+                    alert(response.message || 'Не удалось создать оплату. Попробуйте ещё раз.');
+                }
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 if (jqXHR.responseJSON && jqXHR.responseJSON.errors) {
@@ -99,6 +106,8 @@ $(document).ready(function () {
                     }
 
                     alert(errorMessages);
+                } else if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
+                    alert(jqXHR.responseJSON.message);
                 } else {
                     alert('Ошибка подтверждения подписки: ' + errorThrown);
                 }
