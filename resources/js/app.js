@@ -9,17 +9,28 @@ const readJson = (id) => {
     try { return JSON.parse(el.textContent); } catch (e) { return null; }
 };
 
-/* Аналитика: цели Яндекс.Метрики, если счётчик подключён. Версия героя добавляется к каждому событию. */
+/* Аналитика.
+   1) Своя база: POST /frontend-api/track, по ней админка считает воронку A/B-теста.
+   2) Яндекс.Метрика: цели reachGoal и электронная коммерция через dataLayer (impressions, detail, add, purchase). */
+const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content || '';
 const track = (name, params = {}) => {
     const variant = document.querySelector('main[data-hero-variant]')?.dataset.heroVariant;
     const payload = { ...params, ...(variant ? { hero: variant } : {}) };
     if (typeof window.ym === 'function' && window.YM_ID) window.ym(window.YM_ID, 'reachGoal', name, payload);
+    if (window.TRACK_URL) {
+        const body = JSON.stringify({ event: name, step: params.step, plan_id: params.plan_id, mode: params.mode, frequency: params.frequency, source: params.source });
+        try {
+            fetch(window.TRACK_URL, { method: 'POST', keepalive: true, credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf() }, body }).catch(() => {});
+        } catch (e) { /* аналитика не должна ломать страницу */ }
+    }
     if (window.DEBUG_TRACK) console.info('[track]', name, payload);
 };
-document.addEventListener('click', (e) => {
-    const el = e.target.closest('[data-track]');
-    if (el) track(el.dataset.track, { source: el.dataset.source || '' });
-});
+const ecommerce = (action, payload) => {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ ecommerce: { currencyCode: 'RUB', [action]: payload } });
+    if (window.DEBUG_TRACK) console.info('[ecommerce]', action, payload);
+};
+const product = (p, extra = {}) => ({ id: String(p.id), name: p.name, category: 'Подписка на цветы', price: Number(p.price), ...extra });
 
 /* Сегментный переключатель с едущей таблеткой */
 function segment(el, onChange) {
@@ -75,7 +86,7 @@ function initHome() {
             if (state.mode) url.searchParams.set('for', state.mode); else url.searchParams.delete('for');
             link.href = url.pathname + url.search;
             link.classList.toggle('secondary', !sel);
-            link.dataset.track = 'plan_cta_click'; link.dataset.source = 'plan:' + plan.id;
+            link.removeAttribute('data-track');
         });
         const list = document.getElementById('planList');
         if (opts.scroll && list && list.scrollWidth > list.clientWidth) {
@@ -122,6 +133,15 @@ function initHome() {
         if (opts.fromUser) track('hero_mode_select', { mode, position: opts.position || 'hero' });
         renderPlans({ scroll: !!opts.fromUser });
     };
+
+    // электронная коммерция: показ планов и выбор плана
+    ecommerce('impressions', data.plans.map((p, i) => product(p, { list: 'Главная / планы', position: i + 1 })));
+    planCards.forEach((card) => card.querySelector('[data-cta]')?.addEventListener('click', () => {
+        const plan = data.plans.find((p) => String(p.id) === card.dataset.id);
+        if (!plan) return;
+        ecommerce('detail', { products: [product(plan, { variant: pricing[state.freq].label })] });
+        track('plan_cta_click', { plan_id: plan.id, frequency: state.freq, mode: state.mode || undefined, source: 'plan' });
+    }));
 
     heroSeg = segment(document.getElementById('heroSeg'), (v) => applyMode(v, { fromUser: true, position: 'hero' }));
     modeSeg = segment(document.getElementById('modeSeg'), (v) => applyMode(v, { fromUser: true, position: 'plans' }));
@@ -182,7 +202,14 @@ function initWizard() {
     }));
     document.querySelectorAll('#tags button').forEach((t) => t.addEventListener('click', () => t.setAttribute('aria-pressed', String(t.getAttribute('aria-pressed') !== 'true'))));
 
+    const cartProduct = () => {
+        const f = pricing[st.freq];
+        return data.planId
+            ? { id: String(data.planId), name: document.querySelector('.planNote b')?.textContent || 'План', category: 'Подписка на цветы', price: st.budget, quantity: f.firstPaid, variant: f.label }
+            : { id: 'custom', name: 'Своя подписка', category: 'Подписка на цветы', price: st.budget, quantity: f.firstPaid, variant: f.label };
+    };
     const go = (step) => {
+        if (step === 2 && st.step === 1) ecommerce('add', { products: [cartProduct()] });
         st.step = step; $('step1').hidden = step !== 1; $('step2').hidden = step !== 2;
         if (step === 2) document.querySelectorAll('#styles img[data-src]').forEach((i) => { i.src = i.dataset.src; i.removeAttribute('data-src'); });
         [...$('progress').children].forEach((i, k) => i.classList.toggle('on', k < step)); $('progress').setAttribute('aria-valuenow', step);
@@ -190,15 +217,15 @@ function initWizard() {
         const sec = step === 1 ? $('step1') : $('step2');
         if (!reduced) { sec.style.animation = 'none'; void sec.offsetWidth; sec.style.animation = 'rise .25s var(--ease-enter) both'; }
         window.scrollTo({ top: 0, behavior: 'auto' }); sec.querySelector('h1').focus({ preventScroll: true });
-        track('wizard_step', { step }); render(false);
+        track('wizard_step', { step, plan_id: data.planId || undefined, frequency: st.freq, mode: data.for || undefined }); render(false);
     };
     $('next1').addEventListener('click', () => go(2));
     $('back2').addEventListener('click', (e) => { e.preventDefault(); go(1); });
     $('backLink').addEventListener('click', (e) => { if (st.step > 1) { e.preventDefault(); go(st.step - 1); } });
-    $('next2').addEventListener('click', () => { track('wizard_step', { step: 3 }); window.alert('Шаг 3 «Доставка» появится на следующем этапе разработки.'); });
+    $('next2').addEventListener('click', () => { track('wizard_step', { step: 3, plan_id: data.planId || undefined, frequency: st.freq, mode: data.for || undefined }); window.alert('Шаг 3 «Доставка» появится на следующем этапе разработки.'); });
     $('barNext').addEventListener('click', () => (st.step === 1 ? go(2) : $('next2').click()));
 
-    track('wizard_start', { source: data.planId ? 'plan' : 'link', for: data.for || '' });
+    track('wizard_start', { source: data.planId ? 'plan' : 'link', plan_id: data.planId || undefined, frequency: st.freq, mode: data.for || undefined });
     render(false);
 }
 

@@ -3,6 +3,7 @@
 namespace App\Http\Api;
 
 use App\Http\Controllers\AuthController;
+use App\Models\AbEvent;
 use App\Models\Payment;
 use App\Models\Subscription;
 use Exception;
@@ -133,6 +134,14 @@ class Yookassa {
                         $subscription->save();
 
                         Log::channel('shop')->info('Оплачена подписка.', [$responseObj]);
+
+                        // Для A/B-теста главной: оплата как последний шаг воронки
+                        if (!empty($subscription->ab_variant) && !empty($subscription->ab_visitor)) {
+                            AbEvent::log($subscription->ab_variant, 'payment_success', $subscription->ab_visitor, [
+                                'plan_id' => $subscription->plan_id,
+                                'frequency' => $subscription->frequency,
+                            ]);
+                        }
                     }
 
                     $authController = new AuthController();
