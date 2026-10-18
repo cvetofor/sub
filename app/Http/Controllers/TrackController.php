@@ -20,7 +20,7 @@ class TrackController extends Controller {
         ]);
 
         [$variant, $visitor] = AssignHeroVariant::current($request);
-        if (!$variant || !$visitor) {
+        if (!$variant || !$visitor || AssignHeroVariant::looksLikeBot($request)) {
             return response()->noContent(204);
         }
 

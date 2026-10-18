@@ -60,7 +60,7 @@ class AssignHeroVariant {
         ];
     }
 
-    private static function looksLikeBot(Request $request): bool {
+    public static function looksLikeBot(Request $request): bool {
         $ua = strtolower((string) $request->userAgent());
 
         return $ua === '' || Str::contains($ua, ['bot', 'crawl', 'spider', 'slurp', 'yandex.com/bots', 'lighthouse', 'headless']);
