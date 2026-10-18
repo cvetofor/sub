@@ -21,6 +21,7 @@ class User extends Authenticatable {
         'name',
         'email',
         'phone',
+        'phone_e164',
         'password',
         'role_id',
         'is_active'

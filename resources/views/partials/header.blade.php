@@ -11,7 +11,7 @@
         </nav>
         <div class="right">
             <a class="plansLink" href="{{ route('home') }}#plans">Планы</a>
-            <a class="login" href="{{ route('profile') }}">{{ auth()->check() ? 'Мои подписки' : 'Войти' }}</a>
+            <a class="login" href="{{ auth()->check() ? route('profile') : route('auth.login') }}">{{ auth()->check() ? 'Мои подписки' : 'Войти' }}</a>
         </div>
     </div>
 </header>

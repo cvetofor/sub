@@ -9,66 +9,106 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller {
+    /**
+     * Ссылка на оплату первого месяца. Возвращает URL или строку с ошибкой.
+     * Без ключей ЮKassa вне production создаётся тестовый платёж с имитацией оплаты.
+     */
     public static function create($subscription) {
         $payment = $subscription->payments()
             ->orderBy('created_at', 'desc')
             ->first();
 
-        if ($payment && $payment->payment_status_id === Payment::IN_PROGRESS) {
+        if ($payment && (int) $payment->payment_status_id === Payment::IN_PROGRESS) {
+            if (str_starts_with($payment->payment_gateway_transaction, 'test-')) {
+                return route('payment.test', ['subscription' => $subscription->id]);
+            }
+
             return 'https://yoomoney.ru/checkout/payments/v2/contract?orderId=' . $payment->payment_gateway_transaction;
         }
 
-        if ($payment && $payment->payment_status_id === Payment::PAYED) {
-            return 'Уже есть оплаченная транзакция. По ней будут рекурентные списания.';
+        if ($payment && (int) $payment->payment_status_id === Payment::PAYED) {
+            return 'Уже есть оплаченная транзакция. По ней будут рекуррентные списания.';
         }
 
-        if (!$payment) {
-            $yookassa = new Yookassa();
-            $paymentYookassa = $yookassa->createPayment($subscription->id);
+        if (!Yookassa::isConfigured()) {
+            if (app()->isProduction()) {
+                Log::channel('shop')->error('Нет ключей ЮKassa, оплата невозможна.', ['subscription_id' => $subscription->id]);
 
-            if (!$paymentYookassa) {
-                Log::channel('shop')->error('Ошибка при создании платежа через Yookassa', [
-                    'subscription_id' => $subscription->id,
-                ]);
-
-                return 'Ошибка создания операции в платежном сервисе.';
+                return 'Оплата временно недоступна.';
             }
 
             $paymentModel = Payment::create([
                 'payment_status_id' => Payment::IN_PROGRESS,
-                'amount' => $paymentYookassa->amount->value,
-                'payment_gateway_transaction' =>  $paymentYookassa->id
+                'amount' => $subscription->firstPaymentAmount(),
+                'payment_gateway_transaction' => 'test-' . bin2hex(random_bytes(6)),
             ]);
-
             $subscription->payments()->attach($paymentModel->id);
 
-            Log::channel('shop')->info('Создана новая оплата через Yookassa.', [
+            return route('payment.test', ['subscription' => $subscription->id]);
+        }
+
+        $yookassa = new Yookassa();
+        $paymentYookassa = $yookassa->createPayment($subscription->id);
+
+        if (!$paymentYookassa) {
+            Log::channel('shop')->error('Ошибка при создании платежа через Yookassa', [
                 'subscription_id' => $subscription->id,
-                'amount' => $paymentYookassa->amount->value,
-                'payment_gateway_transaction' =>  $paymentYookassa->id
             ]);
 
-            return $paymentYookassa->getConfirmation()->getConfirmationUrl();
+            return 'Ошибка создания операции в платежном сервисе.';
         }
+
+        $paymentModel = Payment::create([
+            'payment_status_id' => Payment::IN_PROGRESS,
+            'amount' => $paymentYookassa->amount->value,
+            'payment_gateway_transaction' => $paymentYookassa->id,
+        ]);
+
+        $subscription->payments()->attach($paymentModel->id);
+
+        Log::channel('shop')->info('Создана новая оплата через Yookassa.', [
+            'subscription_id' => $subscription->id,
+            'amount' => $paymentYookassa->amount->value,
+            'payment_gateway_transaction' => $paymentYookassa->id,
+        ]);
+
+        return $paymentYookassa->getConfirmation()->getConfirmationUrl();
     }
 
+    /** Возврат с оплаты. Статус подтверждает вебхук, поэтому страница может прийти раньше него и перепроверяет себя. */
     public function redirect(Request $request) {
-        if ($request->has('subscription_id')) {
-            $subscriptionId = $request->subscription_id;
-            $subscription = Subscription::find($subscriptionId);
-
-            sleep(1);
-            $payment = $subscription->payments()
-                ->orderBy('created_at', 'desc')
-                ->first();
-
-            if ($payment && $payment->payment_status_id === Payment::PAYED) {
-                return view('payment.success', compact('subscription'));
-            }
-
-            return view('payment.fail');
+        $subscription = Subscription::with('plan')->find($request->integer('subscription_id'));
+        if (!$subscription) {
+            return redirect()->route('home');
         }
 
-        return url('/');
+        $payment = $subscription->payments()->orderBy('created_at', 'desc')->first();
+        $paid = $payment && (int) $payment->payment_status_id === Payment::PAYED;
+        $attempt = $request->integer('attempt');
+
+        if (!$paid && $attempt < 5) {
+            return view('payment.pending', ['subscription' => $subscription, 'attempt' => $attempt + 1]);
+        }
+
+        return $paid
+            ? view('payment.success', ['subscription' => $subscription, 'payment' => $payment])
+            : view('payment.fail', ['subscription' => $subscription]);
+    }
+
+    /** Имитация оплаты для тестового стенда: только когда ключей ЮKassa нет и это не production. */
+    public function test(Request $request, Subscription $subscription) {
+        abort_if(app()->isProduction() || Yookassa::isConfigured(), 404);
+
+        $payment = $subscription->payments()->orderBy('created_at', 'desc')->first();
+        abort_unless($payment && str_starts_with($payment->payment_gateway_transaction, 'test-'), 404);
+
+        if ($request->isMethod('POST')) {
+            $payment->update(['payment_status_id' => Payment::PAYED, 'recurrent_token' => 'test-token']);
+            Yookassa::activate($subscription);
+
+            return redirect()->route('payment.yookassa.redirect', ['subscription_id' => $subscription->id]);
+        }
+
+        return view('payment.test', ['subscription' => $subscription, 'payment' => $payment]);
     }
 }

@@ -178,7 +178,7 @@ function initWizard() {
     const tier = (b) => b < 2000 ? 0 : b < 4000 ? 1 : b < 8000 ? 2 : 3;
     const flip = (el) => { if (!el || reduced) return; el.classList.remove('price-anim'); void el.offsetWidth; el.classList.add('price-anim'); };
 
-    const render = (anim) => {
+    let render = (anim) => {
         const b = st.budget, f = pricing[st.freq], pct = ((b - 1000) / 14000) * 100;
         $('budget').style.setProperty('--fill', pct.toFixed(1) + '%');
         $('budget').setAttribute('aria-valuetext', fmt(b) + ' рублей');
@@ -205,31 +205,221 @@ function initWizard() {
     const cartProduct = () => {
         const f = pricing[st.freq];
         return data.planId
-            ? { id: String(data.planId), name: document.querySelector('.planNote b')?.textContent || 'План', category: 'Подписка на цветы', price: st.budget, quantity: f.firstPaid, variant: f.label }
+            ? { id: String(data.planId), name: data.planName || 'План', category: 'Подписка на цветы', price: st.budget, quantity: f.firstPaid, variant: f.label }
             : { id: 'custom', name: 'Своя подписка', category: 'Подписка на цветы', price: st.budget, quantity: f.firstPaid, variant: f.label };
     };
+
+    /* Шаг 3: доставка */
+    const dayEvery = ['', 'каждый понедельник', 'каждый вторник', 'каждую среду', 'каждый четверг', 'каждую пятницу', 'каждую субботу', 'каждое воскресенье'];
+    const dayShort = ['', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
+    st.day = 6; st.windowId = null; st.additions = [];
+    const radios = (el, attr, onChange) => {
+        if (!el) return;
+        const btns = [...el.querySelectorAll('[role="radio"]')];
+        btns.forEach((b) => b.addEventListener('click', () => { btns.forEach((x) => x.setAttribute('aria-checked', String(x === b))); onChange(b.dataset[attr]); }));
+        const on = btns.find((b) => b.getAttribute('aria-checked') === 'true'); if (on) onChange(on.dataset[attr]);
+    };
+    radios($('days'), 'day', (v) => { st.day = Number(v); $('dayNote').textContent = 'Привозим ' + dayEvery[st.day] + ', в выбранное окно.'; render(false); });
+    radios($('windows'), 'id', (v) => { st.windowId = Number(v); render(false); });
+    document.querySelectorAll('#additions input').forEach((c) => c.addEventListener('change', () => {
+        st.additions = [...document.querySelectorAll('#additions input:checked')].map((x) => ({ id: Number(x.value), price: Number(x.dataset.price), every: x.dataset.every === '1', name: x.closest('.opt').querySelector('b').textContent }));
+        render(true);
+    }));
+    const extras = () => {
+        const f = pricing[st.freq];
+        const every = st.additions.filter((a) => a.every).reduce((n, a) => n + a.price, 0);
+        const once = st.additions.filter((a) => !a.every).reduce((n, a) => n + a.price, 0);
+        return { first: every * f.firstPaid + once, monthly: every * f.perMonth };
+    };
+    const windowLabel = () => document.querySelector('#windows [aria-checked="true"]')?.textContent || '';
+    const setErr = (id, msg) => { const e = $(id); if (!e) return; e.hidden = !msg; e.textContent = msg || ''; const inp = e.previousElementSibling; if (inp && inp.tagName === 'INPUT') inp.setAttribute('aria-invalid', msg ? 'true' : 'false'); };
+    const phoneOk = (v) => /^(\+7|7|8)?[\s-]?\(?9\d{2}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}$/.test(v.trim()) || /^9\d{9}$/.test(v.replace(/\D/g, ''));
+    const validStep3 = () => {
+        let ok = true;
+        if ($('address').value.trim().length < 5) { setErr('errAddress', 'Укажите адрес: улица, дом, квартира.'); ok = false; } else setErr('errAddress', '');
+        const rp = $('receivingPhone');
+        if (rp && !$('giftFields').hidden && rp.value.trim() && !phoneOk(rp.value)) { setErr('errReceivingPhone', 'Телефон в формате +7 912 345-67-89.'); ok = false; } else setErr('errReceivingPhone', '');
+        if (!ok) { const bad = document.querySelector('#step3 [aria-invalid="true"]'); bad?.focus(); }
+        return ok;
+    };
+
+    /* Переопределяем render: добавляем доставку и дополнения в сводку */
+    const baseRender = render;
+    const render2 = (anim) => {
+        baseRender(anim);
+        const f = pricing[st.freq], ex = extras();
+        const first = st.budget * f.firstPaid + ex.first, monthly = st.budget * f.perMonth + ex.monthly;
+        $('sFirst').textContent = fmt(first) + ' ₽'; $('sMonthly').textContent = fmt(monthly) + ' ₽ / мес';
+        $('bFirst').textContent = fmt(first) + ' ₽'; $('bSub').textContent = barSub[st.freq] + ' · дальше ' + fmt(monthly) + ' ₽/мес';
+        const delivery = st.step >= 3 && $('address').value.trim() ? dayShort[st.day] + (windowLabel() ? ', ' + windowLabel() : '') : '';
+        $('sDeliveryRow').hidden = !delivery; $('sDelivery').textContent = delivery;
+        $('sExtrasRow').hidden = !st.additions.length; $('sExtras').textContent = st.additions.map((a) => a.name).join(', ');
+        const ms = $('mobileSummary');
+        if (ms) {
+            const put = (k, v) => { const el = ms.querySelector('[data-sum="' + k + '"]'); if (el) el.textContent = v; };
+            put('budget', fmt(st.budget) + ' ₽'); put('freq', f.label); put('delivery', delivery || '—'); put('extras', st.additions.map((a) => a.name).join(', '));
+            ms.querySelector('[data-sum-row="extras"]').hidden = !st.additions.length;
+            put('first', fmt(first) + ' ₽'); put('promo', f.promo.replace('Первый месяц: ', '')); put('monthly', fmt(monthly) + ' ₽ / мес');
+        }
+        if ($('payBtn')) $('payBtn').textContent = 'Перейти к оплате · ' + fmt(first) + ' ₽';
+        if (st.step === 4) $('barNext').textContent = 'Оплатить';
+        else if (st.step === 3) $('barNext').textContent = 'Дальше';
+        else $('barNext').textContent = 'Дальше';
+    };
+    render = render2; // eslint-disable-line no-func-assign
+
     const go = (step) => {
         if (step === 2 && st.step === 1) ecommerce('add', { products: [cartProduct()] });
-        st.step = step; $('step1').hidden = step !== 1; $('step2').hidden = step !== 2;
+        st.step = step;
+        [1, 2, 3, 4].forEach((n) => { const sec = $('step' + n); if (sec) sec.hidden = step !== n; });
         if (step === 2) document.querySelectorAll('#styles img[data-src]').forEach((i) => { i.src = i.dataset.src; i.removeAttribute('data-src'); });
         [...$('progress').children].forEach((i, k) => i.classList.toggle('on', k < step)); $('progress').setAttribute('aria-valuenow', step);
         $('stepLabel').textContent = 'Шаг ' + step + ' из 4';
-        const sec = step === 1 ? $('step1') : $('step2');
+        const sec = $('step' + step);
         if (!reduced) { sec.style.animation = 'none'; void sec.offsetWidth; sec.style.animation = 'rise .25s var(--ease-enter) both'; }
         window.scrollTo({ top: 0, behavior: 'auto' }); sec.querySelector('h1').focus({ preventScroll: true });
         track('wizard_step', { step, plan_id: data.planId || undefined, frequency: st.freq, mode: data.for || undefined }); render(false);
     };
     $('next1').addEventListener('click', () => go(2));
     $('back2').addEventListener('click', (e) => { e.preventDefault(); go(1); });
+    $('next2').addEventListener('click', () => go(3));
+    $('back3').addEventListener('click', (e) => { e.preventDefault(); go(2); });
+    $('next3').addEventListener('click', () => { if (validStep3()) go(4); });
+    $('back4').addEventListener('click', (e) => { e.preventDefault(); go(3); });
     $('backLink').addEventListener('click', (e) => { if (st.step > 1) { e.preventDefault(); go(st.step - 1); } });
-    $('next2').addEventListener('click', () => { track('wizard_step', { step: 3, plan_id: data.planId || undefined, frequency: st.freq, mode: data.for || undefined }); window.alert('Шаг 3 «Доставка» появится на следующем этапе разработки.'); });
-    $('barNext').addEventListener('click', () => (st.step === 1 ? go(2) : $('next2').click()));
+    $('address').addEventListener('input', () => render(false));
+
+    /* Шаг 4: вход по коду и оплата */
+    const auth = initCodeAuth({
+        urls: data.urls,
+        nameInput: $('senderName'),
+        onDone: (user) => {
+            $('authForm').hidden = true; $('authDone').hidden = false;
+            $('whoName').textContent = user.name; $('whoPhone').textContent = user.phone;
+            $('authBox').dataset.logged = '1';
+        }
+    });
+    const payError = (msg) => { $('payError').hidden = !msg; $('payError').textContent = msg || ''; };
+    let paying = false;
+    const pay = async () => {
+        if (paying) return;
+        payError('');
+        if ($('authBox').dataset.logged !== '1') {
+            if (!auth.hasCode()) { await auth.sendCode(); return; }
+            const ok = await auth.verify(); if (!ok) return;
+        }
+        const name = ($('whoName').textContent || $('senderName').value).trim();
+        if (name.length < 2) { payError('Укажите имя.'); return; }
+        paying = true; $('payBtn').setAttribute('aria-busy', 'true'); $('barNext').setAttribute('aria-busy', 'true');
+        const body = {
+            plan_id: data.planId || null, budget: data.planId ? null : st.budget, frequency: st.freq, for: data.for || null,
+            styles: st.styles, tags: [...document.querySelectorAll('#tags button[aria-pressed="true"]')].map((t) => t.textContent),
+            address: $('address').value.trim(), delivery_day: st.day, time_delivery_id: st.windowId,
+            option_ids: st.additions.map((a) => a.id), sender_name: name,
+            receiving_name: $('receivingName') && !$('giftFields').hidden ? $('receivingName').value.trim() || null : null,
+            receiving_phone: $('receivingPhone') && !$('giftFields').hidden ? $('receivingPhone').value.trim() || null : null,
+            card_text: $('cardText') && !$('giftFields').hidden ? $('cardText').value.trim() || null : null,
+            comment: $('comment').value.trim() || null
+        };
+        try {
+            const r = await postJson(data.urls.store, body);
+            if (!r.ok) { payError(r.message || firstError(r) || 'Не удалось оформить. Проверьте поля.'); return; }
+            track('payment_redirect', { plan_id: data.planId || undefined, frequency: st.freq, mode: data.for || undefined });
+            window.location.assign(r.payment_url);
+        } catch (e) {
+            payError('Нет связи с сервером. Попробуйте ещё раз.');
+        } finally {
+            paying = false; $('payBtn').removeAttribute('aria-busy'); $('barNext').removeAttribute('aria-busy');
+        }
+    };
+    $('payBtn').addEventListener('click', pay);
+    $('barNext').addEventListener('click', () => { if (st.step === 1) go(2); else if (st.step === 2) go(3); else if (st.step === 3) $('next3').click(); else pay(); });
 
     track('wizard_start', { source: data.planId ? 'plan' : 'link', plan_id: data.planId || undefined, frequency: st.freq, mode: data.for || undefined });
     render(false);
 }
 
+/* Запрос JSON с CSRF. Возвращает тело ответа и признак ok (HTTP 2xx и ok в теле). */
+async function postJson(url, body) {
+    const res = await fetch(url, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf() }, body: JSON.stringify(body) });
+    let json = {};
+    try { json = await res.json(); } catch (e) { json = {}; }
+    return { ...json, ok: res.ok && json.ok !== false, status: res.status };
+}
+const firstError = (r) => (r && r.errors && Object.values(r.errors)[0] && Object.values(r.errors)[0][0]) || '';
+
+/* Вход по коду из СМС: общий для шага 4 мастера и страницы входа.
+   Ожидает элементы senderPhone, sendCodeBtn, codeRow, smsCode, verifyBtn, resendBtn, errPhone, errCode, debugCode. */
+function initCodeAuth({ urls, nameInput, onDone }) {
+    const $ = (id) => document.getElementById(id);
+    const phoneEl = $('senderPhone'), sendBtn = $('sendCodeBtn'), codeRow = $('codeRow'), codeEl = $('smsCode'), verifyBtn = $('verifyBtn'), resendBtn = $('resendBtn');
+    if (!phoneEl || !sendBtn) return { hasCode: () => false, sendCode: async () => false, verify: async () => false };
+    const setErr = (id, msg) => { const e = $(id); if (!e) return; e.hidden = !msg; e.textContent = msg || ''; };
+    let sentTo = null, timer = null;
+    const countdown = (sec) => {
+        clearInterval(timer); let left = sec; resendBtn.disabled = true;
+        const tick = () => { resendBtn.textContent = left > 0 ? 'Отправить ещё раз через ' + left + ' с' : 'Отправить ещё раз'; if (left <= 0) { clearInterval(timer); resendBtn.disabled = false; } left--; };
+        tick(); timer = setInterval(tick, 1000);
+    };
+    const sendCode = async () => {
+        setErr('errPhone', ''); setErr('errCode', '');
+        if (nameInput && nameInput.value.trim().length < 2) { setErr('errName', 'Как к вам обращаться?'); nameInput.focus(); return false; }
+        if (nameInput) setErr('errName', '');
+        if (phoneEl.value.replace(/\D/g, '').length < 10) { setErr('errPhone', 'Введите номер мобильного телефона.'); phoneEl.focus(); return false; }
+        sendBtn.setAttribute('aria-busy', 'true');
+        try {
+            const r = await postJson(urls.code, { phone: phoneEl.value });
+            if (!r.ok) { setErr('errPhone', r.message || firstError(r) || 'Не удалось отправить код.'); if (r.status === 429) { codeRow.hidden = false; countdown(r.retry_after || 60); } return false; }
+            sentTo = r.phone; phoneEl.value = r.pretty || phoneEl.value;
+            codeRow.hidden = false; sendBtn.hidden = true; codeEl.value = ''; codeEl.focus(); countdown(r.retry_after || 60);
+            if (r.debug_code && $('debugCode')) { $('debugCode').hidden = false; $('debugCode').textContent = 'Тестовый стенд: код ' + r.debug_code; }
+            return true;
+        } catch (e) { setErr('errPhone', 'Нет связи с сервером.'); return false; } finally { sendBtn.removeAttribute('aria-busy'); }
+    };
+    const verify = async () => {
+        setErr('errCode', '');
+        if (!/^\d{4}$/.test(codeEl.value.trim())) { setErr('errCode', 'Введите 4 цифры из СМС.'); codeEl.focus(); return false; }
+        verifyBtn.setAttribute('aria-busy', 'true');
+        try {
+            const r = await postJson(urls.verify, { phone: sentTo || phoneEl.value, code: codeEl.value.trim(), name: nameInput ? nameInput.value.trim() || null : null });
+            if (!r.ok) { setErr('errCode', r.message || firstError(r) || 'Код не подошёл.'); codeEl.select(); return false; }
+            if (r.csrf) { const m = document.querySelector('meta[name="csrf-token"]'); if (m) m.content = r.csrf; }
+            onDone(r.user);
+            return true;
+        } catch (e) { setErr('errCode', 'Нет связи с сервером.'); return false; } finally { verifyBtn.removeAttribute('aria-busy'); }
+    };
+    sendBtn.addEventListener('click', sendCode);
+    resendBtn.addEventListener('click', sendCode);
+    verifyBtn.addEventListener('click', verify);
+    codeEl.addEventListener('input', () => { codeEl.value = codeEl.value.replace(/\D/g, '').slice(0, 4); if (codeEl.value.length === 4) verify(); });
+    codeEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); verify(); } });
+    phoneEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); sendCode(); } });
+    return { hasCode: () => sentTo !== null, sendCode, verify };
+}
+
+/* Страница входа */
+function initLogin() {
+    const data = readJson('login-data');
+    if (!data) return;
+    initCodeAuth({ urls: data.urls, nameInput: null, onDone: () => window.location.assign(data.redirect) });
+}
+
+/* Страница успешной оплаты: покупка в электронную коммерцию и цель */
+function initPurchase() {
+    const p = readJson('purchase-data');
+    if (!p) return;
+    const key = 'cvf.purchase.' + p.id;
+    try { if (localStorage.getItem(key)) return; localStorage.setItem(key, '1'); } catch (e) { /* приватный режим */ }
+    ecommerce('purchase', { actionField: { id: p.id, revenue: p.revenue }, products: p.products });
+    if (typeof window.ym === 'function' && window.YM_ID) {
+        const variant = document.querySelector('main[data-hero-variant]')?.dataset.heroVariant;
+        window.ym(window.YM_ID, 'reachGoal', 'payment_success', { plan_id: p.plan_id, frequency: p.frequency, revenue: p.revenue, ...(variant ? { hero: variant } : {}) });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('site-data')) initHome();
     if (document.getElementById('wizard')) initWizard();
+    if (document.getElementById('loginPage')) initLogin();
+    if (document.getElementById('paymentResult')) initPurchase();
 });

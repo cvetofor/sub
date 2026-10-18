@@ -78,6 +78,138 @@
                     <button class="btn" type="button" id="next2">Дальше: доставка</button>
                 </div>
             </section>
+
+            <section id="step3" hidden>
+                <h1 class="serif" tabindex="-1">Куда и когда привозить?</h1>
+                <p class="lead">Адрес и день можно поменять в любой момент в кабинете.</p>
+                <div class="form" style="margin-top:20px">
+                    <div class="field">
+                        <label for="address">Адрес доставки</label>
+                        <input id="address" name="address" type="text" autocomplete="street-address" placeholder="Город, улица, дом, квартира" maxlength="255" required>
+                        <span class="err" id="errAddress" hidden></span>
+                    </div>
+                    <fieldset>
+                        <legend>День недели</legend>
+                        <div class="days" role="radiogroup" aria-label="День доставки" id="days">
+                            @foreach (['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] as $i => $d)
+                                <button type="button" role="radio" data-day="{{ $i + 1 }}" aria-checked="{{ $i === 5 ? 'true' : 'false' }}">{{ $d }}</button>
+                            @endforeach
+                        </div>
+                        <div class="toast" id="dayNote" aria-live="polite" style="margin-top:10px"></div>
+                    </fieldset>
+                    @if ($windows->isNotEmpty())
+                        <fieldset>
+                            <legend>Время</legend>
+                            <div class="tags" role="radiogroup" aria-label="Окно доставки" id="windows">
+                                @foreach ($windows as $k => $w)
+                                    <button type="button" role="radio" data-id="{{ $w['id'] }}" aria-checked="{{ $k === 0 ? 'true' : 'false' }}">{{ $w['label'] }}</button>
+                                @endforeach
+                            </div>
+                        </fieldset>
+                    @endif
+                    <div id="giftFields" @if ($for !== 'gift') hidden @endif>
+                        <fieldset>
+                            <legend>Кому дарим</legend>
+                            <div class="grid2">
+                                <div class="field">
+                                    <label for="receivingName">Имя получателя</label>
+                                    <input id="receivingName" type="text" autocomplete="off" maxlength="120" placeholder="Мария">
+                                </div>
+                                <div class="field">
+                                    <label for="receivingPhone">Телефон получателя</label>
+                                    <input id="receivingPhone" type="tel" inputmode="tel" autocomplete="off" placeholder="+7 912 345-67-89" maxlength="32">
+                                    <span class="err" id="errReceivingPhone" hidden></span>
+                                </div>
+                            </div>
+                            <div class="field" style="margin-top:12px">
+                                <label for="cardText">Текст открытки <span class="toast">(необязательно)</span></label>
+                                <textarea id="cardText" rows="2" maxlength="300" placeholder="Напишем от руки и вложим в букет"></textarea>
+                            </div>
+                        </fieldset>
+                    </div>
+                    @if ($additions->isNotEmpty())
+                        <fieldset>
+                            <legend>Добавить к букету</legend>
+                            <div class="opts" id="additions">
+                                @foreach ($additions as $a)
+                                    <label class="opt">
+                                        <input type="checkbox" value="{{ $a['id'] }}" data-price="{{ $a['price'] }}" data-every="{{ $a['every'] ? 1 : 0 }}">
+                                        <span class="t"><b>{{ $a['name'] }}</b><small>{{ $a['every'] ? 'к каждой доставке' : 'разово, в первый месяц' }}</small></span>
+                                        <span class="p">+{{ number_format($a['price'], 0, '', ' ') }} ₽</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </fieldset>
+                    @endif
+                    <div class="field">
+                        <label for="comment">Комментарий курьеру <span class="toast">(необязательно)</span></label>
+                        <textarea id="comment" rows="2" maxlength="500" placeholder="Код домофона, этаж, когда лучше звонить"></textarea>
+                    </div>
+                </div>
+                <div class="actions">
+                    <a class="back" href="#" id="back3">Назад</a>
+                    <button class="btn" type="button" id="next3">Дальше: оплата</button>
+                </div>
+            </section>
+
+            <section id="step4" hidden>
+                <h1 class="serif" tabindex="-1">Почти готово</h1>
+                <p class="lead">Подтвердим номер телефона: по нему вы будете входить в кабинет и управлять подпиской.</p>
+
+                <div class="panel auth" id="authBox" style="margin-top:20px" data-logged="{{ $user ? '1' : '0' }}">
+                    <div id="authForm" @if ($user) hidden @endif>
+                        <div class="grid2">
+                            <div class="field">
+                                <label for="senderName">Ваше имя</label>
+                                <input id="senderName" type="text" autocomplete="name" maxlength="120" placeholder="Анна" required>
+                                <span class="err" id="errName" hidden></span>
+                            </div>
+                            <div class="field">
+                                <label for="senderPhone">Телефон</label>
+                                <input id="senderPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 912 345-67-89" maxlength="32" required>
+                                <span class="err" id="errPhone" hidden></span>
+                            </div>
+                        </div>
+                        <div class="codeRow" id="codeRow" hidden>
+                            <div class="field">
+                                <label for="smsCode">Код из СМС</label>
+                                <input id="smsCode" class="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="4" placeholder="••••">
+                                <span class="err" id="errCode" hidden></span>
+                            </div>
+                            <button type="button" class="btn" id="verifyBtn">Подтвердить</button>
+                            <button type="button" class="linkBtn" id="resendBtn" disabled>Отправить ещё раз</button>
+                        </div>
+                        <button type="button" class="btn ghost" id="sendCodeBtn">Получить код</button>
+                        <p class="toast" id="debugCode" hidden></p>
+                    </div>
+                    <div id="authDone" @if (!$user) hidden @endif>
+                        <div class="who">
+                            <span class="ok" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span>
+                            <div><b id="whoName">{{ $user?->name }}</b><span id="whoPhone">{{ $user ? \App\Support\Phone::pretty($user->phone_e164 ?: $user->phone) : '' }}</span></div>
+                            <a href="{{ route('logout') }}" class="toast">Не вы?</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="summary mobileSummary" id="mobileSummary">
+                    <div class="k">Итого</div>
+                    <div class="row"><span>Букет</span><span data-sum="budget"></span></div>
+                    <div class="row"><span>Частота</span><span data-sum="freq"></span></div>
+                    <div class="row"><span>Доставка</span><span data-sum="delivery"></span></div>
+                    <div class="row" data-sum-row="extras" hidden><span>Дополнения</span><span data-sum="extras"></span></div>
+                    <hr>
+                    <div class="row"><span>Первый месяц</span><span class="total" data-sum="first"></span></div>
+                    <div class="promo" data-sum="promo"></div>
+                    <div class="row"><span>Со второго месяца</span><span data-sum="monthly"></span></div>
+                </div>
+
+                <div class="alert" id="payError" role="alert" hidden></div>
+                <p class="toast" style="margin-top:16px">Нажимая «Перейти к оплате», вы принимаете <a href="{{ route('user_agreement') }}" target="_blank" rel="noopener">условия подписки</a>. Оплата картой через ЮKassa, списание раз в месяц. Пауза и отмена в кабинете.</p>
+                <div class="actions">
+                    <a class="back" href="#" id="back4">Назад</a>
+                    <button class="btn" type="button" id="payBtn">Перейти к оплате</button>
+                </div>
+            </section>
         </div>
 
         <aside style="display:flex;flex-direction:column;gap:20px;min-width:0">
@@ -99,6 +231,8 @@
                 <div class="row"><span>Букет</span><span id="sBudget"></span></div>
                 <div class="row"><span>Частота</span><span id="sFreq"></span></div>
                 <div class="row" id="sStyleRow" hidden><span>Стиль</span><span id="sStyle"></span></div>
+                <div class="row" id="sDeliveryRow" hidden><span>Доставка</span><span id="sDelivery"></span></div>
+                <div class="row" id="sExtrasRow" hidden><span>Дополнения</span><span id="sExtras"></span></div>
                 <hr>
                 <div class="row"><span>Первый месяц</span><span class="total" id="sFirst"></span></div>
                 <div class="promo" id="sPromo"></div>

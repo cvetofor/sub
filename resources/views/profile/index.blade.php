@@ -1,87 +1,81 @@
-@extends('layouts.app')
+@extends('layouts.site')
 
-@section('title', 'Личный кабинет')
+@section('title', 'Мои подписки — Цветофор')
 
-@section('content')
-    <section class="min-h-screen flex items-center justify-center py-12 px-4 bg-red-200">
-        <div class="w-full max-w-7xl bg-white rounded-3xl shadow-xl p-6 sm:p-8 md:p-10">
-            <h1 class="text-3xl sm:text-4xl font-extrabold mb-8 text-gray-800 text-center">Мои подписки</h1>
+@section('body')
+    @include('partials.header')
+    <main class="cab">
+        <div class="cab-head">
+            <div>
+                <h1 class="serif">Мои подписки</h1>
+                <p class="lead">{{ $user->name }} · {{ \App\Support\Phone::pretty($user->phone_e164 ?: $user->phone) }}</p>
+            </div>
+            <a class="linkBtn" href="{{ route('logout') }}">Выйти</a>
+        </div>
 
-            @if ($subscriptions && $subscriptions->count())
-                <div class="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
-                    @foreach ($subscriptions as $sub)
-                        <div
-                            class="bg-white rounded-2xl border border-gray-200 shadow-lg hover:shadow-2xl transition-shadow duration-300 p-5 sm:p-6 flex flex-col justify-between">
-                            <div class="mb-4 space-y-1 overflow-hidden">
-                                <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-1 truncate">{{ $sub->plan->name }}
-                                </h2>
-                                <p class="text-gray-600 text-sm sm:text-lg">Стоимость: <span
-                                        class="font-semibold">{{ $sub->totalAmount() }}₽</span></p>
-                                <p class="text-gray-600 text-sm sm:text-lg">
-                                    Опции:
-                                    <span class="font-semibold">
-                                        @foreach ($sub->plan->options as $option)
-                                            {{ $option->name }}@if (!$loop->last)
-                                                ,
-                                            @endif
-                                        @endforeach
-                                    </span>
-                                </p>
-                                <p class="text-gray-600 text-sm sm:text-lg">
-                                    Частота доставки:
-                                    @php $freq = \App\Enums\Frequency::getFrequencyElem($sub->frequency); @endphp
-                                    <span class="font-semibold">{{ $freq['translate'] }} (≈
-                                        {{ $freq['count'] }} доставки/мес.)</span>
-                                </p>
-                                <p class="text-gray-600 text-sm sm:text-lg">Адрес: <span
-                                        class="font-semibold">{{ $sub->address }}</span></p>
-                                <p class="text-gray-600 text-sm sm:text-lg">Получатель: <span
-                                        class="font-semibold">{{ $sub->receiving_name }}</span></p>
-                                <p class="text-gray-600 text-sm sm:text-lg">Телефон: <span
-                                        class="font-semibold">{{ $sub->receiving_phone }}</span></p>
+        @if (session('success'))
+            <div class="notice ok" role="status">{{ session('success') }}</div>
+        @endif
+        @if (session('error'))
+            <div class="alert" role="alert" style="margin:0">{{ session('error') }}</div>
+        @endif
+
+        @if ($subscriptions->isEmpty())
+            <div class="summary empty">
+                <p>Подписок пока нет. Выберите план, и первый букет приедет уже в ближайшую субботу.</p>
+                <a class="btn" href="{{ route('home') }}#plans">Выбрать план</a>
+            </div>
+        @else
+            <div class="cab-list">
+                @foreach ($subscriptions as $sub)
+                    <article class="summary sub" aria-labelledby="sub-{{ $sub->id }}">
+                        <div class="sub-top">
+                            <div>
+                                <div class="k">Подписка №{{ $sub->id }}</div>
+                                <h2 id="sub-{{ $sub->id }}">{{ $sub->plan->name }}</h2>
                             </div>
-
-                            <div class="mt-4 border-t border-gray-200 pt-4 space-y-1">
-                                <p class="text-gray-700 text-sm sm:text-base font-medium">Активна: <span
-                                        class="font-semibold">{{ $sub->is_active ? 'Да' : 'Нет' }}</span></p>
-                                <p class="text-gray-700 text-sm sm:text-base font-medium">Оформлена: <span
-                                        class="font-semibold">{{ $sub->created_at->format('d.m.Y') }}</span></p>
-                                <p class="text-gray-700 text-sm sm:text-base font-medium">Следующий платеж: <span
-                                        class="font-semibold">{{ \Carbon\Carbon::parse($sub->next_date_payment)->format('d.m.Y') }}</span>
-                                </p>
-                            </div>
-
-                            <div class="mt-6 flex flex-col gap-3">
+                            @if (!$sub->is_paid)
+                                <span class="badge warn">Не оплачена</span>
+                            @elseif ($sub->is_active)
+                                <span class="badge">Активна</span>
+                            @else
+                                <span class="badge muted">На паузе</span>
+                            @endif
+                        </div>
+                        <div class="row"><span>Частота</span><span>{{ \App\Services\Pricing::LABELS[$sub->frequency] ?? $sub->frequency }}</span></div>
+                        @if ($sub->delivery_day)
+                            <div class="row"><span>День</span><span>{{ \App\Support\Days::NOMINATIVE[$sub->delivery_day] ?? '' }}@if ($sub->timeDelivery), {{ substr($sub->timeDelivery->from, 0, 5) }}–{{ substr($sub->timeDelivery->to, 0, 5) }}@endif</span></div>
+                        @endif
+                        <div class="row"><span>Адрес</span><span>{{ $sub->address }}</span></div>
+                        @if ($sub->receiving_name && $sub->receiving_name !== $sub->sender_name)
+                            <div class="row"><span>Получатель</span><span>{{ $sub->receiving_name }}</span></div>
+                        @endif
+                        @if ($sub->plan->options->isNotEmpty())
+                            <div class="row"><span>Дополнения</span><span>{{ $sub->plan->options->pluck('name')->join(', ') }}</span></div>
+                        @endif
+                        <hr>
+                        @if ($sub->is_paid)
+                            <div class="row"><span>Списание раз в месяц</span><span class="total" style="font-size:20px">{{ number_format($sub->monthlyAmount(), 0, '', ' ') }} ₽</span></div>
+                            @if ($sub->is_active && $sub->next_date_payment)
+                                <div class="row"><span>Следующее</span><span>{{ $sub->next_date_payment->translatedFormat('j F Y') }}</span></div>
+                            @endif
+                            <div class="sub-actions">
                                 @if ($sub->is_active)
-                                    <form action="{{ route('subscription.disable', $sub->id) }}" method="POST" class="relative group">
-                                        @csrf 
-                                        <button type="submit"
-                                            class="w-full bg-rose-500 text-white font-semibold py-3 rounded-xl hover:bg-rose-600 transition-colors duration-300 cursor-pointer">
-                                            Остановить подписку
-                                        </button>
- 
-                                        <span
-                                            class="absolute left-1/2 -translate-x-1/2 -top-18 w-64 bg-gray-800 text-white text-sm rounded-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-center z-10">
-                                            Если остановить подписку, то деньги перестанут списываться с вашего привязанного
-                                            счета.
-                                        </span>
-                                    </form>
+                                    <form method="POST" action="{{ route('subscription.disable', $sub) }}">@csrf<button class="btn ghost" type="submit">Поставить на паузу</button></form>
                                 @else
-                                    <form action="{{ route('subscription.active', $sub->id) }}" method="POST">
-                                        @csrf 
-                                        <button type="submit"
-                                            class="w-full bg-green-500 text-white font-semibold py-3 rounded-xl hover:bg-green-600 transition-colors duration-300 cursor-pointer">
-                                            Возобновить подписку
-                                        </button>
-                                    </form>
+                                    <form method="POST" action="{{ route('subscription.active', $sub) }}">@csrf<button class="btn" type="submit">Возобновить</button></form>
                                 @endif
                             </div>
-                        </div>
-                    @endforeach
-                </div>
-            @else
-                <p class="text-center text-gray-500 text-lg mt-8">Подписок нет.</p>
-            @endif
-        </div>
-    </section>
+                            <p class="toast" style="margin:0">Пауза останавливает списания и доставки. Возобновить можно в любой момент.</p>
+                        @else
+                            <div class="row"><span>К оплате за первый месяц</span><span class="total" style="font-size:20px">{{ number_format($sub->firstPaymentAmount(), 0, '', ' ') }} ₽</span></div>
+                            <div class="sub-actions"><a class="btn" href="{{ route('subscription.pay', $sub) }}">Оплатить</a></div>
+                        @endif
+                    </article>
+                @endforeach
+            </div>
+            <p class="toast">Поменять адрес, день или состав: напишите нам, и флорист всё перенастроит. Самостоятельное редактирование скоро появится.</p>
+        @endif
+    </main>
+    @include('partials.footer')
 @endsection
