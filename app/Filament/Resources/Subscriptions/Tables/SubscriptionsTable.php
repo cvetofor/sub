@@ -29,10 +29,20 @@ class SubscriptionsTable {
                     ->formatStateUsing(fn($state) => Plan::find($state)?->name ?? 'План не найден')
                     ->url(fn($record) => '/hub/plans/' . $record->plan_id . '/edit')
                     ->color('primary'),
-                IconColumn::make('using_promo')
-                    ->label('Использован промо')
+                TextColumn::make('frequency')
+                    ->label('Частота')
+                    ->formatStateUsing(fn ($state) => \App\Services\Pricing::LABELS[$state] ?? $state),
+                TextColumn::make('delivery_day')
+                    ->label('День')
+                    ->formatStateUsing(fn ($state) => $state ? \App\Support\Days::NOMINATIVE[$state] ?? '—' : '—'),
+                IconColumn::make('is_active')
+                    ->label('Активна')
                     ->alignCenter()
                     ->boolean(),
+                TextColumn::make('created_at')
+                    ->label('Создана')
+                    ->dateTime('d.m.Y H:i')
+                    ->sortable(),
             ])
             ->filters([
                 Filter::make('is_active')
@@ -56,6 +66,7 @@ class SubscriptionsTable {
                     ->label('Фильтры'),
             )
             ->deferFilters(false)
-            ->persistFiltersInSession();
+            ->persistFiltersInSession()
+            ->defaultSort('created_at', 'desc');
     }
 }

@@ -2,6 +2,8 @@
 
 @section('title', 'Вход — Цветофор')
 
+@section('robots', 'noindex, nofollow')
+
 @section('body')
     @include('partials.header')
     <main class="authPage" id="loginPage">

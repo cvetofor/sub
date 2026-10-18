@@ -53,4 +53,14 @@ class HomeController extends Controller {
             ['src' => asset('images/site/g-author-window.jpg'), 'alt' => 'Крупная композиция у окна', 'plan' => 'С размахом'],
         ];
     }
+
+    /** Карта сайта: только публичные страницы. Мастер, кабинет и оплата закрыты от индексации. */
+    public function sitemap() {
+        $urls = [
+            ['loc' => route('home'), 'changefreq' => 'weekly', 'priority' => '1.0'],
+            ['loc' => route('user_agreement'), 'changefreq' => 'yearly', 'priority' => '0.2'],
+        ];
+
+        return response()->view('sitemap', ['urls' => $urls])->header('Content-Type', 'application/xml');
+    }
 }

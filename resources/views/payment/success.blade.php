@@ -2,6 +2,8 @@
 
 @section('title', 'Подписка оплачена — Цветофор')
 
+@section('robots', 'noindex, nofollow')
+
 @section('body')
     @include('partials.header')
     <main class="result" id="paymentResult" data-hero-variant="{{ $subscription->ab_variant }}">

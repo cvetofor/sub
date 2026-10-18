@@ -13,6 +13,7 @@ use App\Services\Pricing;
 use App\Support\Phone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
 class SubscriptionController extends Controller {
@@ -146,6 +147,44 @@ class SubscriptionController extends Controller {
         }
 
         return response()->json(['ok' => true, 'subscription_id' => $subscription->id, 'payment_url' => $paymentLink, 'amount' => $subscription->firstPaymentAmount()], 201);
+    }
+
+    /** Кабинет: изменить адрес, день, окно, получателя, открытку и комментарий. Только владелец. */
+    public function updateDelivery(Request $request, Subscription $subscription) {
+        abort_unless($subscription->belongsToUser($request->user()), 403);
+
+        // Ошибки в отдельном пакете, чтобы на странице с несколькими подписками подсветилась нужная форма
+        $data = Validator::make($request->all(), [
+            'address' => 'required|string|min:5|max:255',
+            'delivery_day' => 'required|integer|min:1|max:7',
+            'time_delivery_id' => ['nullable', 'integer', Rule::exists('time_deliveries', 'id')],
+            'receiving_name' => 'nullable|string|min:2|max:120',
+            'receiving_phone' => 'nullable|string|max:32',
+            'card_text' => 'nullable|string|max:300',
+            'comment' => 'nullable|string|max:500',
+        ], self::MESSAGES)->validateWithBag('sub' . $subscription->id);
+
+        $receivingPhone = !empty($data['receiving_phone']) ? Phone::normalize($data['receiving_phone']) : null;
+        if (!empty($data['receiving_phone']) && !$receivingPhone) {
+            return back()->withErrors(['receiving_phone' => 'Телефон в формате +7 912 345-67-89.'], 'sub' . $subscription->id)->withInput();
+        }
+
+        $preferences = $subscription->preferences ?? [];
+        $preferences['card_text'] = $data['card_text'] ?? null;
+
+        $subscription->update([
+            'address' => $data['address'],
+            'delivery_day' => $data['delivery_day'],
+            'time_delivery_id' => $data['time_delivery_id'] ?? $subscription->time_delivery_id,
+            'receiving_name' => $data['receiving_name'] ?: $subscription->sender_name,
+            'receiving_phone' => $receivingPhone ?: $subscription->sender_phone,
+            'comment' => $data['comment'] ?? null,
+            'preferences' => $preferences,
+        ]);
+
+        Log::channel('shop')->info('Клиент изменил доставку.', ['subscription_id' => $subscription->id, 'delivery_day' => $data['delivery_day']]);
+
+        return redirect()->route('profile')->with('success', 'Доставка обновлена. Флорист увидит изменения сразу.');
     }
 
     /** Повторная оплата неоплаченной подписки из кабинета: только владелец. */

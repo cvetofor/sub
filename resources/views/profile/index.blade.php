@@ -2,6 +2,8 @@
 
 @section('title', 'Мои подписки — Цветофор')
 
+@section('robots', 'noindex, nofollow')
+
 @section('body')
     @include('partials.header')
     <main class="cab">
@@ -67,6 +69,58 @@
                                 @endif
                             </div>
                             <p class="toast" style="margin:0">Пауза останавливает списания и доставки. Возобновить можно в любой момент.</p>
+
+                        <details class="edit" @if ($errors->hasBag('sub' . $sub->id)) open @endif>
+                            <summary>Изменить адрес, день или получателя</summary>
+                            <form method="POST" action="{{ route('subscription.delivery', $sub) }}" class="form" style="margin-top:16px">
+                                @csrf
+                                <div class="field">
+                                    <label for="address-{{ $sub->id }}">Адрес доставки</label>
+                                    <input id="address-{{ $sub->id }}" name="address" type="text" maxlength="255" required value="{{ old('address', $sub->address) }}">
+                                    @error('address', 'sub' . $sub->id)<span class="err">{{ $message }}</span>@enderror
+                                </div>
+                                <div class="grid2">
+                                    <div class="field">
+                                        <label for="day-{{ $sub->id }}">День недели</label>
+                                        <select id="day-{{ $sub->id }}" name="delivery_day">
+                                            @foreach (\App\Support\Days::NOMINATIVE as $n => $name)
+                                                <option value="{{ $n }}" @selected((int) old('delivery_day', $sub->delivery_day ?: 6) === $n)>{{ $name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    @if ($windows->isNotEmpty())
+                                        <div class="field">
+                                            <label for="window-{{ $sub->id }}">Время</label>
+                                            <select id="window-{{ $sub->id }}" name="time_delivery_id">
+                                                @foreach ($windows as $w)
+                                                    <option value="{{ $w->id }}" @selected((int) old('time_delivery_id', $sub->time_delivery_id) === $w->id)>{{ substr($w->from, 0, 5) }}–{{ substr($w->to, 0, 5) }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    @endif
+                                </div>
+                                <div class="grid2">
+                                    <div class="field">
+                                        <label for="rname-{{ $sub->id }}">Получатель</label>
+                                        <input id="rname-{{ $sub->id }}" name="receiving_name" type="text" maxlength="120" value="{{ old('receiving_name', $sub->receiving_name) }}">
+                                    </div>
+                                    <div class="field">
+                                        <label for="rphone-{{ $sub->id }}">Телефон получателя</label>
+                                        <input id="rphone-{{ $sub->id }}" name="receiving_phone" type="tel" inputmode="tel" maxlength="32" value="{{ old('receiving_phone', \App\Support\Phone::pretty($sub->receiving_phone)) }}">
+                                        @error('receiving_phone', 'sub' . $sub->id)<span class="err">{{ $message }}</span>@enderror
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label for="card-{{ $sub->id }}">Текст открытки</label>
+                                    <textarea id="card-{{ $sub->id }}" name="card_text" rows="2" maxlength="300">{{ old('card_text', $sub->preferences['card_text'] ?? '') }}</textarea>
+                                </div>
+                                <div class="field">
+                                    <label for="comment-{{ $sub->id }}">Комментарий курьеру</label>
+                                    <textarea id="comment-{{ $sub->id }}" name="comment" rows="2" maxlength="500">{{ old('comment', $sub->comment) }}</textarea>
+                                </div>
+                                <div class="sub-actions"><button class="btn" type="submit">Сохранить</button></div>
+                            </form>
+                        </details>
                         @else
                             <div class="row"><span>К оплате за первый месяц</span><span class="total" style="font-size:20px">{{ number_format($sub->firstPaymentAmount(), 0, '', ' ') }} ₽</span></div>
                             <div class="sub-actions"><a class="btn" href="{{ route('subscription.pay', $sub) }}">Оплатить</a></div>
@@ -74,7 +128,7 @@
                     </article>
                 @endforeach
             </div>
-            <p class="toast">Поменять адрес, день или состав: напишите нам, и флорист всё перенастроит. Самостоятельное редактирование скоро появится.</p>
+            <p class="toast">Поменять частоту или бюджет: напишите нам, и флорист всё перенастроит.</p>
         @endif
     </main>
     @include('partials.footer')

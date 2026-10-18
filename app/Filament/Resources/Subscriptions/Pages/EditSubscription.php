@@ -9,7 +9,12 @@ use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use App\Models\TimeDelivery;
+use App\Support\Days;
+use App\Services\Pricing;
 use Filament\Infolists\Components\KeyValueEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Pages\EditRecord;
@@ -76,7 +81,19 @@ class EditSubscription extends EditRecord {
                         ->label('Номер телефона получателя'),
                     TextInput::make('address')
                         ->label('Адрес доставки'),
-                ]),
+                    Select::make('delivery_day')
+                        ->label('День доставки')
+                        ->options(Days::NOMINATIVE)
+                        ->native(false),
+                    Select::make('time_delivery_id')
+                        ->label('Окно доставки')
+                        ->options(TimeDelivery::query()->orderBy('from')->get()->mapWithKeys(fn ($w) => [$w->id => substr($w->from, 0, 5) . '–' . substr($w->to, 0, 5)]))
+                        ->native(false),
+                    Textarea::make('comment')
+                        ->label('Комментарий курьеру')
+                        ->rows(2)
+                        ->columnSpanFull(),
+                ])->columns(2),
 
             Section::make('Информация о выбранном плане')
                 ->schema([
@@ -104,8 +121,19 @@ class EditSubscription extends EditRecord {
                     ->schema([
                         Grid::make(2)->schema([
                             Section::make('')->schema([
-                                TextEntry::make('comment')
-                                    ->label('Комментарий'),
+                                TextEntry::make('preferences_text')
+                                    ->label('Пожелания из мастера')
+                                    ->default(self::preferencesText($subscription->preferences)),
+
+                                TextEntry::make('user_link')
+                                    ->label('Клиент')
+                                    ->default($subscription->user ? $subscription->user->name . ' · ' . ($subscription->user->phone_e164 ?: $subscription->user->phone) : 'не привязан')
+                                    ->url($subscription->user_id ? '/hub/users/' . $subscription->user_id . '/edit' : null)
+                                    ->color($subscription->user_id ? 'primary' : 'gray'),
+
+                                TextEntry::make('ab_variant_text')
+                                    ->label('Версия главной (A/B)')
+                                    ->default($subscription->ab_variant ? strtoupper($subscription->ab_variant) : '—'),
 
                                 TextEntry::make('created_at')
                                     ->label('Дата начала подписки')
@@ -136,12 +164,18 @@ class EditSubscription extends EditRecord {
                                     ->default($optPrice + $optPriceOneTime)
                                     ->hintIcon('heroicon-o-information-circle', tooltip: 'Стоимость указана за 1 доставку'),
 
-                                TextEntry::make('total_price')
-                                    ->label('Общая сумма подписки')
+                                TextEntry::make('first_payment')
+                                    ->label('Первый платёж')
                                     ->suffix('₽')
-                                    ->default($subscription->totalAmount()),
+                                    ->default($subscription->firstPaymentAmount())
+                                    ->hintIcon('heroicon-o-information-circle', tooltip: Pricing::PROMO[$subscription->frequency] ?? ''),
 
-                                Text::make('Расчёт: (база за доставку + опции за доставку) × доставок в месяц + сумма одноразовых опций')
+                                TextEntry::make('total_price')
+                                    ->label('Ежемесячное списание')
+                                    ->suffix('₽')
+                                    ->default($subscription->monthlyAmount()),
+
+                                Text::make('Первый месяц: (база + опции за доставку) × оплаченных доставок + разовые опции. Дальше: (база + опции за доставку) × доставок в месяц.')
                                     ->color('warning')
 
                             ])
@@ -183,5 +217,26 @@ class EditSubscription extends EditRecord {
                 ->columns(1)
                 ->columnSpan('full'),
         ]);
+    }
+
+    private static function preferencesText(?array $p): string {
+        if (!$p) {
+            return '—';
+        }
+        $parts = [];
+        if (!empty($p['for'])) {
+            $parts[] = $p['for'] === 'gift' ? 'В подарок' : 'Себе домой';
+        }
+        if (!empty($p['styles'])) {
+            $parts[] = 'Стиль: ' . implode(', ', $p['styles']);
+        }
+        if (!empty($p['tags'])) {
+            $parts[] = 'Учесть: ' . implode(', ', $p['tags']);
+        }
+        if (!empty($p['card_text'])) {
+            $parts[] = 'Открытка: «' . $p['card_text'] . '»';
+        }
+
+        return $parts ? implode('. ', $parts) : '—';
     }
 }

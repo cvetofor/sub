@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Payment;
 use App\Models\Subscription;
+use App\Models\TimeDelivery;
 use App\Support\Phone;
 use Illuminate\Http\Request;
 
@@ -34,6 +35,8 @@ class AuthController extends Controller {
                 return $sub;
             });
 
-        return view('profile.index', ['subscriptions' => $subscriptions, 'user' => $user]);
+        $windows = TimeDelivery::query()->orderBy('from')->get();
+
+        return view('profile.index', ['subscriptions' => $subscriptions, 'user' => $user, 'windows' => $windows]);
     }
 }

@@ -1,0 +1,49 @@
+name: CI (тесты и сборка)
+
+# Проверка новой версии сайта: автотесты и сборка фронтенда.
+# Выкат по-прежнему делается вручную отдельным процессом (см. docs/DEPLOY.md).
+on:
+  push:
+    branches: [redesign]
+  pull_request:
+    branches: [redesign, main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, sqlite3, intl, bcmath, gd
+          coverage: none
+
+      - name: Composer
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Сборка фронтенда
+        run: |
+          npm ci
+          npm run build
+
+      - name: Тесты
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          vendor/bin/phpunit
+
+      - name: Собранные файлы (для выката)
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-build
+          path: public/build
+          retention-days: 14

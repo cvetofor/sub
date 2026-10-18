@@ -6,6 +6,8 @@
     <meta http-equiv="refresh" content="2;url={{ route('payment.yookassa.redirect', ['subscription_id' => $subscription->id, 'attempt' => $attempt]) }}">
 @endpush
 
+@section('robots', 'noindex, nofollow')
+
 @section('body')
     @include('partials.header')
     <main class="result">

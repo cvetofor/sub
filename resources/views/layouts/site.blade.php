@@ -10,6 +10,11 @@
     <meta property="og:description" content="@yield('description', 'Свежие цветы по расписанию. От 1 999 ₽ за букет, второй в подарок.')">
     <meta property="og:image" content="{{ asset('images/site/hero-home.jpg') }}">
     <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <link rel="canonical" href="{{ url()->current() }}">
+    @hasSection('robots')
+        <meta name="robots" content="@yield('robots')">
+    @endif
     <link rel="icon" href="{{ asset('images/favicon.ico') }}" type="image/x-icon">
     <link rel="preload" href="{{ asset('fonts/lora/lora-500-cyrillic.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="{{ asset('fonts/golos/golos-400-cyrillic.woff2') }}" as="font" type="font/woff2" crossorigin>

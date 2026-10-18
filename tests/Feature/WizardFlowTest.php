@@ -140,4 +140,36 @@ class WizardFlowTest extends TestCase {
         $this->postJson('/auth/code', ['phone' => '9123456789'])->assertStatus(429);
         $this->postJson('/auth/code', ['phone' => '+7 495 123-45-67'])->assertStatus(422);
     }
+
+    public function test_owner_can_change_delivery_from_cabinet(): void {
+        $owner = $this->loginByCode();
+        $id = $this->postJson('/subscribe', $this->payload())->json('subscription_id');
+        $this->post('/payment/test/' . $id);
+
+        $stranger = User::create(['name' => 'Чужой', 'email' => 'y@phone.local', 'phone' => '+79990000001', 'phone_e164' => '+79990000001', 'password' => 'x', 'role_id' => Role::CLIENT, 'is_active' => true]);
+        $this->actingAs($stranger)->post("/subscription/{$id}/delivery", ['address' => 'Другой адрес, 1', 'delivery_day' => 2])->assertForbidden();
+
+        $this->actingAs($owner)->post("/subscription/{$id}/delivery", [
+            'address' => 'Ярославль, пр. Ленина, 10, кв. 1', 'delivery_day' => 2, 'time_delivery_id' => $this->window->id,
+            'receiving_name' => 'Ольга', 'receiving_phone' => '8 925 222-33-44', 'card_text' => 'С днём рождения', 'comment' => 'Этаж 3',
+        ])->assertRedirect('/profile')->assertSessionHas('success');
+
+        $sub = Subscription::findOrFail($id);
+        $this->assertSame('Ярославль, пр. Ленина, 10, кв. 1', $sub->address);
+        $this->assertSame(2, $sub->delivery_day);
+        $this->assertSame('Ольга', $sub->receiving_name);
+        $this->assertSame('+79252223344', $sub->receiving_phone);
+        $this->assertSame('С днём рождения', $sub->preferences['card_text']);
+        $this->assertSame(['Минимализм'], $sub->preferences['styles']); // остальные пожелания сохранились
+        $this->assertSame('Этаж 3', $sub->comment);
+
+        $this->actingAs($owner)->post("/subscription/{$id}/delivery", ['address' => 'ул', 'delivery_day' => 2])->assertSessionHasErrors(['address'], null, 'sub' . $id);
+        $this->actingAs($owner)->get('/profile')->assertOk()->assertSee('Вторник')->assertSee('Изменить адрес');
+    }
+
+    public function test_sitemap_and_robots(): void {
+        $this->get('/sitemap.xml')->assertOk()->assertHeader('Content-Type', 'application/xml')->assertSee(route('home'));
+        $this->get('/subscribe')->assertOk()->assertSee('noindex, nofollow');
+        $this->get('/')->assertOk()->assertDontSee('noindex');
+    }
 }

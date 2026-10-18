@@ -2,6 +2,8 @@
 
 @section('title', 'Тестовая оплата — Цветофор')
 
+@section('robots', 'noindex, nofollow')
+
 @section('body')
     @include('partials.header')
     <main class="result">

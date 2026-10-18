@@ -362,6 +362,10 @@
     .sub-top h2 { font-size: 22px; margin-top: 4px; }
     .badge.warn { background: #FDF1D6; color: #8A5A00; } .badge.muted { background: var(--color-surface-2); color: var(--color-text-2); }
     .sub-actions { display: flex; flex-wrap: wrap; gap: 12px; } .sub-actions .btn { margin: 0; }
+    .edit summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--color-accent-700); font-weight: 500; font-size: 15px; list-style: none; }
+    .edit summary::-webkit-details-marker { display: none; }
+    .edit summary::before { content: ''; width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); margin-right: 10px; transition: transform 0.15s; }
+    .edit[open] summary::before { transform: rotate(45deg); }
     .notice.ok { padding: 12px 14px; border-radius: var(--radius-md); background: var(--color-green-50); color: var(--color-green-600); font-size: 14px; }
 
     /* Движение: только opacity и transform */

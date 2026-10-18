@@ -1,2 +1,9 @@
 User-agent: *
-Disallow:
+Disallow: /subscribe
+Disallow: /auth/
+Disallow: /profile
+Disallow: /payment/
+Disallow: /hub
+Disallow: /frontend-api/
+
+Sitemap: https://xn--80aaabblp5c1ajh6ag5e.xn--p1ai/sitemap.xml
