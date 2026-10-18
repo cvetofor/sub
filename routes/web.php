@@ -1,11 +1,16 @@
 <?php
 
-use App\Http\Controllers\MainController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\WizardController;
+use App\Http\Middleware\AssignHeroVariant;
 use Illuminate\Support\Facades\Route;
 
-// Главная страница
-Route::get('/', [MainController::class, 'index'])->name('home');
+// Главная: новая версия с A/B-тестом первого экрана
+Route::get('/', [HomeController::class, 'index'])->middleware(AssignHeroVariant::class)->name('home');
+
+// Мастер подписки
+Route::get('/subscribe', [WizardController::class, 'show'])->name('wizard');
 
 Route::get('/user_agreement', function () {
     return view('information.user_agreement');

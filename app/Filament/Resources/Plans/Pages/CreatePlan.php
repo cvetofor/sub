@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Plans\Pages;
 
 use App\Filament\Resources\Plans\PlanResource;
 use App\Models\City;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -43,6 +44,32 @@ class CreatePlan extends CreateRecord {
                     Select::make('city_id')
                         ->label('Город')
                         ->options(fn() => City::active()->pluck('name', 'id'))->required(),
+
+                    Select::make('scenario')
+                        ->label('Сценарий на главной')
+                        ->options(\App\Models\Plan::SCENARIOS)
+                        ->default('any')
+                        ->required()
+                        ->hintIcon('heroicon-o-information-circle', tooltip: 'Подсвечивается, когда гость выбирает «Себе домой» или «В подарок»'),
+
+                    TextInput::make('tag')
+                        ->label('Подпись под названием')
+                        ->placeholder('в вазу · для дома')
+                        ->maxLength(60)
+                        ->trim(),
+
+                    FileUpload::make('image')
+                        ->label('Фото карточки (16:10)')
+                        ->image()
+                        ->disk('public')
+                        ->directory('plans')
+                        ->imageEditor()
+                        ->maxSize(4096),
+
+                    TextInput::make('sort')
+                        ->label('Порядок на главной')
+                        ->numeric()
+                        ->default(0),
 
                     Toggle::make('is_active')
                         ->label('Активировать')
