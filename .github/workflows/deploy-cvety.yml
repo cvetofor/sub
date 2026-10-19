@@ -51,17 +51,28 @@ jobs:
       - name: Сборка фронтенда
         run: npm ci && npm run build
 
-      - name: SSH-ключ
+      - name: Доступ по SSH (ключ SSH_PRIVATE_KEY или пароль SSH_PASSWORD)
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_deploy
-          chmod 600 ~/.ssh/id_deploy
           ssh-keyscan -H ${{ inputs.ssh_host }} >> ~/.ssh/known_hosts 2>/dev/null
-          echo "Host vps
-            HostName ${{ inputs.ssh_host }}
-            User ${{ inputs.ssh_user }}
-            IdentityFile ~/.ssh/id_deploy
-            IdentitiesOnly yes" > ~/.ssh/config
+          printf 'Host vps\n  HostName %s\n  User %s\n' "${{ inputs.ssh_host }}" "${{ inputs.ssh_user }}" > ~/.ssh/config
+          if [ -n "$SSH_PRIVATE_KEY" ]; then
+            printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
+            printf '  IdentityFile ~/.ssh/id_deploy\n  IdentitiesOnly yes\n' >> ~/.ssh/config
+            echo "вход по ключу"
+          elif [ -n "$SSH_PASSWORD" ]; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq sshpass >/dev/null
+            # Обёртка: все вызовы ssh/rsync ниже идут через sshpass с паролем из секрета
+            printf '#!/bin/sh\nexec sshpass -e /usr/bin/ssh "$@"\n' | sudo tee /usr/local/bin/ssh >/dev/null && sudo chmod +x /usr/local/bin/ssh
+            echo "SSHPASS=$SSH_PASSWORD" >> "$GITHUB_ENV"
+            echo "вход по паролю"
+          else
+            echo "Нет ни SSH_PRIVATE_KEY, ни SSH_PASSWORD в секретах репозитория"; exit 1
+          fi
+          hash -r
           ssh vps 'echo "SSH работает: $(hostname), $(whoami)"'
 
       - name: Копирование кода и сборки
