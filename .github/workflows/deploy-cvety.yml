@@ -1,0 +1,60 @@
+name: Выкат нового сайта на поддомен
+
+# Запускается вручную. Копирует ветку redesign на VPS в отдельную папку рядом со старым сайтом
+# и запускает deploy/setup-cvety.sh. Старый сайт (REMOTE_PATH) не меняется.
+on:
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: 'Домен нового сайта в punycode'
+        required: true
+        default: 'xn--b1ag3bn2a.xn--b1ag1aakjpl.xn--p1ai'
+      site_host:
+        description: 'Домен по-русски для СМС и документов'
+        required: true
+        default: 'цветы.цветофор.рф'
+      new_path:
+        description: 'Папка нового сайта на сервере'
+        required: true
+        default: '/var/www/cvety'
+      new_db:
+        description: 'Имя новой базы (копия старой)'
+        required: true
+        default: 'cvety_sub'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: redesign
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Сборка фронтенда
+        run: npm ci && npm run build
+
+      - name: SSH-ключ
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+
+      - name: Копирование кода и сборки
+        run: |
+          rsync -az --delete \
+            --exclude '.git' --exclude 'node_modules' --exclude 'vendor' --exclude '.env' \
+            --exclude 'storage/logs' --exclude 'storage/framework/sessions' --exclude 'storage/framework/cache' --exclude 'storage/app' \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ inputs.new_path }}/
+
+      - name: Настройка на сервере
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "OLD_PATH='${{ secrets.REMOTE_PATH }}' NEW_PATH='${{ inputs.new_path }}' DOMAIN='${{ inputs.domain }}' SITE_HOST='${{ inputs.site_host }}' NEW_DB='${{ inputs.new_db }}' EXTRA_ENV='${{ secrets.CVETY_EXTRA_ENV }}' bash '${{ inputs.new_path }}/deploy/setup-cvety.sh'"
