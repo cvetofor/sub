@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Delivery;
 use App\Models\Payment;
 use App\Models\Subscription;
 use App\Models\TimeDelivery;
@@ -20,7 +21,7 @@ class AuthController extends Controller {
             $user->phone_e164 ? Phone::legacy($user->phone_e164) : null,
         ])));
 
-        $subscriptions = Subscription::with(['plan.options', 'payments', 'timeDelivery'])
+        $subscriptions = Subscription::with(['plan.options', 'payments', 'timeDelivery', 'deliveries' => fn ($q) => $q->where('status', Delivery::PLANNED)->where('planned_date', '>=', now()->toDateString())->orderBy('planned_date')->with('timeDelivery')])
             ->where(function ($q) use ($user, $phones) {
                 $q->where('user_id', $user->id);
                 if ($phones) {

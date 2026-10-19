@@ -2,10 +2,8 @@
 
 namespace App\Services;
 
-use App\Http\Api\SMSC;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 
 /**
@@ -77,20 +75,7 @@ class SmsCode {
     }
 
     private function deliver(string $phoneE164, string $code): bool {
-        $message = 'Код для входа на подписка.цветофор.рф: ' . $code;
-
-        if (!config('smsc.login') || !config('smsc.password')) {
-            // Без учётных данных СМС не уходит: пишем в лог, чтобы можно было проверить руками на тестовом стенде.
-            Log::channel('shop')->info('СМС не отправлена: нет учётных данных SMSC.', ['phone' => $phoneE164, 'code' => app()->isProduction() ? '***' : $code]);
-
-            return !app()->isProduction();
-        }
-
-        $response = (new SMSC(ltrim($phoneE164, '+')))->sendSMS($message);
-        $ok = is_array($response) && empty($response['error']);
-        Log::channel('shop')->info('Отправлен код входа.', ['phone' => $phoneE164, 'ok' => $ok, 'response' => $response]);
-
-        return $ok;
+        return Sms::send($phoneE164, 'Код для входа на подписка.цветофор.рф: ' . $code, 'code');
     }
 
     private function cacheKey(string $phoneE164): string {

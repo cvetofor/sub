@@ -6,6 +6,8 @@ use App\Http\Controllers\AuthCodeController;
 use App\Models\AbEvent;
 use App\Models\Payment;
 use App\Models\Subscription;
+use App\Services\DeliverySchedule;
+use App\Services\Notifier;
 use App\Support\Phone;
 use Exception;
 use Illuminate\Http\Request;
@@ -161,7 +163,9 @@ class Yookassa {
 
     /** Общее для вебхука и тестовой оплаты: активировать подписку, привязать пользователя, записать в воронку. */
     public static function activate(Subscription $subscription): void {
+        $wasActive = (bool) $subscription->is_active;
         $subscription->is_active = true;
+        $subscription->pause_reason = null;
         $subscription->next_date_payment = \Carbon\Carbon::now()->addMonth();
 
         if (!$subscription->user_id) {
@@ -171,6 +175,12 @@ class Yookassa {
             }
         }
         $subscription->save();
+
+        // Первая оплата: расписание доставок первого месяца и СМС клиенту
+        if (!$wasActive && !$subscription->deliveries()->exists()) {
+            DeliverySchedule::planFirstMonth($subscription);
+            Notifier::subscriptionActivated($subscription);
+        }
 
         if (!empty($subscription->ab_variant) && !empty($subscription->ab_visitor)) {
             AbEvent::log($subscription->ab_variant, 'payment_success', $subscription->ab_visitor, [

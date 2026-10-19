@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Api\Yookassa;
+use App\Models\Delivery;
+use App\Services\DeliverySchedule;
+use App\Services\Notifier;
 use App\Models\Payment;
 use App\Models\Subscription;
 use Carbon\Carbon;
@@ -35,7 +38,8 @@ Schedule::call(function () {
 
         if (!$payment || str_starts_with((string) $payment->recurrent_token, 'test-')) {
             Log::channel('shop')->warning('Нет сохранённого способа оплаты, подписка остановлена.', ['subscription_id' => $subscription->id]);
-            $subscription->update(['is_active' => false]);
+            $subscription->update(['is_active' => false, 'pause_reason' => \App\Models\Subscription::PAUSE_PAYMENT]);
+            Notifier::paymentFailed($subscription, $subscription->monthlyAmount());
             continue;
         }
 
@@ -61,12 +65,43 @@ Schedule::call(function () {
 
             $subscription->payments()->attach($newPayment->id);
 
+            // Доставки следующего месяца и СМС клиенту
+            DeliverySchedule::planNextMonth($subscription);
+            Notifier::renewed($subscription, (float) $newPayment->amount);
+
             Log::channel('shop')->info('Подписка продлена.', ['subscription_id' => $subscription->id, 'amount' => $newPayment->amount, 'payment' => $paymentYookassa->id]);
         } else {
             $subscription->is_active = false;
+            $subscription->pause_reason = \App\Models\Subscription::PAUSE_PAYMENT;
             $subscription->save();
+            Notifier::paymentFailed($subscription, $subscription->monthlyAmount());
 
             Log::channel('shop')->info('Не удалось продлить подписку, поставлена на паузу.', ['subscription_id' => $subscription->id, 'status' => $paymentYookassa?->status]);
         }
     }
 })->everyTwoHours();
+
+/* Напоминание о завтрашней доставке: один раз, только по активным подпискам. */
+Schedule::call(function () {
+    $tomorrow = Carbon::tomorrow()->toDateString();
+    $deliveries = Delivery::planned()->onDate($tomorrow)->whereNull('reminded_at')
+        ->whereHas('subscription', fn ($q) => $q->where('is_active', true))
+        ->with('subscription', 'timeDelivery')
+        ->get();
+    foreach ($deliveries as $delivery) {
+        Notifier::deliveryTomorrow($delivery);
+    }
+    if ($deliveries->isNotEmpty()) {
+        Log::channel('shop')->info('Разосланы напоминания о доставках.', ['date' => $tomorrow, 'count' => $deliveries->count()]);
+    }
+})->dailyAt('18:00')->name('deliveries:remind')->withoutOverlapping();
+
+/* Ночью закрываем вчерашние доставки, которые флорист не отметил вручную. */
+Schedule::call(function () {
+    $closed = Delivery::planned()->where('planned_date', '<', Carbon::today()->toDateString())
+        ->whereHas('subscription', fn ($q) => $q->where('is_active', true))
+        ->update(['status' => Delivery::DELIVERED, 'delivered_at' => Carbon::now(), 'note' => 'закрыта автоматически']);
+    if ($closed) {
+        Log::channel('shop')->info('Прошедшие доставки закрыты автоматически.', ['count' => $closed]);
+    }
+})->dailyAt('02:00')->name('deliveries:close');

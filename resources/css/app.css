@@ -366,6 +366,10 @@
     .edit summary::-webkit-details-marker { display: none; }
     .edit summary::before { content: ''; width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); margin-right: 10px; transition: transform 0.15s; }
     .edit[open] summary::before { transform: rotate(45deg); }
+    .dlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+    .dlist li { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; border-bottom: 1px dashed var(--color-border); font-size: 15px; }
+    .dlist li:last-child { border-bottom: 0; }
+    .dlist .linkBtn { padding: 8px 0; min-height: 36px; }
     .notice.ok { padding: 12px 14px; border-radius: var(--radius-md); background: var(--color-green-50); color: var(--color-green-600); font-size: 14px; }
 
     /* Документы и страницы ошибок */

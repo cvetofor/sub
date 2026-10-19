@@ -20,6 +20,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/subscription/{subscription}/resume', [SubscriptionController::class, 'resume'])->name('subscription.active');
     Route::get('/subscription/{subscription}/pay', [SubscriptionController::class, 'pay'])->name('subscription.pay');
     Route::post('/subscription/{subscription}/delivery', [SubscriptionController::class, 'updateDelivery'])->name('subscription.delivery');
+    Route::post('/subscription/{subscription}/deliveries/{delivery}/skip', [SubscriptionController::class, 'skipDelivery'])->name('subscription.skip');
 });
 
 Route::get('/sitemap.xml', [HomeController::class, 'sitemap'])->name('sitemap');

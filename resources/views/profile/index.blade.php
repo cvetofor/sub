@@ -56,6 +56,26 @@
                             <div class="row"><span>Дополнения</span><span>{{ $sub->plan->options->pluck('name')->join(', ') }}</span></div>
                         @endif
                         <hr>
+                        @if ($sub->is_paid && !$sub->is_active && $sub->pause_reason === \App\Models\Subscription::PAUSE_PAYMENT)
+                            <div class="alert" style="margin:0">Последнее списание не прошло. Проверьте карту и нажмите «Возобновить», мы повторим списание в течение двух часов.</div>
+                        @endif
+                        @if ($sub->is_paid && $sub->deliveries->isNotEmpty())
+                            <div class="k">Ближайшие доставки</div>
+                            <ul class="dlist">
+                                @foreach ($sub->deliveries->take(4) as $d)
+                                    <li>
+                                        <span class="d-date">{{ \App\Support\Days::short($d->planned_date->dayOfWeekIso) }}, {{ $d->planned_date->translatedFormat('j F') }}@if ($d->windowLabel()) · {{ $d->windowLabel() }}@endif</span>
+                                        @if ($sub->is_active && $d->planned_date->gte(now()->addDays(\App\Services\DeliverySchedule::MIN_LEAD_DAYS)->startOfDay()))
+                                            <form method="POST" action="{{ route('subscription.skip', [$sub, $d]) }}" onsubmit="return confirm('Пропустить доставку {{ $d->planned_date->translatedFormat('j F') }}? Букет перенесём в конец расписания.')">@csrf<button class="linkBtn" type="submit">Пропустить</button></form>
+                                        @elseif (!$sub->is_active)
+                                            <span class="toast">на паузе</span>
+                                        @else
+                                            <span class="toast">уже собираем</span>
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
                         @if ($sub->is_paid)
                             <div class="row"><span>Списание раз в месяц</span><span class="total" style="font-size:20px">{{ number_format($sub->monthlyAmount(), 0, '', ' ') }} ₽</span></div>
                             @if ($sub->is_active && $sub->next_date_payment)

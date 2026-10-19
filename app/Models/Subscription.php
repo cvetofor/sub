@@ -6,8 +6,13 @@ use App\Services\Pricing;
 use Illuminate\Database\Eloquent\Model;
 
 class Subscription extends Model {
+    public const PAUSE_CLIENT = 'client';
+    public const PAUSE_PAYMENT = 'payment_failed';
+    public const PAUSE_ADMIN = 'admin';
+
     protected $fillable = [
         'is_active',
+        'pause_reason',
         'plan_id',
         'user_id',
         'time_delivery_id',
@@ -61,6 +66,10 @@ class Subscription extends Model {
 
     public function timeDelivery() {
         return $this->belongsTo(TimeDelivery::class);
+    }
+
+    public function deliveries() {
+        return $this->hasMany(Delivery::class);
     }
 
     public function payments() {

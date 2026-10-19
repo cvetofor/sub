@@ -41,9 +41,10 @@ class EditSubscription extends EditRecord {
                 ->color($this->record->is_active ? 'danger' : 'success')
                 ->action(function (): void {
                     if ($this->record->is_active) {
-                        $this->record->update(['is_active' => false]);
+                        $this->record->update(['is_active' => false, 'pause_reason' => \App\Models\Subscription::PAUSE_ADMIN]);
                     } else {
-                        $this->record->update(['is_active' => true]);
+                        $this->record->update(['is_active' => true, 'pause_reason' => null]);
+                        \App\Services\DeliverySchedule::shiftOverdue($this->record);
                     }
 
                     $this->redirect(request()->header('Referer'));
@@ -148,7 +149,12 @@ class EditSubscription extends EditRecord {
 
                                 TextEntry::make('is_activee')
                                     ->label('Активирована')
-                                    ->default($this->record->is_active ? 'Да' : 'Нет')
+                                    ->default($this->record->is_active ? 'Да' : 'Нет' . match ($this->record->pause_reason) {
+                                        \App\Models\Subscription::PAUSE_CLIENT => ' · пауза по просьбе клиента',
+                                        \App\Models\Subscription::PAUSE_PAYMENT => ' · не прошло списание',
+                                        \App\Models\Subscription::PAUSE_ADMIN => ' · остановлена менеджером',
+                                        default => '',
+                                    })
                                     ->color($this->record->is_active ? 'success' : 'danger'),
                             ]),
                             Section::make('')->schema([
@@ -182,6 +188,13 @@ class EditSubscription extends EditRecord {
                         ]),
                     ]),
 
+                Tab::make('Доставки')
+                    ->icon(Heroicon::Truck)
+                    ->badge($subscription->deliveries()->where('status', \App\Models\Delivery::PLANNED)->count() ?: null)
+                    ->schema([
+                        View::make('filament.schemas.components.deliveries-table')
+                            ->viewData(['deliveries' => $subscription->deliveries()->with('timeDelivery')->orderByDesc('planned_date')->get()]),
+                    ]),
                 Tab::make('Платежи')
                     ->icon(Heroicon::Banknotes)
                     ->schema([
@@ -217,6 +230,12 @@ class EditSubscription extends EditRecord {
                 ->columns(1)
                 ->columnSpan('full'),
         ]);
+    }
+
+    protected function afterSave(): void {
+        if ($this->record->wasChanged(['delivery_day', 'time_delivery_id'])) {
+            \App\Services\DeliverySchedule::moveToWeekday($this->record);
+        }
     }
 
     private static function preferencesText(?array $p): string {

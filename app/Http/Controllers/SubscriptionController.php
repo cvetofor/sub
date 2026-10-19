@@ -9,8 +9,11 @@ use App\Models\Plan;
 use App\Models\PlanOption;
 use App\Models\Subscription;
 use App\Models\TimeDelivery;
+use App\Models\Delivery;
+use App\Services\DeliverySchedule;
 use App\Services\Pricing;
 use App\Support\Phone;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -176,15 +179,29 @@ class SubscriptionController extends Controller {
             'address' => $data['address'],
             'delivery_day' => $data['delivery_day'],
             'time_delivery_id' => $data['time_delivery_id'] ?? $subscription->time_delivery_id,
-            'receiving_name' => $data['receiving_name'] ?: $subscription->sender_name,
+            'receiving_name' => ($data['receiving_name'] ?? null) ?: $subscription->sender_name,
             'receiving_phone' => $receivingPhone ?: $subscription->sender_phone,
             'comment' => $data['comment'] ?? null,
             'preferences' => $preferences,
         ]);
 
+        DeliverySchedule::moveToWeekday($subscription);
         Log::channel('shop')->info('Клиент изменил доставку.', ['subscription_id' => $subscription->id, 'delivery_day' => $data['delivery_day']]);
 
         return redirect()->route('profile')->with('success', 'Доставка обновлена. Флорист увидит изменения сразу.');
+    }
+
+    /** Кабинет: пропустить ближайшую доставку. Букет не сгорает, а переносится в конец. */
+    public function skipDelivery(Request $request, Subscription $subscription, Delivery $delivery) {
+        abort_unless($subscription->belongsToUser($request->user()), 403);
+        abort_unless((int) $delivery->subscription_id === (int) $subscription->id && $delivery->status === Delivery::PLANNED, 404);
+        if ($delivery->planned_date->lt(Carbon::today()->addDays(DeliverySchedule::MIN_LEAD_DAYS))) {
+            return redirect()->route('profile')->with('error', 'Эту доставку уже собирают, пропустить можно доставку не раньше чем за два дня. Позвоните нам, поможем.');
+        }
+        DeliverySchedule::skip($delivery);
+        Log::channel('shop')->info('Клиент пропустил доставку.', ['subscription_id' => $subscription->id, 'delivery_id' => $delivery->id]);
+
+        return redirect()->route('profile')->with('success', 'Доставка пропущена, букет перенесён в конец расписания.');
     }
 
     /** Повторная оплата неоплаченной подписки из кабинета: только владелец. */
@@ -202,7 +219,7 @@ class SubscriptionController extends Controller {
     /** Пауза подписки: только владелец. */
     public function pause(Request $request, Subscription $subscription) {
         abort_unless($subscription->belongsToUser($request->user()), 403);
-        $subscription->update(['is_active' => false]);
+        $subscription->update(['is_active' => false, 'pause_reason' => Subscription::PAUSE_CLIENT]);
         Log::channel('shop')->info('Подписка поставлена на паузу клиентом.', ['subscription_id' => $subscription->id]);
 
         return redirect()->back()->with('success', 'Подписка на паузе. Списаний не будет.');
@@ -212,7 +229,8 @@ class SubscriptionController extends Controller {
     public function resume(Request $request, Subscription $subscription) {
         abort_unless($subscription->belongsToUser($request->user()), 403);
         abort_unless($subscription->payments()->where('payment_status_id', \App\Models\Payment::PAYED)->exists(), 422);
-        $subscription->update(['is_active' => true]);
+        $subscription->update(['is_active' => true, 'pause_reason' => null]);
+        DeliverySchedule::shiftOverdue($subscription);
         Log::channel('shop')->info('Подписка возобновлена клиентом.', ['subscription_id' => $subscription->id]);
 
         return redirect()->back()->with('success', 'Подписка снова активна.');
