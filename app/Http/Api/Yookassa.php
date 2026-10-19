@@ -167,7 +167,7 @@ class Yookassa {
         if (!$subscription->user_id) {
             $phone = Phone::normalize($subscription->sender_phone);
             if ($phone) {
-                $subscription->user_id = AuthCodeController::findOrCreateClient($phone, $subscription->sender_name)->id;
+                $subscription->user_id = AuthCodeController::findOrCreateClient($phone, $subscription->sender_name)?->id;
             }
         }
         $subscription->save();

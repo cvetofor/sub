@@ -82,6 +82,13 @@ class PaymentController extends Controller {
             return redirect()->route('home');
         }
 
+        // Страница показывает адрес и суммы, поэтому только владельцу. Сессия могла истечь, пока
+        // клиент был на стороне банка: тогда просим войти и возвращаем сюда же.
+        if (!$request->user()) {
+            return redirect()->guest(route('auth.login'));
+        }
+        abort_unless($subscription->belongsToUser($request->user()), 403);
+
         $payment = $subscription->payments()->orderBy('created_at', 'desc')->first();
         $paid = $payment && (int) $payment->payment_status_id === Payment::PAYED;
         $attempt = $request->integer('attempt');
@@ -98,6 +105,7 @@ class PaymentController extends Controller {
     /** Имитация оплаты для тестового стенда: только когда ключей ЮKassa нет и это не production. */
     public function test(Request $request, Subscription $subscription) {
         abort_if(app()->isProduction() || Yookassa::isConfigured(), 404);
+        abort_unless($subscription->belongsToUser($request->user()), 403);
 
         $payment = $subscription->payments()->orderBy('created_at', 'desc')->first();
         abort_unless($payment && str_starts_with($payment->payment_gateway_transaction, 'test-'), 404);

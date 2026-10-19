@@ -33,7 +33,7 @@ Route::group(['prefix' => '/payment', 'as' => 'payment.'], function () {
         Route::get('/redirect', [PaymentController::class, 'redirect'])->name('redirect');
     });
     // Имитация оплаты на тестовом стенде, в production отвечает 404
-    Route::match(['get', 'post'], '/test/{subscription}', [PaymentController::class, 'test'])->name('test');
+    Route::match(['get', 'post'], '/test/{subscription}', [PaymentController::class, 'test'])->middleware('auth')->name('test');
 });
 
 require __DIR__ . '/auth.php';

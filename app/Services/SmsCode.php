@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\RateLimiter;
 class SmsCode {
     public const TTL_MINUTES = 10;
     public const MAX_ATTEMPTS = 5;
+    public const MAX_FAILURES_PER_HOUR = 10;
 
     /**
      * Отправляет код. Возвращает ['ok' => bool, 'retry_after' => сек, 'debug_code' => только вне production].
@@ -43,11 +44,18 @@ class SmsCode {
         return $result;
     }
 
-    /** Проверяет код. При успехе код сгорает. */
+    /** Проверяет код. При успехе код сгорает. После 10 неверных вводов подряд номер блокируется на час. */
     public function verify(string $phoneE164, string $code): bool {
+        $failKey = 'sms-code:fail:' . $phoneE164;
+        if (RateLimiter::tooManyAttempts($failKey, self::MAX_FAILURES_PER_HOUR)) {
+            return false;
+        }
+
         $key = $this->cacheKey($phoneE164);
         $entry = Cache::get($key);
         if (!$entry) {
+            RateLimiter::hit($failKey, 3600);
+
             return false;
         }
         if ($entry['attempts'] >= self::MAX_ATTEMPTS) {
@@ -58,10 +66,12 @@ class SmsCode {
         if (!Hash::check(trim($code), $entry['hash'])) {
             $entry['attempts']++;
             Cache::put($key, $entry, now()->addMinutes(self::TTL_MINUTES));
+            RateLimiter::hit($failKey, 3600);
 
             return false;
         }
         Cache::forget($key);
+        RateLimiter::clear($failKey);
 
         return true;
     }

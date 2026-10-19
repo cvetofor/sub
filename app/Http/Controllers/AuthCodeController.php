@@ -58,12 +58,19 @@ class AuthCodeController extends Controller {
             return response()->json(['ok' => false, 'message' => 'Код не подошёл. Проверьте цифры или запросите новый.'], 422);
         }
 
+        // Вход по коду только для клиентов: сотрудники входят в админку по паролю
         $user = self::findOrCreateClient($phone, $data['name'] ?? null);
+        if (!$user) {
+            return response()->json(['ok' => false, 'message' => 'Этот номер не может войти по коду. Напишите нам.'], 422);
+        }
+        if (!$user->is_active) {
+            return response()->json(['ok' => false, 'message' => 'Аккаунт заблокирован. Напишите нам, чтобы разобраться.'], 422);
+        }
         Auth::login($user, true);
         $request->session()->regenerate();
 
         // Сессия пересоздана, поэтому отдаём новый CSRF-токен: мастер подставит его в следующий запрос
-        return response()->json(['ok' => true, 'csrf' => csrf_token(), 'user' => ['id' => $user->id, 'name' => $user->name, 'phone' => Phone::pretty($phone)]]);
+        return response()->json(['ok' => true, 'csrf' => csrf_token(), 'redirect' => redirect()->intended(route('profile'))->getTargetUrl(), 'user' => ['id' => $user->id, 'name' => $user->name, 'phone' => Phone::pretty($phone)]]);
     }
 
     public function logout(Request $request) {
@@ -74,12 +81,22 @@ class AuthCodeController extends Controller {
         return redirect()->route('home');
     }
 
-    /** Ищем клиента по единому номеру, затем по старому формату, иначе создаём. */
-    public static function findOrCreateClient(string $phoneE164, ?string $name = null): User {
-        $user = User::where('phone_e164', $phoneE164)->first()
-            ?? User::where('phone', Phone::legacy($phoneE164))->first()
-            ?? User::where('phone', $phoneE164)->first();
+    /**
+     * Ищем клиента по единому номеру, затем по старому формату, иначе создаём.
+     * Возвращает null, если номер принадлежит сотруднику: такие аккаунты по коду не открываются.
+     */
+    public static function findOrCreateClient(string $phoneE164, ?string $name = null): ?User {
+        $byPhone = User::where('phone_e164', $phoneE164)
+            ->orWhere('phone', Phone::legacy($phoneE164))
+            ->orWhere('phone', $phoneE164)
+            ->orderBy('id')
+            ->get();
 
+        if ($byPhone->contains(fn (User $u) => !$u->isClient())) {
+            return null;
+        }
+
+        $user = $byPhone->first();
         if ($user) {
             $changes = [];
             if (!$user->phone_e164) {
@@ -87,9 +104,6 @@ class AuthCodeController extends Controller {
             }
             if ($name && ($user->name === '' || $user->name === 'Клиент')) {
                 $changes['name'] = $name;
-            }
-            if (!$user->is_active) {
-                $changes['is_active'] = true;
             }
             if ($changes) {
                 $user->forceFill($changes)->save();

@@ -388,7 +388,7 @@ function initCodeAuth({ urls, nameInput, onDone }) {
             const r = await postJson(urls.verify, { phone: sentTo || phoneEl.value, code: codeEl.value.trim(), name: nameInput ? nameInput.value.trim() || null : null });
             if (!r.ok) { setErr('errCode', r.message || firstError(r) || 'Код не подошёл.'); codeEl.select(); return false; }
             if (r.csrf) { const m = document.querySelector('meta[name="csrf-token"]'); if (m) m.content = r.csrf; }
-            onDone(r.user);
+            onDone(r.user, r);
             return true;
         } catch (e) { setErr('errCode', 'Нет связи с сервером.'); return false; } finally { verifyBtn.removeAttribute('aria-busy'); }
     };
@@ -405,7 +405,7 @@ function initCodeAuth({ urls, nameInput, onDone }) {
 function initLogin() {
     const data = readJson('login-data');
     if (!data) return;
-    initCodeAuth({ urls: data.urls, nameInput: null, onDone: () => window.location.assign(data.redirect) });
+    initCodeAuth({ urls: data.urls, nameInput: null, onDone: (user, r) => window.location.assign((r && r.redirect) || data.redirect) });
 }
 
 /* Страница успешной оплаты: покупка в электронную коммерцию и цель */

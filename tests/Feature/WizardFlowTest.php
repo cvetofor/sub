@@ -172,4 +172,60 @@ class WizardFlowTest extends TestCase {
         $this->get('/subscribe')->assertOk()->assertSee('noindex, nofollow');
         $this->get('/')->assertOk()->assertDontSee('noindex');
     }
+
+    public function test_payment_result_page_is_only_for_owner(): void {
+        $owner = $this->loginByCode();
+        $id = $this->postJson('/subscribe', $this->payload())->json('subscription_id');
+        $this->post('/payment/test/' . $id);
+        $url = '/payment/yookassa/redirect?subscription_id=' . $id . '&attempt=9';
+
+        $this->actingAs($owner)->get($url)->assertOk()->assertSee('Готово');
+
+        $stranger = User::create(['name' => 'Чужой', 'email' => 'z@phone.local', 'phone' => '+79990000002', 'phone_e164' => '+79990000002', 'password' => 'x', 'role_id' => Role::CLIENT, 'is_active' => true]);
+        $this->actingAs($stranger)->get($url)->assertForbidden();
+        $this->actingAs($stranger)->get('/payment/test/' . $id)->assertForbidden();
+
+        auth()->logout();
+        $this->get($url)->assertRedirect('/auth/login');
+        $this->get('/payment/test/' . $id)->assertRedirect('/auth/login');
+    }
+
+    public function test_staff_and_blocked_accounts_cannot_login_by_sms_code(): void {
+        User::create(['name' => 'Админ', 'email' => 'admin@site.local', 'phone' => '+7 (912) 345-6789', 'phone_e164' => '+79123456789', 'password' => 'x', 'role_id' => Role::ADMIN, 'is_active' => true]);
+        $sent = $this->postJson('/auth/code', ['phone' => '9123456789'])->assertOk()->json();
+        $this->postJson('/auth/verify', ['phone' => $sent['phone'], 'code' => $sent['debug_code']])->assertStatus(422);
+        $this->assertGuest();
+        $this->assertSame(1, User::count(), 'клиентский аккаунт на номер сотрудника не создаётся');
+
+        $blocked = User::create(['name' => 'Блок', 'email' => 'b@phone.local', 'phone' => '+79990000003', 'phone_e164' => '+79990000003', 'password' => 'x', 'role_id' => Role::CLIENT, 'is_active' => false]);
+        $sent = $this->postJson('/auth/code', ['phone' => '+79990000003'])->assertOk()->json();
+        $this->postJson('/auth/verify', ['phone' => $sent['phone'], 'code' => $sent['debug_code']])->assertStatus(422);
+        $this->assertGuest();
+        $this->assertFalse((bool) $blocked->fresh()->is_active, 'вход по коду не включает заблокированный аккаунт');
+    }
+
+    public function test_phone_is_locked_after_repeated_wrong_codes(): void {
+        $sent = $this->postJson('/auth/code', ['phone' => '9123456789'])->assertOk()->json();
+        $wrong = '0000' === $sent['debug_code'] ? '1111' : '0000';
+        for ($i = 0; $i < 10; $i++) {
+            $this->postJson('/auth/verify', ['phone' => $sent['phone'], 'code' => $wrong])->assertStatus(422);
+        }
+        // Даже верный код после 10 ошибок не принимается: номер заблокирован на час
+        $this->postJson('/auth/verify', ['phone' => $sent['phone'], 'code' => $sent['debug_code']])->assertStatus(422);
+        $this->assertGuest();
+    }
+
+    public function test_only_active_staff_can_access_admin_panel(): void {
+        $panel = \Filament\Facades\Filament::getDefaultPanel();
+        $admin = User::create(['name' => 'A', 'email' => 'a@site.local', 'password' => 'x', 'role_id' => Role::ADMIN, 'is_active' => true]);
+        $manager = User::create(['name' => 'M', 'email' => 'm@site.local', 'password' => 'x', 'role_id' => Role::MANAGER, 'is_active' => true]);
+        $fired = User::create(['name' => 'F', 'email' => 'f@site.local', 'password' => 'x', 'role_id' => Role::MANAGER, 'is_active' => false]);
+        $client = User::create(['name' => 'C', 'email' => 'c@phone.local', 'password' => 'x', 'role_id' => Role::CLIENT, 'is_active' => true]);
+        $this->assertTrue($admin->canAccessPanel($panel));
+        $this->assertTrue($manager->canAccessPanel($panel));
+        $this->assertFalse($fired->canAccessPanel($panel));
+        $this->assertFalse($client->canAccessPanel($panel));
+        $this->actingAs($client)->get('/hub')->assertForbidden();
+        $this->actingAs($admin)->get('/hub')->assertOk();
+    }
 }
