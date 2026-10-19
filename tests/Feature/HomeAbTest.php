@@ -38,4 +38,9 @@ class HomeAbTest extends TestCase {
     public function test_plans_and_prices_are_shown(): void {
         $this->get('/?hero=a')->assertOk()->assertSee('Просто так')->assertSee('1 999');
     }
+
+    public function test_agreement_and_error_pages_use_new_layout(): void {
+        $this->get('/user_agreement')->assertOk()->assertSee('Пользовательское соглашение')->assertSee('class="hdr"', false);
+        $this->get('/no-such-page')->assertNotFound()->assertSee('Такой страницы нет')->assertSee('noindex', false);
+    }
 }

@@ -231,6 +231,9 @@ function initWizard() {
         const once = st.additions.filter((a) => !a.every).reduce((n, a) => n + a.price, 0);
         return { first: every * f.firstPaid + once, monthly: every * f.perMonth };
     };
+    // Ближайшая дата выбранного дня недели, не раньше чем через два дня: флористу нужно время на закупку
+    const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    const nextDate = (day) => { const d = new Date(); d.setDate(d.getDate() + 2); const js = day % 7; while (d.getDay() !== js) d.setDate(d.getDate() + 1); return dayShort[day] + ', ' + d.getDate() + ' ' + months[d.getMonth()]; };
     const windowLabel = () => document.querySelector('#windows [aria-checked="true"]')?.textContent || '';
     const setErr = (id, msg) => { const e = $(id); if (!e) return; e.hidden = !msg; e.textContent = msg || ''; const inp = e.previousElementSibling; if (inp && inp.tagName === 'INPUT') inp.setAttribute('aria-invalid', msg ? 'true' : 'false'); };
     const phoneOk = (v) => /^(\+7|7|8)?[\s-]?\(?9\d{2}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}$/.test(v.trim()) || /^9\d{9}$/.test(v.replace(/\D/g, ''));
@@ -253,6 +256,7 @@ function initWizard() {
         $('bFirst').textContent = fmt(first) + ' ₽'; $('bSub').textContent = barSub[st.freq] + ' · дальше ' + fmt(monthly) + ' ₽/мес';
         const delivery = st.step >= 3 && $('address').value.trim() ? dayShort[st.day] + (windowLabel() ? ', ' + windowLabel() : '') : '';
         $('sDeliveryRow').hidden = !delivery; $('sDelivery').textContent = delivery;
+        if ($('sNextDate') && st.step >= 3) $('sNextDate').textContent = nextDate(st.day);
         $('sExtrasRow').hidden = !st.additions.length; $('sExtras').textContent = st.additions.map((a) => a.name).join(', ');
         const ms = $('mobileSummary');
         if (ms) {

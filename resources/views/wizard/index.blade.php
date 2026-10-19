@@ -239,7 +239,7 @@
                 <div class="row"><span>Первый месяц</span><span class="total" id="sFirst"></span></div>
                 <div class="promo" id="sPromo"></div>
                 <div class="row"><span>Со второго месяца</span><span id="sMonthly"></span></div>
-                <div class="row"><span>Первый букет</span><span>сб, {{ $firstBouquetDate->translatedFormat('j F') }}</span></div>
+                <div class="row"><span>Первый букет</span><span id="sNextDate">сб, {{ $firstBouquetDate->translatedFormat('j F') }}</span></div>
                 <p class="toast" style="margin:0">Списание раз в месяц картой. Пауза и отмена в кабинете, без штрафов.</p>
             </div>
         </aside>
