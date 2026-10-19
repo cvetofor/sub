@@ -96,11 +96,15 @@ if [ -n "$SUDO" ] || [ "$(id -u)" = "0" ]; then
     echo "nginx-конфигурация уже есть"
   fi
   if command -v certbot >/dev/null; then
+    for i in $(seq 1 20); do
+      if getent hosts "$DOMAIN" | grep -q .; then echo "DNS отвечает: $(getent hosts "$DOMAIN" | awk '{print $1}' | head -1)"; break; fi
+      [ "$i" = 20 ] && echo "DNS для $DOMAIN ещё не виден, сертификат может не выпуститься с первого раза"; sleep 15
+    done
     if ! $SUDO certbot certificates 2>/dev/null | grep -q "$DOMAIN"; then
       $SUDO certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email --redirect || echo "certbot не смог выпустить сертификат: проверьте, что DNS уже указывает на этот сервер"
     else echo "сертификат уже есть"; fi
   else
-    echo "certbot не установлен: sudo apt install certbot python3-certbot-nginx, затем certbot --nginx -d $DOMAIN"
+    echo "certbot не установлен, ставлю"; $SUDO apt-get update -qq && $SUDO apt-get install -y -qq certbot python3-certbot-nginx >/dev/null && $SUDO certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email --redirect || echo "сертификат выпустить не удалось, повторите позже: certbot --nginx -d $DOMAIN"
   fi
 else
   echo "Нет sudo: nginx и сертификат нужно настроить вручную по docs/nginx-cvety.conf"

@@ -51,26 +51,34 @@ jobs:
       - name: Сборка фронтенда
         run: npm ci && npm run build
 
-      - name: Доступ по SSH (ключ SSH_PRIVATE_KEY или пароль SSH_PASSWORD)
+      - name: Доступ к серверу
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          BEGET_LOGIN: ${{ secrets.BEGET_LOGIN }}
+          BEGET_PASSWORD: ${{ secrets.BEGET_PASSWORD }}
+          BEGET_API_PASSWORD: ${{ secrets.BEGET_API_PASSWORD }}
+          VPS_IP: ${{ inputs.ssh_host }}
+          DOMAIN_IDN: ${{ inputs.site_host }}
         run: |
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          ssh-keyscan -H ${{ inputs.ssh_host }} >> ~/.ssh/known_hosts 2>/dev/null
-          printf 'Host vps\n  HostName %s\n  User %s\n' "${{ inputs.ssh_host }}" "${{ inputs.ssh_user }}" > ~/.ssh/config
+          ssh-keyscan -H "$VPS_IP" >> ~/.ssh/known_hosts 2>/dev/null
+          printf 'Host vps\n  HostName %s\n  User %s\n' "$VPS_IP" "${{ inputs.ssh_user }}" > ~/.ssh/config
           if [ -n "$SSH_PRIVATE_KEY" ]; then
             printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
             printf '  IdentityFile ~/.ssh/id_deploy\n  IdentitiesOnly yes\n' >> ~/.ssh/config
-            echo "вход по ключу"
+            echo "вход по готовому ключу"
+          elif [ -n "$BEGET_LOGIN" ] && { [ -n "$BEGET_PASSWORD" ] || [ -n "$BEGET_API_PASSWORD" ]; }; then
+            # Через API Beget: ключ на сервер и DNS-запись
+            KEY_PATH=~/.ssh/id_deploy bash deploy/beget-prepare.sh
+            printf '  IdentityFile ~/.ssh/id_deploy\n  IdentitiesOnly yes\n' >> ~/.ssh/config
           elif [ -n "$SSH_PASSWORD" ]; then
             sudo apt-get update -qq && sudo apt-get install -y -qq sshpass >/dev/null
-            # Обёртка: все вызовы ssh/rsync ниже идут через sshpass с паролем из секрета
             printf '#!/bin/sh\nexec sshpass -e /usr/bin/ssh "$@"\n' | sudo tee /usr/local/bin/ssh >/dev/null && sudo chmod +x /usr/local/bin/ssh
             echo "SSHPASS=$SSH_PASSWORD" >> "$GITHUB_ENV"
             echo "вход по паролю"
           else
-            echo "Нет ни SSH_PRIVATE_KEY, ни SSH_PASSWORD в секретах репозитория"; exit 1
+            echo "Нужен один из секретов: SSH_PRIVATE_KEY, или BEGET_LOGIN + BEGET_PASSWORD/BEGET_API_PASSWORD, или SSH_PASSWORD"; exit 1
           fi
           hash -r
           ssh vps 'echo "SSH работает: $(hostname), $(whoami)"'
