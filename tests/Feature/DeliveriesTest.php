@@ -132,4 +132,23 @@ class DeliveriesTest extends TestCase {
         $this->assertStringContainsString('С любовью', $body);
         $this->assertStringContainsString('09:00–11:00', $body);
     }
+
+    public function test_team_gets_telegram_messages_when_configured(): void {
+        config(['services.telegram.token' => 'test-token', 'services.telegram.chat_id' => '-100']);
+        \Illuminate\Support\Facades\Http::fake(['api.telegram.org/*' => \Illuminate\Support\Facades\Http::response(['ok' => true])]);
+
+        [$user, $sub] = $this->paidSubscription('biweekly', 6);
+        $this->actingAs($user)->post("/subscription/{$sub->id}/delivery", ['address' => $sub->address, 'delivery_day' => 3, 'time_delivery_id' => $this->window->id]);
+        $this->actingAs($user)->post("/subscription/{$sub->id}/pause");
+
+        \Illuminate\Support\Facades\Http::assertSentCount(3); // новая подписка, смена доставки, пауза
+        \Illuminate\Support\Facades\Http::assertSent(fn ($r) => str_contains($r['text'], 'Новая подписка') && str_contains($r['text'], 'Ярославль') && $r['chat_id'] === '-100');
+        \Illuminate\Support\Facades\Http::assertSent(fn ($r) => str_contains($r['text'], 'изменил доставку: Среда') && str_contains($r['text'], '/hub/subscriptions/' . $sub->id));
+    }
+
+    public function test_cabinet_shows_payment_history_and_wizard_shows_city(): void {
+        [$user] = $this->paidSubscription('biweekly', 6);
+        $this->actingAs($user)->get('/profile')->assertOk()->assertSee('История платежей')->assertSee('2 990 ₽');
+        $this->get('/subscribe')->assertOk()->assertSee('Доставляем по городу Ярославль');
+    }
 }

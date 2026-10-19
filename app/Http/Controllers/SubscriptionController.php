@@ -12,6 +12,7 @@ use App\Models\TimeDelivery;
 use App\Models\Delivery;
 use App\Services\DeliverySchedule;
 use App\Services\Pricing;
+use App\Services\TeamNotifier;
 use App\Support\Phone;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -186,6 +187,7 @@ class SubscriptionController extends Controller {
         ]);
 
         DeliverySchedule::moveToWeekday($subscription);
+        TeamNotifier::deliveryChanged($subscription);
         Log::channel('shop')->info('Клиент изменил доставку.', ['subscription_id' => $subscription->id, 'delivery_day' => $data['delivery_day']]);
 
         return redirect()->route('profile')->with('success', 'Доставка обновлена. Флорист увидит изменения сразу.');
@@ -199,6 +201,7 @@ class SubscriptionController extends Controller {
             return redirect()->route('profile')->with('error', 'Эту доставку уже собирают, пропустить можно доставку не раньше чем за два дня. Позвоните нам, поможем.');
         }
         DeliverySchedule::skip($delivery);
+        TeamNotifier::deliverySkipped($subscription, $delivery);
         Log::channel('shop')->info('Клиент пропустил доставку.', ['subscription_id' => $subscription->id, 'delivery_id' => $delivery->id]);
 
         return redirect()->route('profile')->with('success', 'Доставка пропущена, букет перенесён в конец расписания.');
@@ -220,6 +223,7 @@ class SubscriptionController extends Controller {
     public function pause(Request $request, Subscription $subscription) {
         abort_unless($subscription->belongsToUser($request->user()), 403);
         $subscription->update(['is_active' => false, 'pause_reason' => Subscription::PAUSE_CLIENT]);
+        TeamNotifier::paused($subscription);
         Log::channel('shop')->info('Подписка поставлена на паузу клиентом.', ['subscription_id' => $subscription->id]);
 
         return redirect()->back()->with('success', 'Подписка на паузе. Списаний не будет.');

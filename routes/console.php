@@ -4,6 +4,7 @@ use App\Http\Api\Yookassa;
 use App\Models\Delivery;
 use App\Services\DeliverySchedule;
 use App\Services\Notifier;
+use App\Services\TeamNotifier;
 use App\Models\Payment;
 use App\Models\Subscription;
 use Carbon\Carbon;
@@ -75,6 +76,7 @@ Schedule::call(function () {
             $subscription->pause_reason = \App\Models\Subscription::PAUSE_PAYMENT;
             $subscription->save();
             Notifier::paymentFailed($subscription, $subscription->monthlyAmount());
+            TeamNotifier::paymentFailed($subscription, $subscription->monthlyAmount());
 
             Log::channel('shop')->info('Не удалось продлить подписку, поставлена на паузу.', ['subscription_id' => $subscription->id, 'status' => $paymentYookassa?->status]);
         }

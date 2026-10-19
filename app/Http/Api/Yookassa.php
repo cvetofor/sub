@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\Subscription;
 use App\Services\DeliverySchedule;
 use App\Services\Notifier;
+use App\Services\TeamNotifier;
 use App\Support\Phone;
 use Exception;
 use Illuminate\Http\Request;
@@ -180,6 +181,7 @@ class Yookassa {
         if (!$wasActive && !$subscription->deliveries()->exists()) {
             DeliverySchedule::planFirstMonth($subscription);
             Notifier::subscriptionActivated($subscription);
+            TeamNotifier::newSubscription($subscription, $subscription->firstPaymentAmount());
         }
 
         if (!empty($subscription->ab_variant) && !empty($subscription->ab_visitor)) {

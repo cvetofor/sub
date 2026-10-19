@@ -76,6 +76,16 @@
                                 @endforeach
                             </ul>
                         @endif
+                        @if ($sub->is_paid && $sub->payments->where('payment_status_id', \App\Models\Payment::PAYED)->isNotEmpty())
+                            <details class="edit">
+                                <summary>История платежей</summary>
+                                <ul class="dlist" style="margin-top:8px">
+                                    @foreach ($sub->payments->where('payment_status_id', \App\Models\Payment::PAYED)->sortByDesc('created_at') as $p)
+                                        <li><span>{{ $p->created_at->translatedFormat('j F Y') }}</span><b>{{ number_format((float) $p->amount, 0, '', ' ') }} ₽</b></li>
+                                    @endforeach
+                                </ul>
+                            </details>
+                        @endif
                         @if ($sub->is_paid)
                             <div class="row"><span>Списание раз в месяц</span><span class="total" style="font-size:20px">{{ number_format($sub->monthlyAmount(), 0, '', ' ') }} ₽</span></div>
                             @if ($sub->is_active && $sub->next_date_payment)

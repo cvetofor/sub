@@ -14,6 +14,12 @@ return [
     |
     */
 
+    // Уведомления команде в Telegram: токен бота и id чата (группы)
+    'telegram' => [
+        'token' => env('TELEGRAM_BOT_TOKEN'),
+        'chat_id' => env('TELEGRAM_CHAT_ID'),
+    ],
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],

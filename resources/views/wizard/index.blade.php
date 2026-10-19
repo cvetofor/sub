@@ -87,7 +87,8 @@
                 <div class="form" style="margin-top:20px">
                     <div class="field">
                         <label for="address">Адрес доставки</label>
-                        <input id="address" name="address" type="text" autocomplete="street-address" placeholder="Город, улица, дом, квартира" maxlength="255" required>
+                        <input id="address" name="address" type="text" autocomplete="street-address" placeholder="{{ $cityName ? $cityName . ", улица, дом, квартира" : "Город, улица, дом, квартира" }}" maxlength="255" required>
+                        @if ($cityName)<span class="toast">Доставляем по городу {{ $cityName }}.</span>@endif
                         <span class="err" id="errAddress" hidden></span>
                     </div>
                     <fieldset>

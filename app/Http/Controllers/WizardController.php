@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\City;
 use App\Models\Plan;
 use App\Models\PlanOption;
 use App\Models\TimeDelivery;
@@ -49,6 +50,7 @@ class WizardController extends Controller {
             'budget' => $budget,
             'additions' => $additions,
             'windows' => $windows,
+            'cityName' => City::active()->value('name'),
             'firstBouquetDate' => HomeController::nextSaturday(),
             'user' => $user,
             'wizardJson' => json_encode([
