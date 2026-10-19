@@ -21,6 +21,18 @@ on:
         description: 'Имя новой базы (копия старой)'
         required: true
         default: 'cvety_sub'
+      ssh_host:
+        description: 'IP сервера'
+        required: true
+        default: '93.189.231.103'
+      ssh_user:
+        description: 'Пользователь SSH'
+        required: true
+        default: 'root'
+      old_path:
+        description: 'Папка старого сайта (пусто = найти автоматически по .env)'
+        required: false
+        default: ''
 
 jobs:
   deploy:
@@ -40,20 +52,27 @@ jobs:
         run: npm ci && npm run build
 
       - name: SSH-ключ
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -H ${{ inputs.ssh_host }} >> ~/.ssh/known_hosts 2>/dev/null
+          echo "Host vps
+            HostName ${{ inputs.ssh_host }}
+            User ${{ inputs.ssh_user }}
+            IdentityFile ~/.ssh/id_deploy
+            IdentitiesOnly yes" > ~/.ssh/config
+          ssh vps 'echo "SSH работает: $(hostname), $(whoami)"'
 
       - name: Копирование кода и сборки
         run: |
+          ssh vps "mkdir -p '${{ inputs.new_path }}'"
           rsync -az --delete \
             --exclude '.git' --exclude 'node_modules' --exclude 'vendor' --exclude '.env' \
             --exclude 'storage/logs' --exclude 'storage/framework/sessions' --exclude 'storage/framework/cache' --exclude 'storage/app' \
-            -e "ssh -o StrictHostKeyChecking=no" \
-            ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ inputs.new_path }}/
+            ./ vps:${{ inputs.new_path }}/
 
       - name: Настройка на сервере
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "OLD_PATH='${{ secrets.REMOTE_PATH }}' NEW_PATH='${{ inputs.new_path }}' DOMAIN='${{ inputs.domain }}' SITE_HOST='${{ inputs.site_host }}' NEW_DB='${{ inputs.new_db }}' EXTRA_ENV='${{ secrets.CVETY_EXTRA_ENV }}' bash '${{ inputs.new_path }}/deploy/setup-cvety.sh'"
+          ssh vps \
+            "OLD_PATH='${{ inputs.old_path }}' NEW_PATH='${{ inputs.new_path }}' DOMAIN='${{ inputs.domain }}' SITE_HOST='${{ inputs.site_host }}' NEW_DB='${{ inputs.new_db }}' EXTRA_ENV='${{ secrets.CVETY_EXTRA_ENV }}' bash '${{ inputs.new_path }}/deploy/setup-cvety.sh'"

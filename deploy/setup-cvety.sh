@@ -4,7 +4,13 @@
 #   OLD_PATH=/var/www/sub NEW_PATH=/var/www/cvety DOMAIN=xn--b1ag3bn2a.xn--b1ag1aakjpl.xn--p1ai SITE_HOST=цветы.цветофор.рф bash deploy/setup-cvety.sh
 set -euo pipefail
 
-OLD_PATH="${OLD_PATH:?путь к старому сайту, например /var/www/sub}"
+OLD_PATH="${OLD_PATH:-}"
+if [ -z "$OLD_PATH" ]; then
+  # Ищем старый сайт по его .env с доменом подписка.цветофор.рф
+  OLD_PATH="$(grep -ls 'xn--80aaabblp5c1ajh6ag5e\|подписка.цветофор' /var/www/*/.env /var/www/*/*/.env /home/*/*/.env /home/*/*/*/.env /srv/*/.env 2>/dev/null | head -1 | xargs -r dirname)"
+  [ -n "$OLD_PATH" ] || { echo "Не нашёл старый сайт автоматически: укажите OLD_PATH"; exit 1; }
+  echo "старый сайт найден: $OLD_PATH"
+fi
 NEW_PATH="${NEW_PATH:-/var/www/cvety}"
 DOMAIN="${DOMAIN:?punycode-домен нового сайта}"
 SITE_HOST="${SITE_HOST:-$DOMAIN}"
