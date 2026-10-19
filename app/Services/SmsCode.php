@@ -75,7 +75,7 @@ class SmsCode {
     }
 
     private function deliver(string $phoneE164, string $code): bool {
-        return Sms::send($phoneE164, 'Код для входа на подписка.цветофор.рф: ' . $code, 'code');
+        return Sms::send($phoneE164, 'Код для входа на ' . \App\Support\Site::host() . ': ' . $code, 'code');
     }
 
     private function cacheKey(string $phoneE164): string {

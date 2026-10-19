@@ -63,4 +63,11 @@ class HomeController extends Controller {
 
         return response()->view('sitemap', ['urls' => $urls])->header('Content-Type', 'application/xml');
     }
+
+    /** robots.txt с адресом карты сайта текущего домена. */
+    public function robots() {
+        $lines = ['User-agent: *', 'Disallow: /subscribe', 'Disallow: /auth/', 'Disallow: /profile', 'Disallow: /payment/', 'Disallow: /hub', 'Disallow: /frontend-api/', '', 'Sitemap: ' . route('sitemap')];
+
+        return response(implode("\n", $lines) . "\n", 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
+    }
 }

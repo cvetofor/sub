@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\Log;
 use YooKassa\Client;
 
 class Yookassa {
+    /** Метка платежей нового сайта в metadata. Уведомления без неё принадлежат старому сайту. */
+    public const SITE_TAG = 'v2';
+
     private static $client;
 
     public function __construct() {
@@ -62,6 +65,7 @@ class Yookassa {
                     'metadata' => [
                         'sub_id' => $sub->id,
                         'is_reccurent' => '0',
+                        'site' => self::SITE_TAG,
                     ],
                     'receipt' => [
                         'customer' => [
@@ -112,6 +116,7 @@ class Yookassa {
                 'metadata' => [
                     'sub_id' => $sub->id,
                     'is_reccurent' => '1',
+                    'site' => self::SITE_TAG,
                 ],
             ],
             $idempotenceKey
@@ -133,6 +138,12 @@ class Yookassa {
             $factory = new \YooKassa\Model\Notification\NotificationFactory();
             $notificationObj = $factory->factory($data);
             $responseObj = $notificationObj->getObject();
+
+            // У магазина ЮKassa один адрес уведомлений. Пока старый сайт работает рядом,
+            // его платежи (без метки site) пересылаем ему как есть.
+            if (($responseObj->getMetadata()->site ?? null) !== self::SITE_TAG) {
+                return self::forwardToLegacy($request);
+            }
 
             if ($responseObj->getMetadata()->is_reccurent !== '1'
                 && $notificationObj->getEvent() === \YooKassa\Model\Notification\NotificationEventType::PAYMENT_SUCCEEDED) {
@@ -159,6 +170,28 @@ class Yookassa {
             ]);
 
             return response()->noContent(400);
+        }
+    }
+
+    /** Пересылка уведомления старому сайту. Без настроенного адреса отвечаем 200, чтобы ЮKassa не повторяла. */
+    private static function forwardToLegacy(Request $request) {
+        $url = config('yookassa.legacy_callback');
+        if (!$url) {
+            Log::channel('shop')->info('Уведомление ЮKassa не для этого сайта, адрес пересылки не задан.', ['payment' => $request->json('object.id')]);
+
+            return response()->noContent(200);
+        }
+        try {
+            $response = \Illuminate\Support\Facades\Http::timeout(15)
+                ->withBody($request->getContent(), 'application/json')
+                ->post($url);
+            Log::channel('shop')->info('Уведомление ЮKassa переслано старому сайту.', ['payment' => $request->json('object.id'), 'status' => $response->status()]);
+
+            return response()->noContent($response->successful() ? 200 : 502);
+        } catch (\Throwable $e) {
+            Log::channel('shop')->error('Не удалось переслать уведомление ЮKassa старому сайту.', ['message' => $e->getMessage()]);
+
+            return response()->noContent(502);
         }
     }
 

@@ -24,6 +24,7 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('/sitemap.xml', [HomeController::class, 'sitemap'])->name('sitemap');
+Route::get('/robots.txt', [HomeController::class, 'robots'])->name('robots');
 
 Route::get('/user_agreement', function () {
     return view('information.user_agreement');
