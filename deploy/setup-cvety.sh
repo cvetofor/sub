@@ -84,6 +84,8 @@ log "Расписание доставок для уже оплаченных п
 $PHP artisan deliveries:backfill
 
 log "Права и кэши"
+# Служебные папки Laravel не копируются при выкате, создаём: без storage/logs любое исключение даёт 500
+mkdir -p storage/logs storage/framework/cache/data storage/framework/sessions storage/framework/views storage/framework/testing storage/app/public bootstrap/cache
 $PHP artisan storage:link >/dev/null 2>&1 || true
 # Владелец как у старого сайта (обычно www-data): PHP должен писать в storage и bootstrap/cache
 WEB_USER="$(stat -c '%U' "$OLD_PATH/storage" 2>/dev/null || echo www-data)"; id "$WEB_USER" >/dev/null 2>&1 || WEB_USER=www-data
