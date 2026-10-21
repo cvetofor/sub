@@ -85,6 +85,17 @@ jobs:
           [ "$ok" = 1 ] || { echo "Ни один способ доступа не сработал: нужен рабочий SSH_PRIVATE_KEY, или BEGET_LOGIN + пароль API, или SSH_PASSWORD"; exit 1; }
           ssh vps 'echo "SSH работает: $(hostname), $(whoami)"'
 
+      - name: DNS-запись через API Beget
+        if: always()
+        continue-on-error: true
+        env:
+          BEGET_LOGIN: ${{ secrets.BEGET_LOGIN }}
+          BEGET_API_PASSWORD: ${{ secrets.BEGET_API_PASSWORD }}
+          VPS_IP: ${{ inputs.ssh_host }}
+          DOMAIN_IDN: ${{ inputs.site_host }}
+        run: |
+          if [ -n "$BEGET_LOGIN" ] && [ -n "$BEGET_API_PASSWORD" ]; then MODE=dns bash deploy/beget-prepare.sh; else echo "Нет BEGET_LOGIN/BEGET_API_PASSWORD, DNS-запись добавьте вручную"; fi
+
       - name: Копирование кода и сборки
         run: |
           ssh vps "mkdir -p '${{ inputs.new_path }}'"
