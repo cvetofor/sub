@@ -105,7 +105,7 @@ jobs:
           ssh vps "mkdir -p '${{ inputs.new_path }}'"
           rsync -az --delete \
             --exclude '.git' --exclude 'node_modules' --exclude 'vendor' --exclude '.env' \
-            --exclude 'storage/logs' --exclude 'storage/framework/sessions' --exclude 'storage/framework/cache' --exclude 'storage/app' \
+            --exclude 'storage' --exclude 'bootstrap/cache' \
             ./ vps:${{ inputs.new_path }}/
 
       - name: Настройка на сервере
