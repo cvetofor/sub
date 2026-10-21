@@ -5,13 +5,17 @@
 set -euo pipefail
 
 OLD_PATH="${OLD_PATH:-}"
+NEW_PATH="${NEW_PATH:-/var/www/cvety}"
+echo "скрипт развёртывания запущен на $(hostname) от $(whoami)"
 if [ -z "$OLD_PATH" ]; then
-  # Ищем старый сайт по его .env с доменом подписка.цветофор.рф
-  OLD_PATH="$(grep -ls 'xn--80aaabblp5c1ajh6ag5e\|подписка.цветофор' /var/www/*/.env /var/www/*/*/.env /home/*/*/.env /home/*/*/*/.env /srv/*/.env 2>/dev/null | head -1 | xargs -r dirname)"
-  [ -n "$OLD_PATH" ] || { echo "Не нашёл старый сайт автоматически: укажите OLD_PATH"; exit 1; }
+  # Ищем старый сайт: папка Laravel с нашим платёжным модулем и .env, не считая новой папки
+  for a in $(find /var/www /home /srv /opt /root -maxdepth 4 -name artisan -type f 2>/dev/null || true); do
+    d="$(dirname "$a")"
+    if [ "$d" != "$NEW_PATH" ] && [ -f "$d/.env" ] && [ -f "$d/app/Http/Api/Yookassa.php" ]; then OLD_PATH="$d"; break; fi
+  done
+  [ -n "$OLD_PATH" ] || { echo "Не нашёл старый сайт автоматически. Папки с artisan:"; find /var/www /home /srv /opt /root -maxdepth 4 -name artisan 2>/dev/null || true; echo "Укажите OLD_PATH при запуске"; exit 1; }
   echo "старый сайт найден: $OLD_PATH"
 fi
-NEW_PATH="${NEW_PATH:-/var/www/cvety}"
 DOMAIN="${DOMAIN:?punycode-домен нового сайта}"
 SITE_HOST="${SITE_HOST:-$DOMAIN}"
 NEW_DB="${NEW_DB:-cvety_sub}"
@@ -20,7 +24,7 @@ PHP="${PHP:-php}"
 SUDO=""; if [ "$(id -u)" != "0" ]; then if sudo -n true 2>/dev/null; then SUDO="sudo -n"; fi; fi
 
 log() { printf '\n== %s\n' "$*"; }
-val() { grep -E "^$1=" "$OLD_PATH/.env" | head -1 | cut -d= -f2- | tr -d '"'"'" ; }
+val() { { grep -E "^$1=" "$OLD_PATH/.env" 2>/dev/null || true; } | head -1 | cut -d= -f2- | tr -d '"'"'" ; }
 
 log "Проверки"
 [ -f "$OLD_PATH/.env" ] || { echo "Нет $OLD_PATH/.env: укажите OLD_PATH правильно"; exit 1; }
@@ -72,6 +76,7 @@ $PHP artisan migrate --force
 log "Сдвиг счётчиков, чтобы номера не пересекались со старым сайтом"
 for t in subscriptions payments users plans deliveries; do
   cur=$($PSQL -d "$NEW_DB" -tAc "select coalesce(max(id),0) from $t" 2>/dev/null || echo 0)
+  cur="${cur:-0}"
   if [ "${cur:-0}" -lt 100000 ]; then $PSQL -d "$NEW_DB" -qc "alter sequence ${t}_id_seq restart with 100000"; echo "$t: со 100000"; fi
 done
 
@@ -87,7 +92,7 @@ log "nginx и сертификат"
 if [ -n "$SUDO" ] || [ "$(id -u)" = "0" ]; then
   CONF=/etc/nginx/sites-available/cvety
   if [ ! -f "$CONF" ]; then
-    FPM=$(ls /run/php/php*-fpm.sock 2>/dev/null | head -1)
+    FPM=$( { ls /run/php/php*-fpm.sock 2>/dev/null || true; } | head -1)
     sed "s|xn--b1ag3bn2a.xn--b1ag1aakjpl.xn--p1ai|$DOMAIN|; s|/var/www/cvety/public|$NEW_PATH/public|; s|unix:/run/php/php8.3-fpm.sock|unix:${FPM:-/run/php/php8.3-fpm.sock}|" docs/nginx-cvety.conf | $SUDO tee "$CONF" >/dev/null
     $SUDO ln -sf "$CONF" /etc/nginx/sites-enabled/cvety
     $SUDO nginx -t && $SUDO systemctl reload nginx
@@ -97,7 +102,7 @@ if [ -n "$SUDO" ] || [ "$(id -u)" = "0" ]; then
   fi
   if command -v certbot >/dev/null; then
     for i in $(seq 1 20); do
-      if getent hosts "$DOMAIN" | grep -q .; then echo "DNS отвечает: $(getent hosts "$DOMAIN" | awk '{print $1}' | head -1)"; break; fi
+      if { getent hosts "$DOMAIN" || true; } | grep -q .; then echo "DNS отвечает: $(getent hosts "$DOMAIN" | awk '{print $1}' | head -1)"; break; fi
       [ "$i" = 20 ] && echo "DNS для $DOMAIN ещё не виден, сертификат может не выпуститься с первого раза"; sleep 15
     done
     if ! $SUDO certbot certificates 2>/dev/null | grep -q "$DOMAIN"; then
@@ -112,7 +117,10 @@ fi
 
 log "Cron"
 LINE="* * * * * cd $NEW_PATH && $PHP artisan schedule:run >> /dev/null 2>&1"
-( crontab -l 2>/dev/null | grep -vF "$NEW_PATH && $PHP artisan schedule:run" ; echo "$LINE" ) | crontab -
+TMP="$(mktemp)"
+{ crontab -l 2>/dev/null || true; } | { grep -vF "$NEW_PATH && $PHP artisan schedule:run" || true; } > "$TMP"
+echo "$LINE" >> "$TMP"
+crontab "$TMP" && rm -f "$TMP"
 echo "cron: $LINE"
 
 log "Готово"
