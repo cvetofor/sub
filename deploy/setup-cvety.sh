@@ -52,11 +52,18 @@ if [ ! -f .env ]; then
   done
   sed -i "s|^APP_ENV=.*|APP_ENV=production|; s|^APP_DEBUG=.*|APP_DEBUG=false|; s|^APP_URL=.*|APP_URL=https://$DOMAIN|; s|^SITE_HOST=.*|SITE_HOST=$SITE_HOST|; s|^DB_DATABASE=.*|DB_DATABASE=$NEW_DB|; s|^APP_NAME=.*|APP_NAME=Цветофор|; s|^APP_LOCALE=.*|APP_LOCALE=ru|" .env
   OLD_URL="$(val APP_URL)"; [ -n "$OLD_URL" ] && sed -i "s|^YOOKASSA_LEGACY_CALLBACK=.*|YOOKASSA_LEGACY_CALLBACK=${OLD_URL%/}/api/payment/yookassa/callback|" .env
-  [ -n "$EXTRA_ENV" ] && printf '\n%s\n' "$EXTRA_ENV" >> .env
   $PHP artisan key:generate --force
   echo ".env создан"
 else
-  echo ".env уже есть, не трогаю"
+  echo ".env уже есть, оставляю"
+fi
+# Дополнительные параметры (YM_ID, TELEGRAM_*): обновляем или добавляем при каждом выкате
+if [ -n "$EXTRA_ENV" ]; then
+  printf '%s\n' "$EXTRA_ENV" | while IFS= read -r line; do
+    key="${line%%=*}"; [ -n "$key" ] && [ "$key" != "$line" ] || continue
+    if grep -q "^$key=" .env; then sed -i "s|^$key=.*|$line|" .env; else printf '%s\n' "$line" >> .env; fi
+    echo "env: $key обновлён"
+  done
 fi
 
 log "База данных"

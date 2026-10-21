@@ -52,6 +52,12 @@ Schedule::call(function () {
             continue;
         }
 
+        if ($paymentYookassa && $paymentYookassa->status === 'pending') {
+            // Банк ещё думает: итог придёт уведомлением payment.succeeded или payment.canceled
+            Log::channel('shop')->info('Повторное списание в обработке, ждём уведомление.', ['subscription_id' => $subscription->id, 'payment' => $paymentYookassa->id]);
+            continue;
+        }
+
         if ($paymentYookassa && $paymentYookassa->status === 'succeeded' && $paymentYookassa->paid === true) {
             $subscription->is_active = true;
             $subscription->next_date_payment = Carbon::parse($subscription->next_date_payment)->addMonth();

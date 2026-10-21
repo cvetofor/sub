@@ -44,12 +44,40 @@ class SubdomainTest extends TestCase {
         $this->postJson('/api/payment/yookassa/callback', $this->notification(['site' => Yookassa::SITE_TAG]), ['REMOTE_ADDR' => '8.8.8.8'])->assertStatus(403);
     }
 
-    private function notification(array $metadata): array {
+    public function test_canceled_first_payment_is_marked_and_recurrent_cancel_pauses_subscription(): void {
+        \Illuminate\Support\Facades\DB::table('roles')->insert([['id' => 3, 'name' => 'Клиент', 'code' => 'client']]);
+        $city = \App\Models\City::create(['name' => 'Ярославль', 'code' => 'yar', 'is_active' => true]);
+        $plan = \App\Models\Plan::create(['name' => 'С любовью', 'price' => 2990, 'description' => '', 'is_active' => true, 'is_custom' => false, 'city_id' => $city->id, 'scenario' => 'any', 'sort' => 2]);
+        $sub = \App\Models\Subscription::create(['is_active' => true, 'plan_id' => $plan->id, 'frequency' => 'biweekly', 'delivery_day' => 6, 'sender_name' => 'Анна', 'sender_phone' => '+79123456789', 'address' => 'Ярославль, ул. Свободы, 1']);
+        $payment = \App\Models\Payment::create(['payment_status_id' => \App\Models\Payment::IN_PROGRESS, 'amount' => 2990, 'payment_gateway_transaction' => '2f0a1b3c-0000-5000-8000-aaaaaaaaaaaa']);
+        $sub->payments()->attach($payment->id);
+
+        // Отмена первого платежа: платёж помечен, подписка не трогается
+        $this->postJson('/api/payment/yookassa/callback', $this->notification(['sub_id' => (string) $sub->id, 'is_reccurent' => '0', 'site' => Yookassa::SITE_TAG, 'payment_id' => $payment->payment_gateway_transaction], 'payment.canceled', 'canceled'), ['REMOTE_ADDR' => '185.71.76.1'])->assertNoContent(200);
+        $this->assertSame(\App\Models\Payment::CANCELED, (int) $payment->fresh()->payment_status_id);
+        $this->assertTrue((bool) $sub->fresh()->is_active);
+
+        // Отмена повторного списания: подписка на паузе с причиной
+        $this->postJson('/api/payment/yookassa/callback', $this->notification(['sub_id' => (string) $sub->id, 'is_reccurent' => '1', 'site' => Yookassa::SITE_TAG, 'payment_id' => '2f0a1b3c-0000-5000-8000-bbbbbbbbbbbb'], 'payment.canceled', 'canceled'), ['REMOTE_ADDR' => '185.71.76.1'])->assertNoContent(200);
+        $this->assertFalse((bool) $sub->fresh()->is_active);
+        $this->assertSame(\App\Models\Subscription::PAUSE_PAYMENT, $sub->fresh()->pause_reason);
+
+        // Успешное повторное списание по уведомлению: платёж создан, подписка снова активна, доставки запланированы
+        $this->postJson('/api/payment/yookassa/callback', $this->notification(['sub_id' => (string) $sub->id, 'is_reccurent' => '1', 'site' => Yookassa::SITE_TAG, 'payment_id' => '2f0a1b3c-0000-5000-8000-cccccccccccc']), ['REMOTE_ADDR' => '185.71.76.1'])->assertNoContent(200);
+        $this->assertTrue((bool) $sub->fresh()->is_active);
+        $this->assertSame(2, $sub->payments()->count());
+        $this->assertSame(2, $sub->deliveries()->count());
+
+        // Привязка способа оплаты: без действий, но 200
+        $this->postJson('/api/payment/yookassa/callback', $this->notification(['sub_id' => (string) $sub->id, 'site' => Yookassa::SITE_TAG], 'payment_method.active'), ['REMOTE_ADDR' => '185.71.76.1'])->assertNoContent(200);
+    }
+
+    private function notification(array $metadata, string $event = 'payment.succeeded', string $status = 'succeeded'): array {
         return [
             'type' => 'notification',
-            'event' => 'payment.succeeded',
+            'event' => $event,
             'object' => [
-                'id' => '2f0a1b3c-0000-5000-8000-1234567890ab', 'status' => 'succeeded', 'paid' => true,
+                'id' => $metadata['payment_id'] ?? '2f0a1b3c-0000-5000-8000-1234567890ab', 'status' => $status, 'paid' => $status === 'succeeded',
                 'amount' => ['value' => '100.00', 'currency' => 'RUB'],
                 'created_at' => '2026-10-19T10:00:00.000Z',
                 'metadata' => $metadata,
