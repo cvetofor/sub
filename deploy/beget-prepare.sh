@@ -10,8 +10,10 @@ set -euo pipefail
 BEGET_PASSWORD="${BEGET_PASSWORD:-${BEGET_API_PASSWORD:-}}"; BEGET_API_PASSWORD="${BEGET_API_PASSWORD:-$BEGET_PASSWORD}"
 [ -n "$BEGET_PASSWORD" ] || { echo "Нужен BEGET_PASSWORD или BEGET_API_PASSWORD"; exit 1; }
 KEY_NAME="github-actions-cvety"
+MODE="${MODE:-all}"   # all: ключ на сервер + DNS; dns: только DNS через API хостинга
 log() { printf '\n== %s\n' "$*"; }
 
+if [ "$MODE" != "dns" ]; then
 log "JWT облачного API"
 AUTH=$(curl -sS -X POST https://api.beget.com/v1/auth -H 'Content-Type: application/json' \
   -d "$(jq -cn --arg l "$BEGET_LOGIN" --arg p "$BEGET_PASSWORD" '{login:$l,password:$p,saveMe:false}')")
@@ -51,6 +53,8 @@ for i in $(seq 1 18); do
   sleep 10
 done
 
+fi
+
 log "DNS: $DOMAIN_IDN → $VPS_IP"
 legacy() { # метод, json
   curl -sS -G "https://api.beget.com/api/$1" --data-urlencode "login=$BEGET_LOGIN" --data-urlencode "passwd=$BEGET_API_PASSWORD" \
@@ -76,4 +80,5 @@ else
   fi
 fi
 
+[ "$MODE" = "dns" ] && exit 0
 log "Готово: ключ в $KEY_PATH"
