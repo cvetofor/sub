@@ -7,6 +7,10 @@
 set -euo pipefail
 
 : "${BEGET_LOGIN:?}"; : "${VPS_IP:?}"; : "${DOMAIN_IDN:?}"; KEY_PATH="${KEY_PATH:-$HOME/.ssh/id_deploy}"
+# Секреты часто вставляют с переводом строки или пробелом в конце: убираем
+trim() { printf '%s' "$1" | tr -d '\r\n' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//'; }
+BEGET_LOGIN="$(trim "$BEGET_LOGIN")"; BEGET_PASSWORD="$(trim "${BEGET_PASSWORD:-}")"; BEGET_API_PASSWORD="$(trim "${BEGET_API_PASSWORD:-}")"
+echo "логин Beget: ${BEGET_LOGIN:0:2}… (${#BEGET_LOGIN} симв.), пароль аккаунта: ${#BEGET_PASSWORD} симв., пароль API: ${#BEGET_API_PASSWORD} симв."
 BEGET_PASSWORD="${BEGET_PASSWORD:-${BEGET_API_PASSWORD:-}}"; BEGET_API_PASSWORD="${BEGET_API_PASSWORD:-$BEGET_PASSWORD}"
 [ -n "$BEGET_PASSWORD" ] || { echo "Нужен BEGET_PASSWORD или BEGET_API_PASSWORD"; exit 1; }
 KEY_NAME="github-actions-cvety"
