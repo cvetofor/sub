@@ -63,24 +63,26 @@ jobs:
         run: |
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
           ssh-keyscan -H "$VPS_IP" >> ~/.ssh/known_hosts 2>/dev/null
-          printf 'Host vps\n  HostName %s\n  User %s\n' "$VPS_IP" "${{ inputs.ssh_user }}" > ~/.ssh/config
+          printf 'Host vps\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/id_deploy\n  IdentitiesOnly yes\n' "$VPS_IP" "${{ inputs.ssh_user }}" > ~/.ssh/config
+          ok=0
+          # 1. Готовый ключ из секрета, если он подходит к серверу
           if [ -n "$SSH_PRIVATE_KEY" ]; then
             printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
-            printf '  IdentityFile ~/.ssh/id_deploy\n  IdentitiesOnly yes\n' >> ~/.ssh/config
-            echo "вход по готовому ключу"
-          elif [ -n "$BEGET_LOGIN" ] && { [ -n "$BEGET_PASSWORD" ] || [ -n "$BEGET_API_PASSWORD" ]; }; then
-            # Через API Beget: ключ на сервер и DNS-запись
-            KEY_PATH=~/.ssh/id_deploy bash deploy/beget-prepare.sh
-            printf '  IdentityFile ~/.ssh/id_deploy\n  IdentitiesOnly yes\n' >> ~/.ssh/config
-          elif [ -n "$SSH_PASSWORD" ]; then
-            sudo apt-get update -qq && sudo apt-get install -y -qq sshpass >/dev/null
-            printf '#!/bin/sh\nexec sshpass -e /usr/bin/ssh "$@"\n' | sudo tee /usr/local/bin/ssh >/dev/null && sudo chmod +x /usr/local/bin/ssh
-            echo "SSHPASS=$SSH_PASSWORD" >> "$GITHUB_ENV"
-            echo "вход по паролю"
-          else
-            echo "Нужен один из секретов: SSH_PRIVATE_KEY, или BEGET_LOGIN + BEGET_PASSWORD/BEGET_API_PASSWORD, или SSH_PASSWORD"; exit 1
+            if ssh -o BatchMode=yes -o ConnectTimeout=10 vps 'echo ok' 2>/dev/null | grep -q ok; then ok=1; echo "вход по готовому ключу"; else echo "ключ из SSH_PRIVATE_KEY сервер не принимает, пробую другие способы"; fi
           fi
-          hash -r
+          # 2. Через API Beget: новый ключ на сервер и DNS-запись
+          if [ "$ok" = 0 ] && [ -n "$BEGET_LOGIN" ] && { [ -n "$BEGET_PASSWORD" ] || [ -n "$BEGET_API_PASSWORD" ]; }; then
+            KEY_PATH=~/.ssh/id_deploy bash deploy/beget-prepare.sh && ok=1
+          fi
+          # 3. Пароль root
+          if [ "$ok" = 0 ] && [ -n "$SSH_PASSWORD" ]; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq sshpass >/dev/null
+            printf 'Host vps\n  HostName %s\n  User %s\n' "$VPS_IP" "${{ inputs.ssh_user }}" > ~/.ssh/config
+            printf '#!/bin/sh\nexec sshpass -e /usr/bin/ssh "$@"\n' | sudo tee /usr/local/bin/ssh >/dev/null && sudo chmod +x /usr/local/bin/ssh
+            echo "SSHPASS=$SSH_PASSWORD" >> "$GITHUB_ENV"; export SSHPASS="$SSH_PASSWORD"; hash -r
+            ok=1; echo "вход по паролю"
+          fi
+          [ "$ok" = 1 ] || { echo "Ни один способ доступа не сработал: нужен рабочий SSH_PRIVATE_KEY, или BEGET_LOGIN + пароль API, или SSH_PASSWORD"; exit 1; }
           ssh vps 'echo "SSH работает: $(hostname), $(whoami)"'
 
       - name: Копирование кода и сборки
