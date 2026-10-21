@@ -14,12 +14,12 @@ echo "логин Beget: ${BEGET_LOGIN:0:2}… (${#BEGET_LOGIN} симв.), па�
 BEGET_PASSWORD="${BEGET_PASSWORD:-${BEGET_API_PASSWORD:-}}"; BEGET_API_PASSWORD="${BEGET_API_PASSWORD:-$BEGET_PASSWORD}"
 [ -n "$BEGET_PASSWORD" ] || { echo "Нужен BEGET_PASSWORD или BEGET_API_PASSWORD"; exit 1; }
 KEY_NAME="github-actions-cvety"
-MODE="${MODE:-all}"   # all: ключ на сервер + DNS; dns: только DNS через API хостинга
+MODE="${MODE:-all}"   # all: ключ на сервер + DNS; ssh: только ключ; dns: только DNS через API хостинга
 log() { printf '\n== %s\n' "$*"; }
 
 if [ "$MODE" != "dns" ]; then
 log "JWT облачного API"
-AUTH=$(curl -sS -X POST https://api.beget.com/v1/auth -H 'Content-Type: application/json' \
+AUTH=$(curl -sS --max-time 30 --retry 3 --retry-delay 5 -X POST https://api.beget.com/v1/auth -H 'Content-Type: application/json' \
   -d "$(jq -cn --arg l "$BEGET_LOGIN" --arg p "$BEGET_PASSWORD" '{login:$l,password:$p,saveMe:false}')")
 TOKEN=$(echo "$AUTH" | jq -r '.token // empty')
 if [ -z "$TOKEN" ]; then
@@ -27,7 +27,7 @@ if [ -z "$TOKEN" ]; then
   echo "Если ошибка CODE_REQUIRED_*: на аккаунте включена двухфакторная аутентификация, API так не войдёт. Используйте SSH_PASSWORD."
   exit 1
 fi
-api() { curl -sS -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' "$@"; }
+api() { curl -sS --max-time 30 --retry 3 --retry-delay 5 -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' "$@"; }
 
 log "Сервер с IP $VPS_IP"
 VPS_ID=$(api "https://api.beget.com/v1/vps/server/list?limit=200" | jq -r --arg ip "$VPS_IP" '.vps[] | select(.ip_address==$ip) | .id' | head -1)
@@ -58,11 +58,17 @@ for i in $(seq 1 18); do
 done
 
 fi
+if [ "$MODE" = "ssh" ]; then log "Готово: ключ в $KEY_PATH"; exit 0; fi
 
 log "DNS: $DOMAIN_IDN → $VPS_IP"
-legacy() { # метод, json
-  curl -sS -G "https://api.beget.com/api/$1" --data-urlencode "login=$BEGET_LOGIN" --data-urlencode "passwd=$BEGET_API_PASSWORD" \
-    --data-urlencode "input_format=json" --data-urlencode "output_format=json" --data-urlencode "input_data=$2"
+legacy() { # метод, json; до трёх попыток при сетевых сбоях
+  local i out
+  for i in 1 2 3; do
+    out=$(curl -sS --max-time 20 -G "https://api.beget.com/api/$1" --data-urlencode "login=$BEGET_LOGIN" --data-urlencode "passwd=$BEGET_API_PASSWORD" \
+      --data-urlencode "input_format=json" --data-urlencode "output_format=json" --data-urlencode "input_data=$2" 2>/dev/null) && { printf '%s' "$out"; return 0; }
+    sleep 5
+  done
+  printf '{"status":"error","error_text":"нет связи с api.beget.com"}'
 }
 PARENT="${DOMAIN_IDN#*.}"; SUB="${DOMAIN_IDN%%.*}"
 DOMAINS=$(legacy domain/getList '{}')
