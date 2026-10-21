@@ -70,9 +70,9 @@ jobs:
             printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
             if ssh -o BatchMode=yes -o ConnectTimeout=10 vps 'echo ok' 2>/dev/null | grep -q ok; then ok=1; echo "вход по готовому ключу"; else echo "ключ из SSH_PRIVATE_KEY сервер не принимает, пробую другие способы"; fi
           fi
-          # 2. Через API Beget: новый ключ на сервер и DNS-запись
+          # 2. Через API Beget: новый ключ на сервер (DNS отдельным шагом ниже)
           if [ "$ok" = 0 ] && [ -n "$BEGET_LOGIN" ] && { [ -n "$BEGET_PASSWORD" ] || [ -n "$BEGET_API_PASSWORD" ]; }; then
-            KEY_PATH=~/.ssh/id_deploy bash deploy/beget-prepare.sh && ok=1
+            MODE=ssh KEY_PATH=~/.ssh/id_deploy bash deploy/beget-prepare.sh && ok=1
           fi
           # 3. Пароль root
           if [ "$ok" = 0 ] && [ -n "$SSH_PASSWORD" ]; then
