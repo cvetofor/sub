@@ -85,8 +85,15 @@ $PHP artisan deliveries:backfill
 
 log "Права и кэши"
 $PHP artisan storage:link >/dev/null 2>&1 || true
+# Владелец как у старого сайта (обычно www-data): PHP должен писать в storage и bootstrap/cache
+WEB_USER="$(stat -c '%U' "$OLD_PATH/storage" 2>/dev/null || echo www-data)"; id "$WEB_USER" >/dev/null 2>&1 || WEB_USER=www-data
+$SUDO chown -R "$WEB_USER":"$WEB_USER" storage bootstrap/cache public/build 2>/dev/null || chown -R "$WEB_USER":"$WEB_USER" storage bootstrap/cache public/build || true
 chmod -R ug+rwX storage bootstrap/cache
+echo "владелец storage: $WEB_USER"
 $PHP artisan config:cache && $PHP artisan route:cache && $PHP artisan view:cache && $PHP artisan filament:optimize >/dev/null
+$SUDO chown -R "$WEB_USER":"$WEB_USER" storage bootstrap/cache 2>/dev/null || true
+# Проверка страниц после настройки
+for u in / /subscribe /hub/login; do printf '%-12s HTTP %s\n' "$u" "$(curl -sk -o /dev/null -w '%{http_code}' -H "Host: $DOMAIN" "http://127.0.0.1$u" || echo '000')"; done
 
 log "nginx и сертификат"
 if [ -n "$SUDO" ] || [ "$(id -u)" = "0" ]; then

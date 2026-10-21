@@ -33,6 +33,10 @@ on:
         description: 'Папка старого сайта (пусто = найти автоматически по .env)'
         required: false
         default: ''
+      command:
+        description: 'Команда для выполнения на сервере после настройки (диагностика), пусто = ничего'
+        required: false
+        default: ''
 
 jobs:
   deploy:
@@ -108,3 +112,7 @@ jobs:
         run: |
           ssh vps \
             "OLD_PATH='${{ inputs.old_path }}' NEW_PATH='${{ inputs.new_path }}' DOMAIN='${{ inputs.domain }}' SITE_HOST='${{ inputs.site_host }}' NEW_DB='${{ inputs.new_db }}' EXTRA_ENV='${{ secrets.CVETY_EXTRA_ENV }}' bash '${{ inputs.new_path }}/deploy/setup-cvety.sh'"
+
+      - name: Диагностика на сервере
+        if: ${{ always() && inputs.command != '' }}
+        run: ssh vps "cd '${{ inputs.new_path }}' && ${{ inputs.command }}"
