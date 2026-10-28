@@ -42,7 +42,8 @@ class QuizController extends Controller {
 
     public function index(Request $request) {
         $user = $request->user();
-        $plans = Plan::showcase()->get()->map(fn (Plan $plan) => [
+        // В квизе тарифы идут по цене: от «Мини» к «Букету XL», метки «наш выбор» и «самый большой» привязаны к позиции
+        $plans = Plan::showcase()->get()->sortBy([['price', 'asc'], ['id', 'asc']])->values()->map(fn (Plan $plan) => [
             'id' => $plan->id,
             'name' => $plan->name,
             'nameGift' => $plan->nameFor(Plan::SCENARIO_GIFT),

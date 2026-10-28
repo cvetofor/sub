@@ -74,7 +74,8 @@ class QuizFlowTest extends TestCase {
     }
 
     public function test_quiz_shows_gift_names_and_addons(): void {
-        $this->get('/quiz')->assertOk()->assertSee('Знак внимания')->assertSee('С любовью')->assertSee('Ваза')->assertSee('13:00–15:00');
+        $html = $this->get('/quiz')->assertOk()->assertSee('Знак внимания')->assertSee('С любовью')->assertSee('Ваза')->assertSee('13:00–15:00')->getContent();
+        $this->assertLessThan(strpos($html, 'data-name="Забота"'), strpos($html, 'data-name="Мини"'), 'тарифы в квизе идут по цене');
     }
 
     public function test_guest_creates_subscription_and_pays_without_sms_code(): void {
