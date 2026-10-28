@@ -30,6 +30,7 @@ class UnpaidReminder {
             ->whereIn('source', [Subscription::SOURCE_WIZARD, Subscription::SOURCE_QUIZ])
             ->where('is_active', false)
             ->whereNull('unpaid_reminded_at')
+            ->whereNull('cancelled_at')
             ->whereNotNull('user_id')
             ->where('created_at', '<=', $now->copy()->subMinutes(self::delayMinutes()))
             ->where('created_at', '>=', $now->copy()->subDays(self::MAX_AGE_DAYS))

@@ -142,7 +142,7 @@ class EditSubscription extends EditRecord {
 
                                 TextEntry::make('paid_text')
                                     ->label('Оплата')
-                                    ->default($subscription->isPaid() ? 'Оплачена' : ('Не оплачена' . ($subscription->unpaid_reminded_at ? ', напоминание со ссылкой на оплату отправлено ' . $subscription->unpaid_reminded_at->format('d.m H:i') : ', напоминание о неоплаченной заявке ещё не уходило')))
+                                    ->default($subscription->isPaid() ? 'Оплачена' : ($subscription->cancelled_at ? 'Отменена клиентом ' . $subscription->cancelled_at->format('d.m H:i') : 'Не оплачена' . ($subscription->unpaid_reminded_at ? ', напоминание со ссылкой на оплату отправлено ' . $subscription->unpaid_reminded_at->format('d.m H:i') : ', напоминание о неоплаченной заявке ещё не уходило')))
                                     ->color($subscription->isPaid() ? 'success' : 'warning'),
 
                                 TextEntry::make('amo_text')

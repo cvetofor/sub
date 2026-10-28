@@ -225,6 +225,18 @@ class SubscriptionController extends Controller {
         return redirect()->away($link);
     }
 
+    /** Отмена неоплаченной заявки из кабинета: только владелец, только пока нет оплаты. */
+    public function cancel(Request $request, Subscription $subscription) {
+        abort_unless($subscription->belongsToUser($request->user()), 403);
+        if ($subscription->isPaid()) {
+            return redirect()->route('profile')->with('error', 'Эта подписка уже оплачена. Поставьте её на паузу или напишите нам, если хотите отменить.');
+        }
+        $subscription->update(['is_active' => false, 'cancelled_at' => Carbon::now()]);
+        Log::channel('shop')->info('Клиент отменил неоплаченную заявку.', ['subscription_id' => $subscription->id]);
+
+        return redirect()->route('profile')->with('success', 'Заявка №' . $subscription->id . ' отменена. Деньги не списывались.');
+    }
+
     /** Пауза подписки: только владелец. */
     public function pause(Request $request, Subscription $subscription) {
         abort_unless($subscription->belongsToUser($request->user()), 403);

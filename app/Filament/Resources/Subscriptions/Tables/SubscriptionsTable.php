@@ -41,9 +41,9 @@ class SubscriptionsTable {
                     ->boolean(),
                 TextColumn::make('paid_state')
                     ->label('Оплата')
-                    ->state(fn ($record) => $record->isPaid() ? 'Оплачена' : 'Не оплачена')
+                    ->state(fn ($record) => $record->isPaid() ? 'Оплачена' : ($record->cancelled_at ? 'Отменена клиентом' : 'Не оплачена'))
                     ->badge()
-                    ->color(fn ($state) => $state === 'Оплачена' ? 'success' : 'warning'),
+                    ->color(fn ($state) => match ($state) { 'Оплачена' => 'success', 'Отменена клиентом' => 'gray', default => 'warning' }),
                 TextColumn::make('source')
                     ->label('Откуда')
                     ->formatStateUsing(fn ($state) => match ($state) { 'quiz' => 'Квиз', 'wizard' => 'Мастер', default => '—' })

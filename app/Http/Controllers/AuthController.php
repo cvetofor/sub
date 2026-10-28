@@ -28,6 +28,7 @@ class AuthController extends Controller {
                     $q->orWhereIn('sender_phone', $phones);
                 }
             })
+            ->whereNull('cancelled_at')
             ->orderByDesc('created_at')
             ->get()
             ->map(function (Subscription $sub) {

@@ -28,6 +28,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/subscription/{subscription}/pause', [SubscriptionController::class, 'pause'])->name('subscription.disable');
     Route::post('/subscription/{subscription}/resume', [SubscriptionController::class, 'resume'])->name('subscription.active');
     Route::get('/subscription/{subscription}/pay', [SubscriptionController::class, 'pay'])->name('subscription.pay');
+    Route::post('/subscription/{subscription}/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
     Route::post('/subscription/{subscription}/delivery', [SubscriptionController::class, 'updateDelivery'])->name('subscription.delivery');
     Route::post('/subscription/{subscription}/deliveries/{delivery}/skip', [SubscriptionController::class, 'skipDelivery'])->name('subscription.skip');
 });

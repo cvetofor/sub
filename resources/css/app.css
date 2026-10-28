@@ -166,7 +166,7 @@
     .section-head > div:first-child { flex: 1 1 300px; min-width: 0; }
     .section-head .sub { max-width: 46ch; }
     .sub { font-size: 15px; color: var(--color-text-2); margin: 6px 0 0; }
-    .sub a { display: inline-block; padding: 12px 0; color: var(--color-accent-600); }
+    p.sub a { display: inline-block; padding: 12px 0; color: var(--color-accent-600); }
     @media (min-width: 768px) { .sub { font-size: 16px; } }
 
     /* Шаги «как это работает» */

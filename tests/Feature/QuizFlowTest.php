@@ -290,4 +290,29 @@ class QuizFlowTest extends TestCase {
         $this->assertNull(Subscription::find($id3)->unpaid_reminded_at);
         \Carbon\Carbon::setTestNow();
     }
+
+    public function test_client_can_cancel_unpaid_order_from_cabinet(): void {
+        $id = $this->postJson('/quiz/subscribe', $this->payload())->assertCreated()->json('subscription_id');
+        $user = Subscription::findOrFail($id)->user;
+        $this->actingAs($user)->get('/profile')->assertOk()->assertSee('Оплатить 9 870 ₽')->assertSee('Отменить заказ');
+
+        $stranger = User::create(['name' => 'Ч', 'email' => 'q@phone.local', 'phone' => '+79990000009', 'phone_e164' => '+79990000009', 'password' => 'x', 'role_id' => Role::CLIENT, 'is_active' => true]);
+        $this->actingAs($stranger)->post("/subscription/{$id}/cancel")->assertForbidden();
+
+        $this->actingAs($user)->post("/subscription/{$id}/cancel")->assertRedirect('/profile')->assertSessionHas('success');
+        $sub = Subscription::findOrFail($id);
+        $this->assertNotNull($sub->cancelled_at);
+        $this->actingAs($user)->get('/profile')->assertOk()->assertDontSee('Отменить заказ');
+        \Carbon\Carbon::setTestNow(now()->addHours(2));
+        $this->assertSame(0, \App\Services\UnpaidReminder::run(), 'по отменённой заявке напоминание не уходит');
+        \Carbon\Carbon::setTestNow();
+
+        // Оплаченную отменить из кабинета нельзя
+        auth()->logout();
+        $id2 = $this->postJson('/quiz/subscribe', $this->payload(['sender_phone' => '+7 924 111-22-33']))->json('subscription_id');
+        $this->get(\Illuminate\Support\Facades\URL::temporarySignedRoute('payment.test', now()->addDay(), ['subscription' => $id2]));
+        $this->post('/payment/test/' . $id2)->assertRedirect();
+        $this->post("/subscription/{$id2}/cancel")->assertRedirect('/profile')->assertSessionHas('error');
+        $this->assertNull(Subscription::find($id2)->cancelled_at);
+    }
 }

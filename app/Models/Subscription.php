@@ -33,6 +33,7 @@ class Subscription extends Model {
         'source',
         'amo_lead_id',
         'unpaid_reminded_at',
+        'cancelled_at',
     ];
 
     public const SOURCE_WIZARD = 'wizard';
@@ -44,6 +45,7 @@ class Subscription extends Model {
         'using_promo' => 'boolean',
         'next_date_payment' => 'datetime',
         'unpaid_reminded_at' => 'datetime',
+        'cancelled_at' => 'datetime',
     ];
 
     protected static function boot() {

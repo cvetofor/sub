@@ -153,7 +153,11 @@
                         </details>
                         @else
                             <div class="row"><span>К оплате за первый месяц</span><span class="total" style="font-size:20px">{{ number_format($sub->firstPaymentAmount(), 0, '', ' ') }} ₽</span></div>
-                            <div class="sub-actions"><a class="btn" href="{{ route('subscription.pay', $sub) }}">Оплатить</a></div>
+                            <div class="sub-actions">
+                                <a class="btn" href="{{ route('subscription.pay', $sub) }}">Оплатить {{ number_format($sub->firstPaymentAmount(), 0, '', ' ') }} ₽</a>
+                                <form method="POST" action="{{ route('subscription.cancel', $sub) }}" onsubmit="return confirm('Отменить заявку №{{ $sub->id }}? Деньги не списывались, ничего платить не нужно.')">@csrf<button class="btn ghost" type="submit">Отменить заказ</button></form>
+                            </div>
+                            <p class="toast" style="margin:0">Заявка ждёт оплаты, доставки начнутся после неё. Если передумали, отмените заказ: ничего платить не нужно.</p>
                         @endif
                     </article>
                 @endforeach
