@@ -104,6 +104,11 @@ Schedule::call(function () {
     }
 })->dailyAt('18:00')->name('deliveries:remind')->withoutOverlapping();
 
+/* Заявка без оплаты: через заданное в настройках время одна СМС со ссылкой на оплату. */
+Schedule::call(function () {
+    \App\Services\UnpaidReminder::run();
+})->everyTenMinutes()->name('subscriptions:remind-unpaid')->withoutOverlapping();
+
 /* Ночью закрываем вчерашние доставки, которые флорист не отметил вручную. */
 Schedule::call(function () {
     $closed = Delivery::planned()->where('planned_date', '<', Carbon::today()->toDateString())

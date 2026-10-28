@@ -254,4 +254,40 @@ class QuizFlowTest extends TestCase {
         $this->get('/hub/subscriptions')->assertOk();
         Livewire::test(\App\Filament\Resources\Subscriptions\Pages\EditSubscription::class, ['record' => $id])->assertOk()->assertSee('Квиз (дизайн 2)')->assertSee('Оплачена');
     }
+
+    public function test_unpaid_order_gets_one_payment_link_sms_after_delay(): void {
+        \Carbon\Carbon::setTestNow('2026-10-28 10:00:00');
+        $id = $this->postJson('/quiz/subscribe', $this->payload())->assertCreated()->json('subscription_id');
+        $sub = Subscription::findOrFail($id);
+        $this->assertSame(0, \App\Services\UnpaidReminder::run(), 'час ещё не прошёл');
+
+        \Carbon\Carbon::setTestNow('2026-10-28 11:05:00');
+        $this->assertSame(1, \App\Services\UnpaidReminder::run());
+        $this->assertSame(0, \App\Services\UnpaidReminder::run(), 'вторая СМС не уходит');
+        $sub->refresh();
+        $this->assertNotNull($sub->unpaid_reminded_at);
+        $user = $sub->user->fresh();
+        $this->assertNotNull($user->login_token);
+
+        // Ссылка из СМС ведёт к оплате этой заявки без кода
+        auth()->logout();
+        $this->get('/k/' . $user->login_token . '?pay=' . $id)->assertRedirect('/subscription/' . $id . '/pay');
+        $this->assertAuthenticatedAs($user);
+        $this->get('/subscription/' . $id . '/pay')->assertRedirect();
+
+        // Оплаченные заявки и выключенная настройка: без СМС
+        auth()->logout();
+        $id2 = $this->postJson('/quiz/subscribe', $this->payload(['sender_phone' => '+7 924 111-22-33']))->json('subscription_id');
+        $this->get(\Illuminate\Support\Facades\URL::temporarySignedRoute('payment.test', now()->addDay(), ['subscription' => $id2]));
+        $this->post('/payment/test/' . $id2)->assertRedirect();
+        \Carbon\Carbon::setTestNow('2026-10-28 13:00:00');
+        $this->assertSame(0, \App\Services\UnpaidReminder::run());
+        auth()->logout();
+        $id3 = $this->postJson('/quiz/subscribe', $this->payload(['sender_phone' => '+7 924 333-22-11']))->json('subscription_id');
+        Settings::set('sms', ['unpaid' => false]);
+        \Carbon\Carbon::setTestNow('2026-10-28 15:00:00');
+        $this->assertSame(0, \App\Services\UnpaidReminder::run());
+        $this->assertNull(Subscription::find($id3)->unpaid_reminded_at);
+        \Carbon\Carbon::setTestNow();
+    }
 }

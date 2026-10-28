@@ -37,6 +37,7 @@ class SiteSettings extends Page {
             'design_mode' => Settings::designMode(),
             'hero_mode' => Settings::heroMode(),
             'sms' => array_replace(Settings::DEFAULTS['sms'], is_array($all['sms'] ?? null) ? $all['sms'] : []),
+            'unpaid_reminder_minutes' => (int) ($all['unpaid_reminder_minutes'] ?? 60),
             'amocrm_enabled' => (bool) ($all['amocrm_enabled'] ?? false),
             'amocrm_pipeline_id' => $all['amocrm_pipeline_id'] ?? null,
             'amocrm_status_new' => $all['amocrm_status_new'] ?? null,
@@ -64,10 +65,18 @@ class SiteSettings extends Page {
                 ]),
             Section::make('СМС клиентам')
                 ->description('По неоплаченным заявкам СМС не отправляются никогда: напоминания планируются только после оплаты. Здесь можно выключить отдельные виды.')
-                ->schema(array_map(
-                    fn (string $kind, string $label) => Toggle::make('sms.' . $kind)->label($label)->default(true),
-                    array_keys(Settings::SMS_KINDS),
-                    Settings::SMS_KINDS
+                ->schema(array_merge(
+                    array_map(
+                        fn (string $kind, string $label) => Toggle::make('sms.' . $kind)->label($label)->default(true),
+                        array_keys(Settings::SMS_KINDS),
+                        Settings::SMS_KINDS
+                    ),
+                    [
+                        TextInput::make('unpaid_reminder_minutes')
+                            ->label('Через сколько минут напомнить о неоплаченной заявке')
+                            ->numeric()->minValue(5)->maxValue(4320)->default(60)
+                            ->helperText('Одна СМС на заявку со ссылкой на оплату, по заявкам не старше недели. Проверка каждые 10 минут.'),
+                    ]
                 )),
             Section::make('amoCRM')
                 ->description($amoConfigured
@@ -89,6 +98,7 @@ class SiteSettings extends Page {
             'design_mode' => $data['design_mode'],
             'hero_mode' => $data['hero_mode'],
             'sms' => array_map(fn ($v) => (bool) $v, $data['sms'] ?? []),
+            'unpaid_reminder_minutes' => max(5, (int) ($data['unpaid_reminder_minutes'] ?? 60)),
             'amocrm_enabled' => (bool) ($data['amocrm_enabled'] ?? false),
             'amocrm_pipeline_id' => $data['amocrm_pipeline_id'] ?: null,
             'amocrm_status_new' => $data['amocrm_status_new'] ?: null,

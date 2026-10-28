@@ -20,6 +20,15 @@ class AuthLinkController extends Controller {
             Log::channel('shop')->info('Вход по ссылке из СМС.', ['user_id' => $user->id]);
         }
 
+        // Из СМС о неоплаченной заявке: сразу к оплате своей подписки
+        $payId = $request->integer('pay');
+        if ($payId) {
+            $sub = \App\Models\Subscription::find($payId);
+            if ($sub && $sub->belongsToUser($user)) {
+                return redirect()->route('subscription.pay', $sub);
+            }
+        }
+
         return redirect()->route('profile');
     }
 }

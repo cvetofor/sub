@@ -37,12 +37,14 @@ class Settings {
         'renewed' => 'После повторного списания: подписка продлена',
         'payment_failed' => 'Если списание не прошло: подписка на паузе',
         'code' => 'Код входа в кабинет (классический дизайн)',
+        'unpaid' => 'Заявка без оплаты: ссылка на оплату через заданное время',
     ];
 
     public const DEFAULTS = [
         'design_mode' => self::DESIGN_SPLIT,
         'hero_mode' => 'a',
-        'sms' => ['activated' => true, 'reminder' => true, 'renewed' => true, 'payment_failed' => true, 'code' => true],
+        'sms' => ['activated' => true, 'reminder' => true, 'renewed' => true, 'payment_failed' => true, 'code' => true, 'unpaid' => true],
+        'unpaid_reminder_minutes' => 60,
         'amocrm_enabled' => false,
         'amocrm_pipeline_id' => null,
         'amocrm_status_new' => null,

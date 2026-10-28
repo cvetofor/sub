@@ -14,11 +14,11 @@ class LoginLink {
     public const TTL_DAYS = 30;
 
     /** Выдать ссылку для пользователя: токен в базе, адрес вида /k/XXXXXXXXXXXX. */
-    public static function for(User $user): string {
+    public static function for(User $user, array $query = []): string {
         $token = Str::random(12);
         $user->forceFill(['login_token' => $token, 'login_token_expires_at' => Carbon::now()->addDays(self::TTL_DAYS)])->save();
 
-        return route('auth.link', ['token' => $token]);
+        return route('auth.link', ['token' => $token] + $query);
     }
 
     /** Пользователь по действующему токену или null. Токен не сгорает: ссылка нужна ещё раз через неделю. */
