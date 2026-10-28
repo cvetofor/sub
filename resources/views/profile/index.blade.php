@@ -106,7 +106,7 @@
                                 @csrf
                                 <div class="field">
                                     <label for="address-{{ $sub->id }}">Адрес доставки</label>
-                                    <input id="address-{{ $sub->id }}" name="address" type="text" maxlength="255" required value="{{ old('address', $sub->address) }}">
+                                    <input id="address-{{ $sub->id }}" name="address" type="text" maxlength="255" data-suggest-address required value="{{ old('address', $sub->address) }}">
                                     @error('address', 'sub' . $sub->id)<span class="err">{{ $message }}</span>@enderror
                                 </div>
                                 <div class="grid2">

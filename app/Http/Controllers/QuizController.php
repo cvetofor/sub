@@ -103,6 +103,7 @@ class QuizController extends Controller {
             'hide_sender' => 'nullable|boolean',
             'agree_with_recipient' => 'nullable|boolean',
             'address' => 'required|string|min:5|max:255',
+            'address_fias' => 'nullable|string|max:40',
             'apartment' => 'nullable|string|max:20',
             'entrance' => 'nullable|string|max:20',
             'intercom' => 'nullable|string|max:20',
@@ -117,6 +118,15 @@ class QuizController extends Controller {
         if (!$senderPhone) {
             return response()->json(['ok' => false, 'errors' => ['sender_phone' => ['В номере не хватает цифр. Пример: +7 924 000-00-00']], 'message' => 'Проверьте ваш телефон.'], 422);
         }
+        // Адрес в городе доставки и с номером дома: проверка по DaData, если ключ задан
+        $check = \App\Services\AddressCheck::verify($data['address'], $data['address_fias'] ?? null);
+        if ($problem = \App\Services\AddressCheck::problem($check)) {
+            return response()->json(['ok' => false, 'errors' => ['address' => [$problem]], 'message' => $problem], 422);
+        }
+        if ($check['status'] === \App\Services\AddressCheck::OK && $check['address']) {
+            $data['address'] = $check['address'];
+        }
+
         $isGift = $data['who'] === Plan::SCENARIO_GIFT;
         $receivingPhone = $isGift && !empty($data['receiving_phone']) ? Phone::normalize($data['receiving_phone']) : null;
         if ($isGift && !empty($data['receiving_phone']) && !$receivingPhone) {

@@ -3,6 +3,7 @@
 
 import { fmt, reduced, readJson, track, ecommerce, product, postJson, firstError } from './shared.js';
 import { initQuiz } from './quiz.js';
+import { initFields } from './fields.js';
 
 /* Сегментный переключатель с едущей таблеткой */
 function segment(el, onChange) {
@@ -290,7 +291,7 @@ function initWizard() {
         const body = {
             plan_id: data.planId || null, budget: data.planId ? null : st.budget, frequency: st.freq, for: data.for || null,
             styles: st.styles, tags: [...document.querySelectorAll('#tags button[aria-pressed="true"]')].map((t) => t.textContent),
-            address: $('address').value.trim(), delivery_day: st.day, time_delivery_id: st.windowId,
+            address: $('address').value.trim(), address_fias: $('address').dataset.fias || null, delivery_day: st.day, time_delivery_id: st.windowId,
             option_ids: st.additions.map((a) => a.id), sender_name: name,
             receiving_name: $('receivingName') && !$('giftFields').hidden ? $('receivingName').value.trim() || null : null,
             receiving_phone: $('receivingPhone') && !$('giftFields').hidden ? $('receivingPhone').value.trim() || null : null,
@@ -385,6 +386,7 @@ function initPurchase() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    initFields();
     if (document.getElementById('site-data')) initHome();
     if (document.getElementById('wizard')) initWizard();
     if (document.getElementById('loginPage')) initLogin();

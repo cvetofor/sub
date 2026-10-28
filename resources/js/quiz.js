@@ -276,7 +276,7 @@ export function initQuiz() {
             option_ids: st.additions, card_text: gift ? st.card.trim() || null : null, wishes: $('wishes').value.trim() || null,
             receiving_name: gift ? $('recName').value.trim() || null : null, receiving_phone: gift ? $('recPhone').value.trim() || null : null,
             hide_sender: gift && $('hideSender').checked, agree_with_recipient: gift && st.agree,
-            address: $('address').value.trim(), apartment: $('apartment').value.trim() || null, entrance: $('entrance').value.trim() || null, intercom: $('intercom').value.trim() || null,
+            address: $('address').value.trim(), address_fias: $('address').dataset.fias || null, apartment: $('apartment').value.trim() || null, entrance: $('entrance').value.trim() || null, intercom: $('intercom').value.trim() || null,
             comment: $('comment').value.trim() || null, delivery_day: st.day || 5, time_delivery_id: st.winId,
             sender_name: $('senderName').value.trim(), sender_phone: $('senderPhone').value.trim(),
         };
@@ -284,6 +284,7 @@ export function initQuiz() {
             const r = await postJson(data.urls.store, body);
             if (!r.ok) {
                 if (r.errors && r.errors.sender_phone) setErr('errPhone', $('senderPhone'), r.errors.sender_phone[0]);
+                if (r.errors && r.errors.address) { go(4, { silent: true }); setErr('errAddress', $('address'), r.errors.address[0]); $('address').focus(); return; }
                 payError(r.message || firstError(r) || 'Не удалось оформить. Проверьте поля.');
                 return;
             }

@@ -21,6 +21,10 @@
     <script>
         window.dataLayer = window.dataLayer || [];
         window.TRACK_URL = @json(route('track'));
+        @if (config('services.dadata.token'))
+            window.DADATA_TOKEN = @json(config('services.dadata.token'));
+            window.DADATA_CITY = @json(\App\Services\AddressCheck::city());
+        @endif
         @if (config('analytics.ym_id'))
             window.YM_ID = {{ (int) config('analytics.ym_id') }};
         @endif

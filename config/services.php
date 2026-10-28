@@ -20,6 +20,11 @@ return [
         'chat_id' => env('TELEGRAM_CHAT_ID'),
     ],
 
+    // DaData: ключ API подсказок (адрес ограничен городом доставки). Пусто: адрес не проверяется.
+    'dadata' => [
+        'token' => env('DADATA_TOKEN'),
+    ],
+
     // amoCRM: поддомен аккаунта (xxx.amocrm.ru) и долгосрочный токен интеграции
     'amocrm' => [
         'subdomain' => env('AMOCRM_SUBDOMAIN'),

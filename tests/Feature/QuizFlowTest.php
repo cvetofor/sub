@@ -315,4 +315,30 @@ class QuizFlowTest extends TestCase {
         $this->post("/subscription/{$id2}/cancel")->assertRedirect('/profile')->assertSessionHas('error');
         $this->assertNull(Subscription::find($id2)->cancelled_at);
     }
+
+    public function test_address_is_checked_against_delivery_city_when_dadata_is_configured(): void {
+        config(['services.dadata.token' => 'dd-key']);
+        Http::fake([
+            'suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address' => Http::sequence()
+                ->push(['suggestions' => [['value' => 'г Иркутск, ул Ленина, д 12', 'data' => ['city' => 'Иркутск', 'house' => '12']]]])
+                ->push(['suggestions' => [['value' => 'г Улан-Удэ, ул Ленина', 'data' => ['city' => 'Улан-Удэ', 'house' => null]]]])
+                ->push(['suggestions' => [['value' => 'г Улан-Удэ, ул Ленина, д 12', 'data' => ['city' => 'Улан-Удэ', 'house' => '12']]]])
+                ->push('', 503),
+        ]);
+        $this->postJson('/quiz/subscribe', $this->payload(['address' => 'Иркутск, Ленина 12']))->assertStatus(422)->assertJsonPath('errors.address.0', 'Пока доставляем только по городу Улан-Удэ. Проверьте улицу и дом.');
+        $this->postJson('/quiz/subscribe', $this->payload(['address' => 'ул. Ленина']))->assertStatus(422)->assertJsonPath('errors.address.0', 'Укажите номер дома: по одной улице курьер не найдёт.');
+        $id = $this->postJson('/quiz/subscribe', $this->payload(['address' => 'Ленина 12']))->assertCreated()->json('subscription_id');
+        $this->assertSame('г Улан-Удэ, ул Ленина, д 12, кв. 34, домофон 34', Subscription::find($id)->address);
+        Http::assertSent(fn ($r) => str_ends_with($r->url(), '/suggest/address') && $r->data()['locations'][0]['city'] === 'Улан-Удэ' && $r->hasHeader('Authorization', 'Token dd-key'));
+
+        // Сервис недоступен (четвёртый ответ 503): заказ не блокируем
+        auth()->logout();
+        $this->postJson('/quiz/subscribe', $this->payload(['sender_phone' => '+7 924 111-22-33', 'address' => 'Где-то далеко, 1']))->assertCreated();
+    }
+
+    public function test_address_check_is_skipped_without_dadata_key(): void {
+        Http::fake();
+        $this->postJson('/quiz/subscribe', $this->payload(['address' => 'Иркутск, Ленина 12']))->assertCreated();
+        Http::assertNothingSent();
+    }
 }

@@ -207,7 +207,7 @@
                 <div class="qz-two">
                     <fieldset class="qz-block">
                         <legend><b>Куда</b>@if ($city)<span class="qz-legend-hint">{{ $city }}</span>@endif</legend>
-                        <label class="qz-field"><span>Улица и дом</span><input type="text" id="address" maxlength="255" placeholder="Начните вводить адрес" autocomplete="street-address" required><em class="qz-err" id="errAddress" hidden></em></label>
+                        <label class="qz-field"><span>Улица и дом</span><input type="text" id="address" maxlength="255" placeholder="Начните вводить адрес" autocomplete="street-address" data-suggest-address required><em class="qz-err" id="errAddress" hidden></em></label>
                         <div class="qz-grid3">
                             <label class="qz-field"><span>Квартира</span><input type="text" id="apartment" maxlength="20" placeholder="34"></label>
                             <label class="qz-field"><span>Подъезд</span><input type="text" id="entrance" maxlength="20" placeholder="2"></label>

@@ -53,6 +53,7 @@ class SubscriptionController extends Controller {
             'tags' => 'nullable|array|max:8',
             'tags.*' => 'string|max:40',
             'address' => 'required|string|min:5|max:255',
+            'address_fias' => 'nullable|string|max:40',
             'delivery_day' => 'required|integer|min:1|max:7',
             'time_delivery_id' => ['nullable', 'integer', Rule::exists('time_deliveries', 'id')],
             'option_ids' => 'nullable|array|max:10',
@@ -73,6 +74,13 @@ class SubscriptionController extends Controller {
         $receivingPhone = isset($data['receiving_phone']) ? Phone::normalize($data['receiving_phone']) : null;
         if (!empty($data['receiving_phone']) && !$receivingPhone) {
             return response()->json(['ok' => false, 'message' => 'Проверьте телефон получателя.'], 422);
+        }
+        $check = \App\Services\AddressCheck::verify($data['address'], $data['address_fias'] ?? null);
+        if ($problem = \App\Services\AddressCheck::problem($check)) {
+            return response()->json(['ok' => false, 'errors' => ['address' => [$problem]], 'message' => $problem], 422);
+        }
+        if ($check['status'] === \App\Services\AddressCheck::OK && $check['address']) {
+            $data['address'] = $check['address'];
         }
 
         if (!empty($data['plan_id'])) {
