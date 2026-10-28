@@ -15,7 +15,7 @@ class PlanOptionsTable {
         'delivery' => 'Доставка',
         'style' => 'Стиль букетов',
         'preference' => 'Предпочтение',
-        'addition' => 'Дополнительно',
+        'addition' => 'Дополнение к букету',
     ];
 
     public static function configure(Table $table): Table {

@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Middleware\AssignHeroVariant;
+use App\Http\Middleware\AssignDesign;
+use App\Jobs\SyncAmoLead;
 use App\Models\AbEvent;
 use App\Models\City;
 use App\Models\Plan;
@@ -103,7 +104,7 @@ class SubscriptionController extends Controller {
             }
         }
 
-        [$variant, $visitor] = AssignHeroVariant::current($request);
+        [$variant, $visitor, $design] = AssignDesign::current($request);
 
         $subscription = Subscription::create([
             'is_active' => false,
@@ -127,6 +128,8 @@ class SubscriptionController extends Controller {
             'using_promo' => true,
             'ab_variant' => $variant,
             'ab_visitor' => $visitor,
+            'ab_design' => $design ?? 'classic',
+            'source' => Subscription::SOURCE_WIZARD,
         ]);
 
         if ($user->name === 'Клиент' && $data['sender_name']) {
@@ -142,8 +145,11 @@ class SubscriptionController extends Controller {
         ]);
 
         if ($variant && $visitor) {
-            AbEvent::log($variant, 'payment_redirect', $visitor, ['plan_id' => $plan->id, 'frequency' => $subscription->frequency]);
+            AbEvent::log($variant, 'payment_redirect', $visitor, ['plan_id' => $plan->id, 'frequency' => $subscription->frequency, 'design' => $design]);
         }
+
+        // Заявка в amoCRM сразу, не дожидаясь оплаты: оператор видит, кому позвонить
+        SyncAmoLead::dispatch($subscription->id, SyncAmoLead::CREATED)->afterResponse();
 
         $paymentLink = PaymentController::create($subscription);
         if (!filter_var($paymentLink, FILTER_VALIDATE_URL)) {

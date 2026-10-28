@@ -12,6 +12,11 @@ class Sms {
     }
 
     public static function send(string $phoneE164, string $text, string $kind = 'sms'): bool {
+        if (!Settings::smsEnabled($kind)) {
+            Log::channel('shop')->info('СМС выключена в настройках.', ['kind' => $kind, 'phone' => $phoneE164]);
+
+            return false;
+        }
         if (!self::configured()) {
             Log::channel('shop')->info('СМС не отправлена: нет учётных данных SMSC.', ['kind' => $kind, 'phone' => $phoneE164, 'text' => app()->isProduction() ? '***' : $text]);
 

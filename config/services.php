@@ -20,6 +20,12 @@ return [
         'chat_id' => env('TELEGRAM_CHAT_ID'),
     ],
 
+    // amoCRM: поддомен аккаунта (xxx.amocrm.ru) и долгосрочный токен интеграции
+    'amocrm' => [
+        'subdomain' => env('AMOCRM_SUBDOMAIN'),
+        'token' => env('AMOCRM_TOKEN'),
+    ],
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],

@@ -12,7 +12,9 @@ class Notifier {
     public static function subscriptionActivated(Subscription $sub): void {
         $first = $sub->deliveries()->planned()->orderBy('planned_date')->first();
         $when = $first ? ' Первый букет ' . Days::inDay($first->planned_date->dayOfWeekIso) . ' ' . $first->planned_date->translatedFormat('j F') . '.' : '';
-        Sms::send($sub->sender_phone, 'Цветофор: подписка №' . $sub->id . ' оплачена.' . $when . ' Кабинет: ' . route('profile'), 'activated');
+        // Ссылка для входа без кода: клиент из квиза кабинет ещё не открывал
+        $link = $sub->user ? LoginLink::for($sub->user) : route('profile');
+        Sms::send($sub->sender_phone, 'Цветофор: подписка №' . $sub->id . ' оплачена.' . $when . ' Кабинет: ' . $link, 'activated');
     }
 
     public static function deliveryTomorrow(Delivery $delivery): void {

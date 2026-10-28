@@ -29,7 +29,13 @@ class Subscription extends Model {
         'next_date_payment',
         'ab_variant',
         'ab_visitor',
+        'ab_design',
+        'source',
+        'amo_lead_id',
     ];
+
+    public const SOURCE_WIZARD = 'wizard';
+    public const SOURCE_QUIZ = 'quiz';
 
     protected $casts = [
         'preferences' => 'array',
@@ -75,6 +81,16 @@ class Subscription extends Model {
     public function payments() {
         return $this->belongsToMany(Payment::class, 'subscription_payments', 'subscription_id', 'payment_id')
             ->withTimestamps();
+    }
+
+    /** Есть ли подтверждённая оплата. */
+    public function isPaid(): bool {
+        return $this->payments()->where('payment_status_id', Payment::PAYED)->exists();
+    }
+
+    /** Название тарифа так, как его видел клиент: в подарок у тарифа своё имя. */
+    public function planName(): string {
+        return $this->plan?->nameFor($this->preferences['for'] ?? null) ?? '';
     }
 
     /** Принадлежит ли подписка пользователю: по связи или по номеру телефона (старые подписки без user_id). */

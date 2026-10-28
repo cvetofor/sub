@@ -9,6 +9,11 @@ use Illuminate\Support\Carbon;
 
 class HomeController extends Controller {
     public function index(Request $request) {
+        // Второй дизайн: квиз на той же странице, выбор сделал middleware AssignDesign
+        if ($request->attributes->get('design') === \App\Services\Settings::DESIGN_QUIZ) {
+            return app(QuizController::class)->index($request);
+        }
+
         $plans = Plan::showcase()->get()->map(fn (Plan $plan) => [
             'id' => $plan->id,
             'name' => $plan->name,

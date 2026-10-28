@@ -123,7 +123,7 @@ class EditSubscription extends EditRecord {
                         Grid::make(2)->schema([
                             Section::make('')->schema([
                                 TextEntry::make('preferences_text')
-                                    ->label('Пожелания из мастера')
+                                    ->label('Пожелания клиента')
                                     ->default(self::preferencesText($subscription->preferences)),
 
                                 TextEntry::make('user_link')
@@ -132,9 +132,24 @@ class EditSubscription extends EditRecord {
                                     ->url($subscription->user_id ? '/hub/users/' . $subscription->user_id . '/edit' : null)
                                     ->color($subscription->user_id ? 'primary' : 'gray'),
 
-                                TextEntry::make('ab_variant_text')
-                                    ->label('Версия главной (A/B)')
-                                    ->default($subscription->ab_variant ? strtoupper($subscription->ab_variant) : '—'),
+                                TextEntry::make('source_text')
+                                    ->label('Откуда заявка')
+                                    ->default(match ($subscription->source) {
+                                        \App\Models\Subscription::SOURCE_QUIZ => 'Квиз (дизайн 2)',
+                                        \App\Models\Subscription::SOURCE_WIZARD => 'Мастер (дизайн 1)' . ($subscription->ab_variant ? ', первый экран ' . strtoupper($subscription->ab_variant) : ''),
+                                        default => 'Создана вручную',
+                                    }),
+
+                                TextEntry::make('paid_text')
+                                    ->label('Оплата')
+                                    ->default($subscription->isPaid() ? 'Оплачена' : 'Не оплачена: заявка без СМС и доставок')
+                                    ->color($subscription->isPaid() ? 'success' : 'warning'),
+
+                                TextEntry::make('amo_text')
+                                    ->label('Сделка в amoCRM')
+                                    ->default($subscription->amo_lead_id ? '№' . $subscription->amo_lead_id : 'не создана')
+                                    ->url($subscription->amo_lead_id && config('services.amocrm.subdomain') ? 'https://' . config('services.amocrm.subdomain') . '.amocrm.ru/leads/detail/' . $subscription->amo_lead_id : null, shouldOpenInNewTab: true)
+                                    ->color($subscription->amo_lead_id ? 'primary' : 'gray'),
 
                                 TextEntry::make('created_at')
                                     ->label('Дата начала подписки')
@@ -254,6 +269,15 @@ class EditSubscription extends EditRecord {
         }
         if (!empty($p['card_text'])) {
             $parts[] = 'Открытка: «' . $p['card_text'] . '»';
+        }
+        if (!empty($p['wishes'])) {
+            $parts[] = 'Флористу: ' . $p['wishes'];
+        }
+        if (!empty($p['hide_sender'])) {
+            $parts[] = 'Не говорить, от кого букет';
+        }
+        if (!empty($p['agree_with_recipient'])) {
+            $parts[] = 'День и время согласовать с получателем по телефону';
         }
 
         return $parts ? implode('. ', $parts) : '—';

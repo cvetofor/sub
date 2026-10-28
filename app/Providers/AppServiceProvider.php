@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Filament\Widgets\AbDailyChart;
 use App\Filament\Widgets\AbFunnelWidget;
+use App\Filament\Widgets\DesignDailyChart;
+use App\Filament\Widgets\DesignFunnelWidget;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
@@ -27,5 +29,7 @@ class AppServiceProvider extends ServiceProvider {
         // поэтому регистрируем их как компоненты Livewire вручную.
         Livewire::component('app.filament.widgets.ab-funnel-widget', AbFunnelWidget::class);
         Livewire::component('app.filament.widgets.ab-daily-chart', AbDailyChart::class);
+        Livewire::component('app.filament.widgets.design-funnel-widget', DesignFunnelWidget::class);
+        Livewire::component('app.filament.widgets.design-daily-chart', DesignDailyChart::class);
     }
 }

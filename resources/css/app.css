@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./fonts.css";
+@import "./quiz.css";
 
 /* Дизайн-система «Цветофор»: токены из спецификации дизайнера. Один фирменный малиновый, бумага фоном, Lora + Golos Text. */
 @theme {

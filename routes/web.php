@@ -1,17 +1,26 @@
 <?php
 
+use App\Http\Controllers\AuthLinkController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\QuizController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\WizardController;
-use App\Http\Middleware\AssignHeroVariant;
+use App\Http\Middleware\AssignDesign;
 use Illuminate\Support\Facades\Route;
 
-// Главная: новая версия с A/B-тестом первого экрана
-Route::get('/', [HomeController::class, 'index'])->middleware(AssignHeroVariant::class)->name('home');
+// Главная: дизайн выбирает middleware (классическая главная или квиз), там же A/B-тест
+Route::get('/', [HomeController::class, 'index'])->middleware(AssignDesign::class)->name('home');
+
+// Квиз: оформление за пять вопросов без кода из СМС. Прямой адрес всегда показывает квиз.
+Route::get('/quiz', [QuizController::class, 'index'])->middleware(AssignDesign::class . ':quiz')->name('quiz');
+Route::post('/quiz/subscribe', [QuizController::class, 'store'])->middleware(['throttle:10,1'])->name('quiz.store');
+
+// Вход по ссылке из СМС после оплаты
+Route::get('/k/{token}', AuthLinkController::class)->middleware('throttle:30,1')->name('auth.link');
 
 // Мастер подписки: страница и создание подписки (после входа по коду)
-Route::get('/subscribe', [WizardController::class, 'show'])->name('wizard');
+Route::get('/subscribe', [WizardController::class, 'show'])->middleware(AssignDesign::class . ':classic')->name('wizard');
 Route::post('/subscribe', [SubscriptionController::class, 'store'])->middleware(['auth', 'throttle:10,1'])->name('subscribe.store');
 
 // Управление подпиской: только владелец
@@ -35,7 +44,7 @@ Route::group(['prefix' => '/payment', 'as' => 'payment.'], function () {
         Route::get('/redirect', [PaymentController::class, 'redirect'])->name('redirect');
     });
     // Имитация оплаты на тестовом стенде, в production отвечает 404
-    Route::match(['get', 'post'], '/test/{subscription}', [PaymentController::class, 'test'])->middleware('auth')->name('test');
+    Route::match(['get', 'post'], '/test/{subscription}', [PaymentController::class, 'test'])->name('test');
 });
 
 require __DIR__ . '/auth.php';

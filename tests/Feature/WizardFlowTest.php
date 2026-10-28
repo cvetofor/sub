@@ -170,7 +170,8 @@ class WizardFlowTest extends TestCase {
     public function test_sitemap_and_robots(): void {
         $this->get('/sitemap.xml')->assertOk()->assertHeader('Content-Type', 'application/xml')->assertSee(route('home'));
         $this->get('/subscribe')->assertOk()->assertSee('noindex, nofollow');
-        $this->get('/')->assertOk()->assertDontSee('noindex');
+        $this->get('/?design=classic')->assertOk()->assertDontSee('noindex');
+        $this->get('/?design=quiz')->assertOk()->assertDontSee('noindex');
     }
 
     public function test_payment_result_page_is_only_for_owner(): void {

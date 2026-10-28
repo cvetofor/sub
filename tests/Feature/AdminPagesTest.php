@@ -38,7 +38,7 @@ class AdminPagesTest extends TestCase {
             ->filterTable('period', ['from' => today()->toDateString(), 'to' => today()->addMonth()->toDateString()])
             ->assertCanSeeTableRecords(\App\Models\Delivery::all())
             ->assertSee('Ярославль, ул. Свободы, 1')->assertSee('Минимализм');
-        Livewire::test(EditSubscription::class, ['record' => $sub->id])->assertOk()->assertSee('Пожелания из мастера')->assertSee('Первый платёж');
+        Livewire::test(EditSubscription::class, ['record' => $sub->id])->assertOk()->assertSee('Пожелания клиента')->assertSee('Первый платёж');
         $this->get('/hub')->assertOk();
         // Виджеты дашборда грузятся отложенно, проверяем сам виджет
         Livewire::test(\App\Filament\Widgets\StatsOverview::class)->assertOk()->assertSee('Доставок сегодня')->assertSee('Активных подписок');

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Middleware\AssignHeroVariant;
+use App\Http\Middleware\AssignDesign;
 use App\Models\AbEvent;
 use App\Services\Pricing;
 use Illuminate\Http\Request;
@@ -12,19 +12,19 @@ class TrackController extends Controller {
     public function store(Request $request) {
         $data = $request->validate([
             'event' => 'required|string|in:' . implode(',', array_diff(config('analytics.events'), ['visit', 'payment_success'])),
-            'step' => 'nullable|integer|min:1|max:4',
+            'step' => 'nullable|integer|min:1|max:5',
             'plan_id' => 'nullable|integer|min:1',
             'mode' => 'nullable|string|in:home,gift',
             'frequency' => 'nullable|string|in:' . implode(',', Pricing::frequencies()),
             'source' => 'nullable|string|max:32',
         ]);
 
-        [$variant, $visitor] = AssignHeroVariant::current($request);
-        if (!$variant || !$visitor || AssignHeroVariant::looksLikeBot($request)) {
+        [$variant, $visitor, $design] = AssignDesign::current($request);
+        if (!$variant || !$visitor || AssignDesign::looksLikeBot($request)) {
             return response()->noContent(204);
         }
 
-        AbEvent::log($variant, $data['event'], $visitor, $data);
+        AbEvent::log($variant, $data['event'], $visitor, $data + ['design' => $design]);
 
         return response()->noContent(204);
     }

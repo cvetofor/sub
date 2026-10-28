@@ -4,6 +4,7 @@ namespace App\Filament\Resources\PlanOptions\Pages;
 
 use App\Filament\Resources\PlanOptions\PlanOptionsResource;
 use Filament\Actions\DeleteAction;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -43,7 +44,7 @@ class EditPlanOptions extends EditRecord {
                             'delivery' => 'Доставка',
                             'style' => 'Стиль букетов',
                             'preference' => 'Предпочтение',
-                            'addition' => 'Дополнительно',
+                            'addition' => 'Дополнение к букету (ваза, конфеты, открытка)',
                             'occasion' => 'Повод',
                             'recipient' => 'Получатель'
                         ])
@@ -51,7 +52,27 @@ class EditPlanOptions extends EditRecord {
 
                     Toggle::make('is_every_delivery')
                         ->label('Каждую доставку?')
+                        ->helperText('Включено: добавляется к каждому букету и к ежемесячному списанию. Выключено: один раз, только в первый платёж (ваза, яркая открытка).')
                         ->required(),
+
+                    TextInput::make('description')
+                        ->label('Короткое описание для сайта')
+                        ->placeholder('Стеклянная, под высоту букета')
+                        ->maxLength(160)
+                        ->trim(),
+
+                    FileUpload::make('image')
+                        ->label('Фото для квиза (3:2)')
+                        ->image()
+                        ->disk('public')
+                        ->directory('options')
+                        ->imageEditor()
+                        ->maxSize(4096),
+
+                    TextInput::make('sort')
+                        ->label('Порядок показа')
+                        ->numeric()
+                        ->default(0),
 
                     Toggle::make('is_active')
                         ->label('Активировать')

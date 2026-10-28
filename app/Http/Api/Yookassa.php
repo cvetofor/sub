@@ -58,7 +58,8 @@ class Yookassa {
                     'confirmation' => [
                         'type' => 'redirect',
                         'locale' => 'ru_RU',
-                        'return_url' => route('payment.yookassa.redirect', ['subscription_id' => $subId]),
+                        // Подписанный адрес: клиент из квиза ещё не входил в кабинет, подпись даёт право увидеть итог
+                        'return_url' => \Illuminate\Support\Facades\URL::temporarySignedRoute('payment.yookassa.redirect', now()->addDays(3), ['subscription_id' => $subId]),
                     ],
                     'capture' => true,
                     'save_payment_method' => true,
@@ -254,12 +255,14 @@ class Yookassa {
             DeliverySchedule::planFirstMonth($subscription);
             Notifier::subscriptionActivated($subscription);
             TeamNotifier::newSubscription($subscription, $subscription->firstPaymentAmount());
+            \App\Jobs\SyncAmoLead::dispatch($subscription->id, \App\Jobs\SyncAmoLead::PAID, $subscription->firstPaymentAmount())->afterResponse();
         }
 
         if (!empty($subscription->ab_variant) && !empty($subscription->ab_visitor)) {
             AbEvent::log($subscription->ab_variant, 'payment_success', $subscription->ab_visitor, [
                 'plan_id' => $subscription->plan_id,
                 'frequency' => $subscription->frequency,
+                'design' => $subscription->ab_design,
             ]);
         }
     }

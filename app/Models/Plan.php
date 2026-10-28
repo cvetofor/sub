@@ -18,6 +18,7 @@ class Plan extends Model {
 
     protected $fillable = [
         'name',
+        'name_gift',
         'price',
         'description',
         'is_active',
@@ -28,6 +29,11 @@ class Plan extends Model {
         'image',
         'sort',
     ];
+
+    /** Название тарифа для сценария: в подарок у тарифа может быть своё имя. */
+    public function nameFor(?string $scenario): string {
+        return $scenario === self::SCENARIO_GIFT && $this->name_gift ? $this->name_gift : $this->name;
+    }
 
     public function city() {
         return $this->belongsTo(City::class);

@@ -22,7 +22,7 @@ class PlanOptionsResource extends Resource {
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::Wrench;
 
-    protected static ?string $navigationLabel = 'Опции планов подписки';
+    protected static ?string $navigationLabel = 'Дополнения и опции';
 
     protected static ?string $pluralModelLabel = 'Опции планов подписки';
 

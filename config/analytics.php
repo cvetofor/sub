@@ -12,6 +12,8 @@ return [
         'plan_cta_click',   // нажал «Оформить» на плане
         'wizard_start',     // открыл мастер
         'wizard_step',      // перешёл на шаг N
+        'quiz_start',       // квиз: нажал «Оформить» на главной
+        'quiz_step',        // квиз: перешёл на шаг N
         'payment_redirect', // ушёл в оплату
         'payment_success',  // оплата подтверждена (пишет сервер)
     ],

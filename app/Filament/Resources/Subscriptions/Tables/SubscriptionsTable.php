@@ -39,16 +39,44 @@ class SubscriptionsTable {
                     ->label('Активна')
                     ->alignCenter()
                     ->boolean(),
+                TextColumn::make('paid_state')
+                    ->label('Оплата')
+                    ->state(fn ($record) => $record->isPaid() ? 'Оплачена' : 'Не оплачена')
+                    ->badge()
+                    ->color(fn ($state) => $state === 'Оплачена' ? 'success' : 'warning'),
+                TextColumn::make('source')
+                    ->label('Откуда')
+                    ->formatStateUsing(fn ($state) => match ($state) { 'quiz' => 'Квиз', 'wizard' => 'Мастер', default => '—' })
+                    ->toggleable(),
+                TextColumn::make('amo_lead_id')
+                    ->label('amoCRM')
+                    ->formatStateUsing(fn ($state) => $state ? '№' . $state : '—')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->label('Создана')
                     ->dateTime('d.m.Y H:i')
                     ->sortable(),
             ])
             ->filters([
+                \Filament\Tables\Filters\SelectFilter::make('paid')
+                    ->label('Оплата')
+                    ->options(['paid' => 'Оплаченные', 'unpaid' => 'Не оплаченные заявки'])
+                    ->query(function ($query, array $data) {
+                        $paid = fn ($q) => $q->where('payment_status_id', \App\Models\Payment::PAYED);
+                        if (($data['value'] ?? null) === 'paid') {
+                            $query->whereHas('payments', $paid);
+                        } elseif (($data['value'] ?? null) === 'unpaid') {
+                            $query->whereDoesntHave('payments', $paid);
+                        }
+
+                        return $query;
+                    }),
+                \Filament\Tables\Filters\SelectFilter::make('source')
+                    ->label('Откуда')
+                    ->options(['quiz' => 'Квиз', 'wizard' => 'Мастер']),
                 Filter::make('is_active')
                     ->label('Активная подписка')
                     ->toggle()
-                    ->default(true)
                     ->query(function ($query, array $data) {
                         if ($data['isActive'] === true) {
                             $query->where('is_active', true);

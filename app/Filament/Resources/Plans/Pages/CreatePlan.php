@@ -28,6 +28,13 @@ class CreatePlan extends CreateRecord {
                         ->required()
                         ->trim(),
 
+                    TextInput::make('name_gift')
+                        ->label('Название в сценарии «В подарок»')
+                        ->placeholder('С любовью')
+                        ->maxLength(120)
+                        ->trim()
+                        ->hintIcon('heroicon-o-information-circle', tooltip: 'Тот же тариф, но в квизе для подарка он называется иначе. Пусто: показываем основное название'),
+
                     TextInput::make('price')
                         ->label('Стоимость')
                         ->numeric(false)

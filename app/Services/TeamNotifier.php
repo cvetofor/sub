@@ -35,7 +35,7 @@ class TeamNotifier {
     }
 
     private static function card(Subscription $sub): string {
-        return '№' . $sub->id . ' · ' . $sub->plan->name . ' · ' . (Pricing::LABELS[$sub->frequency] ?? $sub->frequency)
+        return '№' . $sub->id . ' · ' . $sub->planName() . ' · ' . (Pricing::LABELS[$sub->frequency] ?? $sub->frequency)
             . "\n" . $sub->sender_name . ' ' . $sub->sender_phone
             . "\n" . $sub->address
             . "\n" . url('/hub/subscriptions/' . $sub->id . '/edit');

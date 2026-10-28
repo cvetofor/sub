@@ -20,7 +20,7 @@ class PaymentController extends Controller {
 
         if ($payment && (int) $payment->payment_status_id === Payment::IN_PROGRESS) {
             if (str_starts_with($payment->payment_gateway_transaction, 'test-')) {
-                return route('payment.test', ['subscription' => $subscription->id]);
+                return self::testUrl($subscription);
             }
 
             return 'https://yoomoney.ru/checkout/payments/v2/contract?orderId=' . $payment->payment_gateway_transaction;
@@ -44,7 +44,7 @@ class PaymentController extends Controller {
             ]);
             $subscription->payments()->attach($paymentModel->id);
 
-            return route('payment.test', ['subscription' => $subscription->id]);
+            return self::testUrl($subscription);
         }
 
         $yookassa = new Yookassa();
@@ -75,6 +75,11 @@ class PaymentController extends Controller {
         return $paymentYookassa->getConfirmation()->getConfirmationUrl();
     }
 
+    /** Адрес имитации оплаты: подписанный, чтобы клиент из квиза открыл его без входа. */
+    private static function testUrl(Subscription $subscription): string {
+        return \Illuminate\Support\Facades\URL::temporarySignedRoute('payment.test', now()->addDay(), ['subscription' => $subscription->id]);
+    }
+
     /** Возврат с оплаты. Статус подтверждает вебхук, поэтому страница может прийти раньше него и перепроверяет себя. */
     public function redirect(Request $request) {
         $subscription = Subscription::with('plan')->find($request->integer('subscription_id'));
@@ -85,7 +90,13 @@ class PaymentController extends Controller {
         // Страница показывает адрес и суммы, поэтому только владельцу. Сессия могла истечь, пока
         // клиент был на стороне банка: тогда просим войти и возвращаем сюда же.
         if (!$request->user()) {
-            return redirect()->guest(route('auth.login'));
+            // Из квиза клиент возвращается без входа: подписанный адрес из ЮKassa впускает владельца в кабинет
+            if ($request->hasValidSignatureWhileIgnoring(['attempt']) && $subscription->user && $subscription->user->isClient() && $subscription->user->is_active) {
+                \Illuminate\Support\Facades\Auth::login($subscription->user, true);
+                $request->session()->regenerate();
+            } else {
+                return redirect()->guest(route('auth.login'));
+            }
         }
         abort_unless($subscription->belongsToUser($request->user()), 403);
 
@@ -97,14 +108,25 @@ class PaymentController extends Controller {
             return view('payment.pending', ['subscription' => $subscription, 'attempt' => $attempt + 1]);
         }
 
+        $subscription->load('plan.options', 'timeDelivery');
+        $view = $subscription->source === Subscription::SOURCE_QUIZ ? 'quiz.' : 'payment.';
+
         return $paid
-            ? view('payment.success', ['subscription' => $subscription, 'payment' => $payment])
-            : view('payment.fail', ['subscription' => $subscription]);
+            ? view($view . 'success', ['subscription' => $subscription, 'payment' => $payment])
+            : view($view . 'fail', ['subscription' => $subscription]);
     }
 
     /** Имитация оплаты для тестового стенда: только когда ключей ЮKassa нет и это не production. */
     public function test(Request $request, Subscription $subscription) {
         abort_if(app()->isProduction() || Yookassa::isConfigured(), 404);
+        if (!$request->user()) {
+            if ($request->hasValidSignature() && $subscription->user && $subscription->user->isClient()) {
+                \Illuminate\Support\Facades\Auth::login($subscription->user, true);
+                $request->session()->regenerate();
+            } else {
+                return redirect()->guest(route('auth.login'));
+            }
+        }
         abort_unless($subscription->belongsToUser($request->user()), 403);
 
         $payment = $subscription->payments()->orderBy('created_at', 'desc')->first();
@@ -114,7 +136,7 @@ class PaymentController extends Controller {
             $payment->update(['payment_status_id' => Payment::PAYED, 'recurrent_token' => 'test-token']);
             Yookassa::activate($subscription);
 
-            return redirect()->route('payment.yookassa.redirect', ['subscription_id' => $subscription->id]);
+            return redirect()->to(\Illuminate\Support\Facades\URL::temporarySignedRoute('payment.yookassa.redirect', now()->addDay(), ['subscription_id' => $subscription->id]));
         }
 
         return view('payment.test', ['subscription' => $subscription, 'payment' => $payment]);
