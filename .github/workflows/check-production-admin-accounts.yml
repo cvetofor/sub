@@ -37,6 +37,55 @@ jobs:
             VPS_IP=93.189.231.103 DOMAIN_IDN=цветы.цветофор.рф \
             bash deploy/beget-prepare.sh
 
+      - name: Создать или обновить активного администратора
+        env:
+          ADMIN_BOOTSTRAP_EMAIL: ${{ secrets.ADMIN_BOOTSTRAP_EMAIL }}
+          ADMIN_BOOTSTRAP_PASSWORD: ${{ secrets.ADMIN_BOOTSTRAP_PASSWORD }}
+        run: |
+          test -n "$ADMIN_BOOTSTRAP_EMAIL"
+          test -n "$ADMIN_BOOTSTRAP_PASSWORD"
+          PAYLOAD="$(printf '%s\n%s' "$ADMIN_BOOTSTRAP_EMAIL" "$ADMIN_BOOTSTRAP_PASSWORD" | base64 | tr -d '\n')"
+          TARGET="root@93.189.231.103"
+          SSH="ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+          $SSH "$TARGET" "sudo -u www-data bash -s -- '$PAYLOAD'" <<'REMOTE'
+          set -Eeuo pipefail
+          payload="$1"
+          decoded="$(printf '%s' "$payload" | base64 -d)"
+          export ADMIN_EMAIL="${decoded%%        run: |
+          TARGET="root@93.189.231.103"
+          SSH="ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+          $SSH "$TARGET" 'sudo -u www-data bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          cd /var/www/cvety
+          php artisan tinker --execute='echo \App\Models\User::query()
+              ->where("is_active", true)
+              ->whereIn("role_id", [1, 2])
+              ->selectRaw("role_id, count(*) as total")
+              ->groupBy("role_id")
+              ->pluck("total", "role_id")
+              ->toJson();'
+          REMOTE
+\n'*}"
+          export ADMIN_PASSWORD="${decoded#*        run: |
+          TARGET="root@93.189.231.103"
+          SSH="ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+          $SSH "$TARGET" 'sudo -u www-data bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          cd /var/www/cvety
+          php artisan tinker --execute='echo \App\Models\User::query()
+              ->where("is_active", true)
+              ->whereIn("role_id", [1, 2])
+              ->selectRaw("role_id, count(*) as total")
+              ->groupBy("role_id")
+              ->pluck("total", "role_id")
+              ->toJson();'
+          REMOTE
+\n'}"
+          cd /var/www/cvety
+          php artisan tinker --execute='$email = getenv("ADMIN_EMAIL"); $password = getenv("ADMIN_PASSWORD"); \\App\\Models\\User::updateOrCreate(["email" => $email], ["name" => "Администратор", "password" => \\Illuminate\\Support\\Facades\\Hash::make($password), "role_id" => \\App\\Models\\Role::ADMIN, "is_active" => true]); echo "admin_account_ready";'
+          unset ADMIN_EMAIL ADMIN_PASSWORD decoded payload
+          REMOTE
+
       - name: Посчитать активные роли без персональных данных
         run: |
           TARGET="root@93.189.231.103"
