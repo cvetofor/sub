@@ -12,6 +12,7 @@ use App\Services\TeamNotifier;
 use App\Support\Phone;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use YooKassa\Client;
 use YooKassa\Model\Notification\NotificationEventType;
@@ -19,6 +20,9 @@ use YooKassa\Model\Notification\NotificationEventType;
 class Yookassa {
     /** Метка платежей нового сайта в metadata. Уведомления без неё принадлежат старому сайту. */
     public const SITE_TAG = 'v2';
+
+    /** Временная метка в payment_gateway_transaction до ответа ЮKassa. */
+    private const RECURRING_ATTEMPT_PREFIX = 'recurrent-attempt:';
 
     private static $client;
 
@@ -103,9 +107,51 @@ class Yookassa {
         }
     }
 
+    /**
+     * Постоянный ключ одной попытки списания. Повтор того же запроса с этим
+     * ключом вернёт в ЮKassa ту же операцию, а не создаст новое списание.
+     */
+    public static function recurringIdempotenceKey(Subscription $subscription): string {
+        $dueAt = $subscription->next_date_payment?->copy()->utc()->format('Y-m-d\\TH:i:s\\Z') ?? 'unknown';
+
+        return hash('sha256', "recurring:{$subscription->id}:{$dueAt}");
+    }
+
+    /** Создаёт запись о попытке до обращения в ЮKassa. */
+    public static function startRecurringPaymentAttempt(Subscription $subscription, string $recurrentToken): Payment {
+        $idempotenceKey = self::recurringIdempotenceKey($subscription);
+
+        return DB::transaction(function () use ($subscription, $recurrentToken, $idempotenceKey) {
+            $lockedSubscription = Subscription::query()->lockForUpdate()->findOrFail($subscription->id);
+            $existing = $lockedSubscription->payments()
+                ->where('payment_status_id', Payment::IN_PROGRESS)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existing) {
+                return $existing;
+            }
+
+            $attempt = Payment::create([
+                'payment_status_id' => Payment::IN_PROGRESS,
+                'amount' => $lockedSubscription->monthlyAmount(),
+                'payment_gateway_transaction' => self::RECURRING_ATTEMPT_PREFIX . $idempotenceKey,
+                'idempotence_key' => $idempotenceKey,
+                'recurrent_token' => $recurrentToken,
+            ]);
+            $lockedSubscription->payments()->attach($attempt->id);
+
+            return $attempt;
+        });
+    }
+
+    /** Ответ ЮKassa ещё не получен: такой запрос можно безопасно повторить с тем же ключом. */
+    public static function isUnsentRecurringAttempt(Payment $payment): bool {
+        return str_starts_with((string) $payment->payment_gateway_transaction, self::RECURRING_ATTEMPT_PREFIX);
+    }
+
     /** Повторное списание: обычный месяц без подарка. */
-    public function recurrentPayment($token, $sub) {
-        $idempotenceKey = uniqid('', true);
+    public function recurrentPayment(string $token, Subscription $sub, string $idempotenceKey) {
         $response = self::$client->createPayment(
             [
                 'amount' => [
@@ -125,6 +171,92 @@ class Yookassa {
         );
 
         return $response;
+    }
+
+    /** Сохраняет номер операции ЮKassa, пока банк подтверждает списание. */
+    public static function saveRecurringPaymentInProgress(Subscription $subscription, object $paymentYookassa, string $fallbackToken): void {
+        DB::transaction(function () use ($subscription, $paymentYookassa, $fallbackToken) {
+            $lockedSubscription = Subscription::query()->lockForUpdate()->findOrFail($subscription->id);
+            $payment = Payment::query()
+                ->where('idempotence_key', self::recurringIdempotenceKey($lockedSubscription))
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $payment->update([
+                'payment_gateway_transaction' => $paymentYookassa->id,
+                'amount' => $paymentYookassa->amount->value,
+                'recurrent_token' => $paymentYookassa->payment_method->id ?? $fallbackToken,
+            ]);
+            $lockedSubscription->payments()->syncWithoutDetaching([$payment->id]);
+        });
+    }
+
+    /**
+     * Подтверждает одно повторное списание ровно один раз. Возвращает запись
+     * платежа только тому вызову, который действительно продлил подписку.
+     */
+    public static function completeRecurringPayment(Subscription $subscription, string $transactionId, mixed $amount, ?string $recurrentToken): ?Payment {
+        return DB::transaction(function () use ($subscription, $transactionId, $amount, $recurrentToken) {
+            $lockedSubscription = Subscription::query()->lockForUpdate()->find($subscription->id);
+            if (!$lockedSubscription) {
+                return null;
+            }
+
+            $payment = Payment::query()->where('payment_gateway_transaction', $transactionId)->lockForUpdate()->first()
+                ?? $lockedSubscription->payments()->where('payment_status_id', Payment::IN_PROGRESS)->lockForUpdate()->first();
+
+            if ($payment && (int) $payment->payment_status_id === Payment::PAYED) {
+                return null;
+            }
+
+            if (!$payment) {
+                $payment = Payment::create([
+                    'payment_status_id' => Payment::PAYED,
+                    'amount' => $amount,
+                    'payment_gateway_transaction' => $transactionId,
+                    'recurrent_token' => $recurrentToken,
+                ]);
+            } else {
+                $payment->update([
+                    'payment_status_id' => Payment::PAYED,
+                    'amount' => $amount,
+                    'payment_gateway_transaction' => $transactionId,
+                    'recurrent_token' => $recurrentToken ?: $payment->recurrent_token,
+                ]);
+            }
+
+            $lockedSubscription->payments()->syncWithoutDetaching([$payment->id]);
+            $lockedSubscription->is_active = true;
+            $lockedSubscription->pause_reason = null;
+            $lockedSubscription->next_date_payment = \Carbon\Carbon::parse($lockedSubscription->next_date_payment ?? now())->addMonth();
+            $lockedSubscription->save();
+
+            return $payment->fresh();
+        });
+    }
+
+    /** Отменяет сохранённую попытку и ставит активную подписку на паузу. */
+    public static function cancelRecurringPayment(Subscription $subscription, string $transactionId): bool {
+        return DB::transaction(function () use ($subscription, $transactionId) {
+            $lockedSubscription = Subscription::query()->lockForUpdate()->find($subscription->id);
+            if (!$lockedSubscription) {
+                return false;
+            }
+
+            $payment = Payment::query()->where('payment_gateway_transaction', $transactionId)->lockForUpdate()->first()
+                ?? $lockedSubscription->payments()->where('payment_status_id', Payment::IN_PROGRESS)->lockForUpdate()->first();
+            if ($payment) {
+                $payment->update(['payment_status_id' => Payment::CANCELED, 'payment_gateway_transaction' => $transactionId]);
+            }
+
+            if (!$lockedSubscription->is_active) {
+                return false;
+            }
+
+            $lockedSubscription->update(['is_active' => false, 'pause_reason' => Subscription::PAUSE_PAYMENT]);
+
+            return true;
+        });
     }
 
     public function callback(Request $request) {
@@ -172,28 +304,23 @@ class Yookassa {
                     Log::channel('shop')->info('Оплачена подписка.', ['subscription_id' => $subscription->id, 'payment' => $transactionId]);
                 }
             } elseif ($event === NotificationEventType::PAYMENT_SUCCEEDED && $isRecurrent) {
-                // Повторное списание подтвердилось уведомлением: планировщик мог получить статус «в обработке»
-                if ($subscription && !Payment::where('payment_gateway_transaction', $transactionId)->exists()) {
-                    $payment = Payment::create([
-                        'payment_status_id' => Payment::PAYED,
-                        'amount' => $responseObj->getAmount()->getValue(),
-                        'payment_gateway_transaction' => $transactionId,
-                        'recurrent_token' => $responseObj->getPaymentMethod()?->id,
-                    ]);
-                    $subscription->payments()->attach($payment->id);
-                    $subscription->is_active = true;
-                    $subscription->pause_reason = null;
-                    $subscription->next_date_payment = \Carbon\Carbon::parse($subscription->next_date_payment ?? now())->addMonth();
-                    $subscription->save();
+                // Повторное списание подтверждаем идемпотентно: уведомление можно прислать повторно.
+                if ($subscription && ($payment = self::completeRecurringPayment(
+                    $subscription,
+                    $transactionId,
+                    $responseObj->getAmount()->getValue(),
+                    $responseObj->getPaymentMethod()?->id,
+                ))) {
+                    $subscription->refresh()->load('plan.options');
                     DeliverySchedule::planNextMonth($subscription);
                     Notifier::renewed($subscription, (float) $payment->amount);
                     Log::channel('shop')->info('Подписка продлена по уведомлению.', ['subscription_id' => $subscription->id, 'payment' => $transactionId]);
                 }
             } elseif ($event === NotificationEventType::PAYMENT_CANCELED) {
                 Payment::where('payment_gateway_transaction', $transactionId)->update(['payment_status_id' => Payment::CANCELED]);
-                if ($isRecurrent && $subscription && $subscription->is_active) {
+                if ($isRecurrent && $subscription && self::cancelRecurringPayment($subscription, $transactionId)) {
                     // Повторное списание не прошло: пауза и сообщения клиенту и команде
-                    $subscription->update(['is_active' => false, 'pause_reason' => Subscription::PAUSE_PAYMENT]);
+                    $subscription->refresh()->load('plan.options');
                     Notifier::paymentFailed($subscription, $subscription->monthlyAmount());
                     TeamNotifier::paymentFailed($subscription, $subscription->monthlyAmount());
                 }

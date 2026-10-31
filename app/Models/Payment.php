@@ -13,6 +13,7 @@ class Payment extends Model {
         'payment_status_id',
         'amount',
         'payment_gateway_transaction',
+        'idempotence_key',
         'recurrent_token'
     ];
 
