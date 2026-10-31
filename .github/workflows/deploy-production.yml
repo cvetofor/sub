@@ -45,20 +45,22 @@ jobs:
           extensions: mbstring, pdo_sqlite, sqlite3, intl, bcmath, gd
           coverage: none
 
-      - name: Проверить PHP-код
-        run: |
-          composer install --no-interaction --prefer-dist --no-progress
-          cp .env.example .env
-          php artisan key:generate
-          vendor/bin/phpunit
+      - name: Установить PHP-зависимости
+        run: composer install --no-interaction --prefer-dist --no-progress
 
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
 
-      - name: Собрать фронтенд
+      - name: Собрать фронтенд до тестов
         run: npm ci && npm run build
+
+      - name: Проверить PHP-код
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          vendor/bin/phpunit
 
       - name: Настроить SSH
         env:
