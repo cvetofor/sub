@@ -39,6 +39,13 @@ jobs:
             VPS_IP=93.189.231.103 DOMAIN_IDN=цветы.цветофор.рф \
             bash deploy/beget-prepare.sh
 
+      - name: Проверить маршрут JavaScript формы входа
+        run: |
+          TARGET="root@93.189.231.103"
+          SSH="ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+          $SSH "$TARGET" "curl -ksS -o /dev/null -w 'livewire_asset_http=%{http_code}\\n' --resolve 'xn--b1ag3bn2a.xn--b1ag1aakjpl.xn--p1ai:443:127.0.0.1' 'https://xn--b1ag3bn2a.xn--b1ag1aakjpl.xn--p1ai/livewire/livewire.min.js'"
+          $SSH "$TARGET" "nginx -T 2>&1 | grep -E 'server_name.*xn--b1ag3bn2a|location .*\\.(js|css)|try_files|fastcgi_pass|root ' | tail -n 40"
+
       - name: Создать или обновить активного администратора
         env:
           ADMIN_BOOTSTRAP_EMAIL: ${{ secrets.ADMIN_BOOTSTRAP_EMAIL }}
