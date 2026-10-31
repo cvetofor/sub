@@ -1,0 +1,88 @@
+name: Выкат коммита redesign на production
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Ветка, тег или полный SHA из redesign
+        required: true
+        default: redesign
+        type: string
+      run_migrations:
+        description: Применить миграции базы данных
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cvety-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Проверка, сборка и выкат
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+      - name: Убедиться, что коммит входит в redesign
+        run: |
+          git fetch origin redesign --depth=1
+          git merge-base --is-ancestor HEAD origin/redesign
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Собрать фронтенд
+        run: npm ci && npm run build
+      - name: Настроить SSH
+        env:
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.CVETY_DEPLOY_SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.CVETY_DEPLOY_SSH_KNOWN_HOSTS }}
+        run: |
+          test -n "$DEPLOY_SSH_PRIVATE_KEY"
+          test -n "$DEPLOY_SSH_KNOWN_HOSTS"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_PRIVATE_KEY" > ~/.ssh/id_cvety_deploy
+          chmod 600 ~/.ssh/id_cvety_deploy
+          printf '%s\n' "$DEPLOY_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Загрузить собранный фронтенд во временную папку
+        id: release
+        env:
+          DEPLOY_HOST: ${{ secrets.CVETY_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.CVETY_DEPLOY_USER }}
+        run: |
+          test -n "$DEPLOY_HOST" && test -n "$DEPLOY_USER"
+          SHA="$(git rev-parse HEAD)"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          TARGET="$DEPLOY_USER@$DEPLOY_HOST"
+          SSH="ssh -i ~/.ssh/id_cvety_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+          $SSH "$TARGET" "install -d -m 700 '/var/www/cvety/.deploy/build/$SHA'"
+          rsync -az --delete -e "$SSH" public/build/ "$TARGET:/var/www/cvety/.deploy/build/$SHA/"
+      - name: Применить тот же коммит на сервере
+        env:
+          DEPLOY_HOST: ${{ secrets.CVETY_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.CVETY_DEPLOY_USER }}
+          SHA: ${{ steps.release.outputs.sha }}
+          RUN_MIGRATIONS: ${{ inputs.run_migrations }}
+        run: |
+          TARGET="$DEPLOY_USER@$DEPLOY_HOST"
+          SSH="ssh -i ~/.ssh/id_cvety_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+          args="$SHA"
+          if [ "$RUN_MIGRATIONS" = true ]; then args="$args --migrate"; fi
+          $SSH "$TARGET" "sudo -n /usr/local/sbin/cvety-deploy $args"
+      - name: Проверить сервер
+        env:
+          DEPLOY_HOST: ${{ secrets.CVETY_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.CVETY_DEPLOY_USER }}
+          SHA: ${{ steps.release.outputs.sha }}
+        run: |
+          TARGET="$DEPLOY_USER@$DEPLOY_HOST"
+          SSH="ssh -i ~/.ssh/id_cvety_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+          $SSH "$TARGET" "test \"\$(git -C /var/www/cvety rev-parse HEAD)\" = '$SHA' && curl --fail --silent --show-error --max-time 15 --resolve 'xn--b1ag3bn2a.xn--b1ag1aakjpl.xn--p1ai:443:127.0.0.1' https://xn--b1ag3bn2a.xn--b1ag1aakjpl.xn--p1ai/ >/dev/null"
