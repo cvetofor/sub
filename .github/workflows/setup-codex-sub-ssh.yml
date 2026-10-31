@@ -1,0 +1,59 @@
+name: Разово восстановить прямой SSH-доступ Codex
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cvety-production
+  cancel-in-progress: false
+
+jobs:
+  provision:
+    name: Настроить ключ codex-sub без root-доступа
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: redesign
+
+      - name: Получить временный root-ключ через API Beget
+        env:
+          BEGET_LOGIN: ${{ secrets.BEGET_LOGIN }}
+          BEGET_PASSWORD: ${{ secrets.BEGET_PASSWORD }}
+          BEGET_API_PASSWORD: ${{ secrets.BEGET_API_PASSWORD }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          test -n "$BEGET_LOGIN"
+          test -n "$SSH_KNOWN_HOSTS"
+          test -n "$BEGET_PASSWORD$BEGET_API_PASSWORD"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          KEY_PATH="$HOME/.ssh/id_deploy" MODE=ssh \
+            VPS_IP=93.189.231.103 DOMAIN_IDN=цветы.цветофор.рф \
+            bash deploy/beget-prepare.sh
+
+      - name: Установить только ключ codex-sub
+        env:
+          CODEX_SUB_PUBLIC_KEY: ${{ secrets.CODEX_SUB_PUBLIC_KEY }}
+        run: |
+          test -n "$CODEX_SUB_PUBLIC_KEY"
+          PAYLOAD="$(printf '%s' "$CODEX_SUB_PUBLIC_KEY" | base64 | tr -d '\n')"
+          TARGET="root@93.189.231.103"
+          SSH="ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+          $SSH "$TARGET" "bash -s -- '$PAYLOAD'" <<'REMOTE'
+          set -Eeuo pipefail
+          key="$(printf '%s' "$1" | base64 -d)"
+          if ! id codex-sub >/dev/null 2>&1; then
+            useradd --create-home --shell /bin/bash codex-sub
+          fi
+          install -d -m 700 -o codex-sub -g codex-sub /home/codex-sub/.ssh
+          printf 'restrict,pty %s\n' "$key" > /home/codex-sub/.ssh/authorized_keys
+          chown codex-sub:codex-sub /home/codex-sub/.ssh/authorized_keys
+          chmod 600 /home/codex-sub/.ssh/authorized_keys
+          echo "codex_sub_key_ready"
+          REMOTE
