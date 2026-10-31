@@ -100,6 +100,9 @@ jobs:
           target="$1"
           run_migrations="$2"
           site="/var/www/cvety"
+          # The source tree belongs to the restricted deploy user; root is used
+          # only for this controlled release step.
+          git config --global --add safe.directory "$site"
           cd "$site"
 
           exec 9>/var/lock/cvety-deploy.lock
