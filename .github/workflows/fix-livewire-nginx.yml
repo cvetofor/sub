@@ -1,0 +1,74 @@
+name: Разово исправить маршрут Livewire в Nginx
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cvety-production
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    name: Исправить маршрут JavaScript формы входа
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: redesign
+
+      - name: Получить временный root-ключ через API Beget
+        env:
+          BEGET_LOGIN: ${{ secrets.BEGET_LOGIN }}
+          BEGET_PASSWORD: ${{ secrets.BEGET_PASSWORD }}
+          BEGET_API_PASSWORD: ${{ secrets.BEGET_API_PASSWORD }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          test -n "$BEGET_LOGIN"
+          test -n "$SSH_KNOWN_HOSTS"
+          test -n "$BEGET_PASSWORD$BEGET_API_PASSWORD"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          KEY_PATH="$HOME/.ssh/id_deploy" MODE=ssh \
+            VPS_IP=93.189.231.103 DOMAIN_IDN=цветы.цветофор.рф \
+            bash deploy/beget-prepare.sh
+
+      - name: Добавить маршрут Livewire и безопасно перезагрузить Nginx
+        run: |
+          TARGET="root@93.189.231.103"
+          SSH="ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+          $SSH "$TARGET" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          config=/etc/nginx/sites-available/cvety
+          test -f "$config"
+          if ! grep -qF 'location ^~ /livewire/' "$config"; then
+            backup="$config.bak.livewire-$(date +%Y%m%d%H%M%S)"
+            cp -a "$config" "$backup"
+            tmp="$(mktemp)"
+            awk '
+              /# Статика: шрифты, картинки, собранный фронтенд/ && ! done {
+                print "    # Livewire обслуживается Laravel; не перехватывать его как статический .js."
+                print "    location ^~ /livewire/ {"
+                print "        try_files $uri /index.php?$query_string;"
+                print "    }"
+                print ""
+                done=1
+              }
+              { print }
+            ' "$config" > "$tmp"
+            install -m 644 "$tmp" "$config"
+            rm -f "$tmp"
+          fi
+          nginx -t
+          systemctl reload nginx
+          REMOTE
+
+      - name: Проверить JavaScript и страницу входа
+        run: |
+          TARGET="root@93.189.231.103"
+          SSH="ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+          $SSH "$TARGET" "curl -ksS -o /dev/null -w 'livewire_asset_http=%{http_code}\\n' --resolve 'xn--b1ag3bn2a.xn--b1ag1aakjpl.xn--p1ai:443:127.0.0.1' 'https://xn--b1ag3bn2a.xn--b1ag1aakjpl.xn--p1ai/livewire/livewire.min.js'"
