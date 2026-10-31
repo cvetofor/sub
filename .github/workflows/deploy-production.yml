@@ -62,40 +62,38 @@ jobs:
           php artisan key:generate
           vendor/bin/phpunit
 
-      - name: Настроить SSH
+      - name: Получить временный root-ключ через API Beget
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          BEGET_LOGIN: ${{ secrets.BEGET_LOGIN }}
+          BEGET_PASSWORD: ${{ secrets.BEGET_PASSWORD }}
+          BEGET_API_PASSWORD: ${{ secrets.BEGET_API_PASSWORD }}
           SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
         run: |
-          test -n "$SSH_PRIVATE_KEY"
+          test -n "$BEGET_LOGIN"
           test -n "$SSH_KNOWN_HOSTS"
+          test -n "$BEGET_PASSWORD$BEGET_API_PASSWORD"
           install -d -m 700 ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy
-          chmod 600 ~/.ssh/id_deploy
           printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          KEY_PATH="$HOME/.ssh/id_deploy" MODE=ssh \
+            VPS_IP=93.189.231.103 DOMAIN_IDN=цветы.цветофор.рф \
+            bash deploy/beget-prepare.sh
 
       - name: Загрузить собранный фронтенд во временную папку
         id: release
-        env:
-          DEPLOY_HOST: ${{ secrets.SSH_HOST }}
-          DEPLOY_USER: ${{ secrets.SSH_USER }}
         run: |
-          test -n "$DEPLOY_HOST" && test -n "$DEPLOY_USER"
           SHA="$(git rev-parse HEAD)"
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
-          TARGET="$DEPLOY_USER@$DEPLOY_HOST"
+          TARGET="root@93.189.231.103"
           SSH="ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
           $SSH "$TARGET" "install -d -m 700 '/var/www/cvety/.deploy/build/$SHA'"
           rsync -az --delete -e "$SSH" public/build/ "$TARGET:/var/www/cvety/.deploy/build/$SHA/"
 
       - name: Применить тот же коммит на сервере
         env:
-          DEPLOY_HOST: ${{ secrets.SSH_HOST }}
-          DEPLOY_USER: ${{ secrets.SSH_USER }}
           SHA: ${{ steps.release.outputs.sha }}
           RUN_MIGRATIONS: ${{ inputs.run_migrations }}
         run: |
-          TARGET="$DEPLOY_USER@$DEPLOY_HOST"
+          TARGET="root@93.189.231.103"
           SSH="ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
           $SSH "$TARGET" "bash -s -- '$SHA' '$RUN_MIGRATIONS'" <<'REMOTE'
           set -Eeuo pipefail
@@ -146,10 +144,8 @@ jobs:
 
       - name: Проверить сервер
         env:
-          DEPLOY_HOST: ${{ secrets.SSH_HOST }}
-          DEPLOY_USER: ${{ secrets.SSH_USER }}
           SHA: ${{ steps.release.outputs.sha }}
         run: |
-          TARGET="$DEPLOY_USER@$DEPLOY_HOST"
+          TARGET="root@93.189.231.103"
           SSH="ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
           $SSH "$TARGET" "test \"\$(git -C /var/www/cvety rev-parse HEAD)\" = '$SHA' && curl --fail --silent --show-error --max-time 15 --resolve 'xn--b1ag3bn2a.xn--b1ag1aakjpl.xn--p1ai:443:127.0.0.1' https://xn--b1ag3bn2a.xn--b1ag1aakjpl.xn--p1ai/ >/dev/null"
