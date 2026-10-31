@@ -19,7 +19,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          # В main хранится этот одноразовый workflow; вспомогательный скрипт
+          # получения временного ключа находится в ветке приложения.
+          ref: redesign
 
       - name: Получить временный root-ключ через API Beget
         env:
