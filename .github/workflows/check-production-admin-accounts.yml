@@ -57,7 +57,7 @@ jobs:
           password="${decoded#*$'\n'}"
           export ADMIN_EMAIL="$email" ADMIN_PASSWORD="$password"
           cd /var/www/cvety
-          php artisan tinker --execute='$email = getenv("ADMIN_EMAIL"); $password = getenv("ADMIN_PASSWORD"); \App\Models\User::updateOrCreate(["email" => $email], ["name" => "Администратор", "password" => \Illuminate\Support\Facades\Hash::make($password), "role_id" => \App\Models\Role::ADMIN, "is_active" => true]); echo "admin_account_ready";'
+          php artisan tinker --execute='$email = getenv("ADMIN_EMAIL"); $password = getenv("ADMIN_PASSWORD"); $user = \App\Models\User::updateOrCreate(["email" => $email], ["name" => "Администратор", "password" => \Illuminate\Support\Facades\Hash::make($password), "role_id" => \App\Models\Role::ADMIN, "is_active" => true]); if (! \Illuminate\Support\Facades\Hash::check($password, $user->password) || ! $user->is_active || (int) $user->role_id !== \App\Models\Role::ADMIN) { throw new \RuntimeException("admin_record_verification_failed"); } echo "admin_account_ready";'
           unset ADMIN_EMAIL ADMIN_PASSWORD decoded payload email password
           REMOTE
 
