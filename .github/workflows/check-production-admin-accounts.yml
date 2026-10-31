@@ -1,0 +1,76 @@
+name: Разово настроить учётную запись администратора
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cvety-production
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    name: Настроить учётную запись и проверить роли
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Получить временный root-ключ через API Beget
+        env:
+          BEGET_LOGIN: ${{ secrets.BEGET_LOGIN }}
+          BEGET_PASSWORD: ${{ secrets.BEGET_PASSWORD }}
+          BEGET_API_PASSWORD: ${{ secrets.BEGET_API_PASSWORD }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          test -n "$BEGET_LOGIN"
+          test -n "$SSH_KNOWN_HOSTS"
+          test -n "$BEGET_PASSWORD$BEGET_API_PASSWORD"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          KEY_PATH="$HOME/.ssh/id_deploy" MODE=ssh \
+            VPS_IP=93.189.231.103 DOMAIN_IDN=цветы.цветофор.рф \
+            bash deploy/beget-prepare.sh
+
+      - name: Создать или обновить активного администратора
+        env:
+          ADMIN_BOOTSTRAP_EMAIL: ${{ secrets.ADMIN_BOOTSTRAP_EMAIL }}
+          ADMIN_BOOTSTRAP_PASSWORD: ${{ secrets.ADMIN_BOOTSTRAP_PASSWORD }}
+        run: |
+          test -n "$ADMIN_BOOTSTRAP_EMAIL"
+          test -n "$ADMIN_BOOTSTRAP_PASSWORD"
+          PAYLOAD="$(printf '%s\n%s' "$ADMIN_BOOTSTRAP_EMAIL" "$ADMIN_BOOTSTRAP_PASSWORD" | base64 | tr -d '\n')"
+          TARGET="root@93.189.231.103"
+          SSH="ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+          $SSH "$TARGET" "sudo -u www-data bash -s -- '$PAYLOAD'" <<'REMOTE'
+          set -Eeuo pipefail
+          payload="$1"
+          decoded="$(printf '%s' "$payload" | base64 -d)"
+          email="${decoded%%$'\n'*}"
+          password="${decoded#*$'\n'}"
+          export ADMIN_EMAIL="$email" ADMIN_PASSWORD="$password"
+          cd /var/www/cvety
+          php artisan tinker --execute='$email = getenv("ADMIN_EMAIL"); $password = getenv("ADMIN_PASSWORD"); \App\Models\User::updateOrCreate(["email" => $email], ["name" => "Администратор", "password" => \Illuminate\Support\Facades\Hash::make($password), "role_id" => \App\Models\Role::ADMIN, "is_active" => true]); echo "admin_account_ready";'
+          unset ADMIN_EMAIL ADMIN_PASSWORD decoded payload email password
+          REMOTE
+
+      - name: Посчитать активные роли без персональных данных
+        run: |
+          TARGET="root@93.189.231.103"
+          SSH="ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+          $SSH "$TARGET" 'sudo -u www-data bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          cd /var/www/cvety
+          php artisan tinker --execute='echo \App\Models\User::query()
+              ->where("is_active", true)
+              ->whereIn("role_id", [1, 2])
+              ->selectRaw("role_id, count(*) as total")
+              ->groupBy("role_id")
+              ->pluck("total", "role_id")
+              ->toJson();'
+          REMOTE
