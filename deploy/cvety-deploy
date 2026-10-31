@@ -18,15 +18,17 @@ exec 9>/var/lock/cvety-deploy.lock
 flock -n 9 || die "another deployment is already running"
 cd "$SITE_DIR"
 
-git fetch --quiet --depth=1 origin redesign
+# The working tree was bootstrapped shallow; fetch full history once so an
+# explicit deployment of an earlier known-good SHA can serve as an rollback.
+git fetch --quiet --unshallow origin redesign 2>/dev/null ||
+  git fetch --quiet origin redesign
 git cat-file -e "$target^{commit}" || die "commit is unavailable"
 git merge-base --is-ancestor "$target" origin/redesign ||
   die "commit is not reachable from origin/redesign"
 
 previous=$(git rev-parse HEAD)
-if ! git diff --quiet "$previous" "$target" -- composer.lock; then
-  COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
-fi
+dependencies_changed=0
+if ! git diff --quiet "$previous" "$target" -- composer.lock; then dependencies_changed=1; fi
 
 build_stage="$SITE_DIR/.deploy/build/$target"
 if ! git diff --quiet "$previous" "$target" -- package-lock.json package.json vite.config.* resources; then
@@ -44,6 +46,10 @@ down=1
 # Runtime data are ignored by Git: .env, storage, vendor and public/build.
 git reset --hard "$target"
 git ls-files -z | xargs -0 -r chown "$RELEASE_USER:$RELEASE_USER"
+
+if [[ "$dependencies_changed" == 1 ]]; then
+  COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+fi
 
 if [[ -d "$build_stage" ]]; then
   install -d -o www-data -g www-data -m 0755 public/build
