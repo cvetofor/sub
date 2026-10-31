@@ -1,4 +1,4 @@
-name: Проверить активные учётные записи админки
+name: Разово настроить учётную запись администратора
 
 on:
   workflow_dispatch:
@@ -11,8 +11,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  inspect:
-    name: Только чтение списка ролей
+  bootstrap:
+    name: Настроить учётную запись и проверить роли
     runs-on: ubuntu-latest
     environment: production
 
@@ -51,39 +51,12 @@ jobs:
           set -Eeuo pipefail
           payload="$1"
           decoded="$(printf '%s' "$payload" | base64 -d)"
-          export ADMIN_EMAIL="${decoded%%        run: |
-          TARGET="root@93.189.231.103"
-          SSH="ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
-          $SSH "$TARGET" 'sudo -u www-data bash -s' <<'REMOTE'
-          set -Eeuo pipefail
+          email="${decoded%%$'\n'*}"
+          password="${decoded#*$'\n'}"
+          export ADMIN_EMAIL="$email" ADMIN_PASSWORD="$password"
           cd /var/www/cvety
-          php artisan tinker --execute='echo \App\Models\User::query()
-              ->where("is_active", true)
-              ->whereIn("role_id", [1, 2])
-              ->selectRaw("role_id, count(*) as total")
-              ->groupBy("role_id")
-              ->pluck("total", "role_id")
-              ->toJson();'
-          REMOTE
-\n'*}"
-          export ADMIN_PASSWORD="${decoded#*        run: |
-          TARGET="root@93.189.231.103"
-          SSH="ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
-          $SSH "$TARGET" 'sudo -u www-data bash -s' <<'REMOTE'
-          set -Eeuo pipefail
-          cd /var/www/cvety
-          php artisan tinker --execute='echo \App\Models\User::query()
-              ->where("is_active", true)
-              ->whereIn("role_id", [1, 2])
-              ->selectRaw("role_id, count(*) as total")
-              ->groupBy("role_id")
-              ->pluck("total", "role_id")
-              ->toJson();'
-          REMOTE
-\n'}"
-          cd /var/www/cvety
-          php artisan tinker --execute='$email = getenv("ADMIN_EMAIL"); $password = getenv("ADMIN_PASSWORD"); \\App\\Models\\User::updateOrCreate(["email" => $email], ["name" => "Администратор", "password" => \\Illuminate\\Support\\Facades\\Hash::make($password), "role_id" => \\App\\Models\\Role::ADMIN, "is_active" => true]); echo "admin_account_ready";'
-          unset ADMIN_EMAIL ADMIN_PASSWORD decoded payload
+          php artisan tinker --execute='$email = getenv("ADMIN_EMAIL"); $password = getenv("ADMIN_PASSWORD"); \App\Models\User::updateOrCreate(["email" => $email], ["name" => "Администратор", "password" => \Illuminate\Support\Facades\Hash::make($password), "role_id" => \App\Models\Role::ADMIN, "is_active" => true]); echo "admin_account_ready";'
+          unset ADMIN_EMAIL ADMIN_PASSWORD decoded payload email password
           REMOTE
 
       - name: Посчитать активные роли без персональных данных
