@@ -1,0 +1,54 @@
+name: Проверить активные учётные записи админки
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cvety-production
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    name: Только чтение списка ролей
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Получить временный root-ключ через API Beget
+        env:
+          BEGET_LOGIN: ${{ secrets.BEGET_LOGIN }}
+          BEGET_PASSWORD: ${{ secrets.BEGET_PASSWORD }}
+          BEGET_API_PASSWORD: ${{ secrets.BEGET_API_PASSWORD }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          test -n "$BEGET_LOGIN"
+          test -n "$SSH_KNOWN_HOSTS"
+          test -n "$BEGET_PASSWORD$BEGET_API_PASSWORD"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          KEY_PATH="$HOME/.ssh/id_deploy" MODE=ssh \
+            VPS_IP=93.189.231.103 DOMAIN_IDN=цветы.цветофор.рф \
+            bash deploy/beget-prepare.sh
+
+      - name: Посчитать активные роли без персональных данных
+        run: |
+          TARGET="root@93.189.231.103"
+          SSH="ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+          $SSH "$TARGET" 'sudo -u www-data bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          cd /var/www/cvety
+          php artisan tinker --execute='echo \App\Models\User::query()
+              ->where("is_active", true)
+              ->whereIn("role_id", [1, 2])
+              ->selectRaw("role_id, count(*) as total")
+              ->groupBy("role_id")
+              ->pluck("total", "role_id")
+              ->toJson();'
+          REMOTE
