@@ -49,7 +49,7 @@ jobs:
           PAYLOAD="$(printf '%s\n%s' "$ADMIN_BOOTSTRAP_EMAIL" "$ADMIN_BOOTSTRAP_PASSWORD" | base64 | tr -d '\n')"
           TARGET="root@93.189.231.103"
           SSH="ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
-          $SSH "$TARGET" "sudo -u www-data bash -s -- '$PAYLOAD'" <<'REMOTE'
+          $SSH "$TARGET" "sudo -u www-data env HOME=/tmp XDG_CONFIG_HOME=/tmp bash -s -- '$PAYLOAD'" <<'REMOTE'
           set -Eeuo pipefail
           payload="$1"
           decoded="$(printf '%s' "$payload" | base64 -d)"
@@ -65,7 +65,7 @@ jobs:
         run: |
           TARGET="root@93.189.231.103"
           SSH="ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
-          $SSH "$TARGET" 'sudo -u www-data bash -s' <<'REMOTE'
+          $SSH "$TARGET" 'sudo -u www-data env HOME=/tmp XDG_CONFIG_HOME=/tmp bash -s' <<'REMOTE'
           set -Eeuo pipefail
           cd /var/www/cvety
           php artisan tinker --execute='echo \App\Models\User::query()
