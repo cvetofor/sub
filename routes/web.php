@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthLinkController;
+use App\Http\Controllers\AmoSubscriptionViewController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\QuizController;
@@ -18,6 +19,9 @@ Route::post('/quiz/subscribe', [QuizController::class, 'store'])->middleware(['t
 
 // Вход по ссылке из СМС после оплаты
 Route::get('/k/{token}', AuthLinkController::class)->middleware('throttle:30,1')->name('auth.link');
+
+// Непредсказуемая ссылка из amoCRM: только просмотр одной заявки, без входа и редактирования.
+Route::get('/amo/subscription/{token}', AmoSubscriptionViewController::class)->middleware('throttle:30,1')->name('amo.subscription.show');
 
 // Мастер подписки: страница и создание подписки (после входа по коду)
 Route::get('/subscribe', [WizardController::class, 'show'])->middleware(AssignDesign::class . ':classic')->name('wizard');
