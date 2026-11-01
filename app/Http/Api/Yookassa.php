@@ -150,6 +150,25 @@ class Yookassa {
         return str_starts_with((string) $payment->payment_gateway_transaction, self::RECURRING_ATTEMPT_PREFIX);
     }
 
+    /**
+     * Заменяет ключ только у попытки, которую ЮKassa точно не приняла и для
+     * которой ещё нет номера платежа. Используется исключительно адресной
+     * командой после явного подтверждения оператора.
+     */
+    public static function renewUnsentRecurringAttemptKey(Payment $payment): Payment {
+        if (!self::isUnsentRecurringAttempt($payment)) {
+            throw new \LogicException('Можно заменить ключ только у неотправленной попытки.');
+        }
+
+        $key = hash('sha256', random_bytes(32));
+        $payment->update([
+            'idempotence_key' => $key,
+            'payment_gateway_transaction' => self::RECURRING_ATTEMPT_PREFIX . $key,
+        ]);
+
+        return $payment->fresh();
+    }
+
     /** Повторное списание: обычный месяц без подарка. */
     public function recurrentPayment(string $token, Subscription $sub, string $idempotenceKey) {
         $amount = number_format($sub->monthlyAmount(), 2, '.', '');
@@ -197,11 +216,11 @@ class Yookassa {
     }
 
     /** Сохраняет номер операции ЮKassa, пока банк подтверждает списание. */
-    public static function saveRecurringPaymentInProgress(Subscription $subscription, object $paymentYookassa, string $fallbackToken): void {
-        DB::transaction(function () use ($subscription, $paymentYookassa, $fallbackToken) {
+    public static function saveRecurringPaymentInProgress(Subscription $subscription, object $paymentYookassa, string $fallbackToken, ?string $idempotenceKey = null): void {
+        DB::transaction(function () use ($subscription, $paymentYookassa, $fallbackToken, $idempotenceKey) {
             $lockedSubscription = Subscription::query()->lockForUpdate()->findOrFail($subscription->id);
             $payment = Payment::query()
-                ->where('idempotence_key', self::recurringIdempotenceKey($lockedSubscription))
+                ->where('idempotence_key', $idempotenceKey ?: self::recurringIdempotenceKey($lockedSubscription))
                 ->lockForUpdate()
                 ->firstOrFail();
 

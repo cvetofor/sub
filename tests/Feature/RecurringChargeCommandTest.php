@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\City;
+use App\Models\Payment;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Http\Api\Yookassa;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -51,5 +53,22 @@ class RecurringChargeCommandTest extends TestCase
 
         $this->assertDatabaseCount('payments', 0);
         $this->assertTrue((bool) $subscription->fresh()->is_active);
+    }
+
+    public function test_rejected_unsent_attempt_can_replace_only_its_key_without_creating_second_payment(): void
+    {
+        $oldKey = str_repeat('a', 64);
+        $attempt = Payment::create([
+            'payment_status_id' => Payment::IN_PROGRESS,
+            'amount' => 8,
+            'payment_gateway_transaction' => 'recurrent-attempt:' . $oldKey,
+            'idempotence_key' => $oldKey,
+        ]);
+
+        $renewed = Yookassa::renewUnsentRecurringAttemptKey($attempt);
+
+        $this->assertDatabaseCount('payments', 1);
+        $this->assertNotSame($oldKey, $renewed->idempotence_key);
+        $this->assertStringStartsWith('recurrent-attempt:', $renewed->payment_gateway_transaction);
     }
 }
