@@ -152,10 +152,12 @@ class Yookassa {
 
     /** Повторное списание: обычный месяц без подарка. */
     public function recurrentPayment(string $token, Subscription $sub, string $idempotenceKey) {
+        $amount = number_format($sub->monthlyAmount(), 2, '.', '');
+
         $response = self::$client->createPayment(
             [
                 'amount' => [
-                    'value' => number_format($sub->monthlyAmount(), 2, '.', ''),
+                    'value' => $amount,
                     'currency' => 'RUB',
                 ],
                 'capture' => true,
@@ -165,6 +167,27 @@ class Yookassa {
                     'sub_id' => $sub->id,
                     'is_reccurent' => '1',
                     'site' => self::SITE_TAG,
+                ],
+                // Для повторного платежа ЮKassa так же требует чек, как и для
+                // первого. Без него API отклоняет запрос до обращения к банку.
+                'receipt' => [
+                    'customer' => [
+                        'full_name' => $sub->sender_name,
+                        'phone' => preg_replace('/\D+/', '', $sub->sender_phone),
+                    ],
+                    'items' => [
+                        [
+                            'description' => 'Подписка «' . $sub->planName() . '», повторный месяц',
+                            'quantity' => '1.00',
+                            'amount' => [
+                                'value' => $amount,
+                                'currency' => 'RUB',
+                            ],
+                            'vat_code' => '7',
+                            'payment_mode' => 'full_payment',
+                            'payment_subject' => 'commodity',
+                        ],
+                    ],
                 ],
             ],
             $idempotenceKey

@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Models\Subscription;
+use App\Models\Delivery;
 use App\Support\Days;
+use Carbon\Carbon;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -97,6 +99,7 @@ class AmoCrm {
         $payload = [[
             'name' => 'Подписка №' . $sub->id . ': ' . $sub->planName() . ', ' . mb_strtolower(Pricing::LABELS[$sub->frequency] ?? $sub->frequency),
             'price' => (int) round($sub->firstPaymentAmount()),
+            'custom_fields_values' => self::leadCustomFieldValues($sub, false),
             '_embedded' => [
                 'tags' => array_values(array_filter([
                     ['name' => 'сайт'],
@@ -152,6 +155,7 @@ class AmoCrm {
             return;
         }
         $patch = ['price' => (int) round($amount)];
+        $patch['custom_fields_values'] = self::leadCustomFieldValues($sub, true, $amount);
         self::addOptional($patch, 'status_id', Settings::get('amocrm_status_paid'));
         try {
             self::client()->patch('/api/v4/leads/' . $leadId, $patch)->throw();
@@ -204,6 +208,117 @@ class AmoCrm {
         $first = $sub->deliveries()->planned()->orderBy('planned_date')->first();
 
         return $first ? 'Первая доставка ' . $first->planned_date->format('d.m.Y') . ($first->windowLabel() ? ' ' . $first->windowLabel() : '') . '.' : '';
+    }
+
+    /**
+     * Поля карточки сделки, которые сайт действительно знает. Поля находятся
+     * по названиям в amoCRM, поэтому смена их технических номеров не сломает
+     * интеграцию. Неизвестные сайту данные (например, гелий) намеренно не
+     * подменяются нулями.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function leadCustomFieldValues(Subscription $sub, bool $paid, ?float $paidAmount = null): array {
+        if (!self::credentialsPresent()) {
+            return [];
+        }
+
+        $sub->loadMissing('plan.options', 'timeDelivery', 'deliveries.timeDelivery');
+        $preferences = $sub->preferences ?? [];
+        $firstDelivery = $sub->deliveries
+            ->where('status', Delivery::PLANNED)
+            ->sortBy('planned_date')
+            ->first();
+        $deliveryDate = $firstDelivery?->planned_date
+            ?? DeliverySchedule::firstDate((int) ($sub->delivery_day ?: 6));
+        $window = $firstDelivery?->timeDelivery ?: $sub->timeDelivery;
+        $windowLabel = $window ? substr($window->from, 0, 5) . '–' . substr($window->to, 0, 5) : null;
+
+        $composition = array_filter([
+            'Подписка «' . $sub->planName() . '»',
+            number_format((float) ($sub->plan?->price ?? 0), 0, '', ' ') . ' ₽ за букет',
+            mb_strtolower(Pricing::LABELS[$sub->frequency] ?? $sub->frequency),
+            $sub->plan?->options->isNotEmpty() ? 'Дополнения: ' . $sub->plan->options->pluck('name')->join(', ') : null,
+        ]);
+        $comment = array_filter([
+            !empty($preferences['card_text']) ? 'Открытка: ' . $preferences['card_text'] : null,
+            !empty($preferences['wishes']) ? 'Пожелания флористу: ' . $preferences['wishes'] : null,
+            $sub->comment ? 'Комментарий курьеру: ' . $sub->comment : null,
+        ]);
+        $prepayment = $paid ? ($paidAmount ?? $sub->firstPaymentAmount()) : null;
+
+        return array_values(array_filter([
+            self::customFieldValue('ФИО Получателя', $sub->receiving_name),
+            self::customFieldValue('Телефон Получателя', self::digits($sub->receiving_phone)),
+            self::customFieldValue('Адрес доставки', $sub->address),
+            self::customFieldValue('Дата доставки', $deliveryDate),
+            self::customFieldValue('Время доставки', $windowLabel),
+            self::customFieldValue('Источник заявки', 'Сайт ЦВЕТОФОР'),
+            self::customFieldValue('Способ оплаты', 'Юкасса (сайты)'),
+            self::customFieldValue('Доставка/Самовывоз', 'Доставка'),
+            self::customFieldValue('Статус оплаты', $paid ? 'Оплачен' : 'НЕ ОПЛАЧЕН'),
+            self::customFieldValue('Состав заказа', implode('. ', $composition)),
+            self::customFieldValue('Комментарий к заказу', implode("\n", $comment)),
+            self::customFieldValue('Название в чеке', $sub->planName()),
+            self::customFieldValue('Передоплата', $prepayment),
+            self::customFieldValue('Тип предоплаты', $paid ? 'Безнал' : null),
+            self::customFieldValue('Оплачено безналом', $prepayment),
+            self::customFieldValue('Дата приема заказ', $sub->created_at),
+            self::customFieldValue('Телефон заказчика', self::digits($sub->sender_phone)),
+        ]));
+    }
+
+    /** @return array<string, array<string, mixed>> */
+    private static function leadCustomFields(): array {
+        try {
+            return Cache::remember('amocrm:lead-custom-fields', now()->addMinutes(5), function () {
+                $fields = self::client()->get('/api/v4/leads/custom_fields')->throw()->json('_embedded.custom_fields', []);
+
+                return collect($fields)
+                    ->filter(fn (array $field) => !empty($field['name']) && !empty($field['id']))
+                    ->mapWithKeys(fn (array $field) => [$field['name'] => $field])
+                    ->all();
+            });
+        } catch (\Throwable $e) {
+            Log::channel('shop')->warning('Не удалось получить поля сделки amoCRM.', ['message' => $e->getMessage()]);
+
+            return [];
+        }
+    }
+
+    /** @return array<string, mixed>|null */
+    private static function customFieldValue(string $name, mixed $value): ?array {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        $field = self::leadCustomFields()[$name] ?? null;
+        if (!$field) {
+            return null;
+        }
+
+        if (($field['type'] ?? null) === 'date') {
+            $value = $value instanceof Carbon ? $value->copy()->startOfDay()->timestamp : Carbon::parse($value)->startOfDay()->timestamp;
+        }
+        $entry = ['field_id' => (int) $field['id']];
+        if (in_array($field['type'] ?? null, ['select', 'radiobutton'], true)) {
+            $enum = collect($field['enums'] ?? [])->firstWhere('value', $value);
+            if (!$enum) {
+                Log::channel('shop')->warning('В amoCRM нет нужного варианта поля сделки.', ['field' => $name, 'value' => $value]);
+
+                return null;
+            }
+            $entry['values'] = [['enum_id' => (int) $enum['id']]];
+        } else {
+            $entry['values'] = [['value' => (string) $value]];
+        }
+
+        return $entry;
+    }
+
+    private static function digits(?string $phone): ?string {
+        $digits = preg_replace('/\D+/', '', (string) $phone);
+
+        return $digits ?: null;
     }
 
     private static function addOptional(array &$target, string $key, mixed $value): void {
