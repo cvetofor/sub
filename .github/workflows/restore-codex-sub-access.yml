@@ -48,7 +48,7 @@ jobs:
           set -Eeuo pipefail
           user="codex-deploy"
           key="$1"
-          case "$key" in ssh-ed25519 *) ;; *) echo "invalid_public_key"; exit 1 ;; esac
+          case "$key" in ssh-ed25519\ *) ;; *) echo "invalid_public_key"; exit 1 ;; esac
 
           if ! id "$user" >/dev/null 2>&1; then
             useradd --create-home --shell /bin/bash "$user"
