@@ -1,4 +1,4 @@
-name: Разово восстановить ограниченный SSH-доступ Codex
+name: Разово настроить постоянный SSH-доступ Codex
 
 on:
   workflow_dispatch:
@@ -11,8 +11,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  restore:
-    name: Восстановить ключ codex-sub без пароля и sudo
+  provision:
+    name: Создать постоянный доступ codex-deploy с sudo
     runs-on: ubuntu-latest
     environment: production
 
@@ -33,40 +33,45 @@ jobs:
           test -n "$BEGET_PASSWORD$BEGET_API_PASSWORD"
           install -d -m 700 ~/.ssh
           printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          KEY_PATH="$HOME/.ssh/id_restore" MODE=ssh \
+          KEY_PATH="$HOME/.ssh/id_provision" MODE=ssh \
             VPS_IP=93.189.231.103 DOMAIN_IDN=цветы.цветофор.рф \
             bash deploy/beget-prepare.sh
 
-      - name: Установить один ограниченный ключ codex-sub
+      - name: Создать постоянный ключевой доступ и sudo без пароля
         env:
           CODEX_SUB_PUBLIC_KEY: ${{ secrets.CODEX_SUB_PUBLIC_KEY }}
         run: |
           test -n "$CODEX_SUB_PUBLIC_KEY"
           TARGET="root@93.189.231.103"
-          SSH="ssh -i ~/.ssh/id_restore -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+          SSH="ssh -i ~/.ssh/id_provision -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
           $SSH "$TARGET" "bash -s -- '$CODEX_SUB_PUBLIC_KEY'" <<'REMOTE'
           set -Eeuo pipefail
+          user="codex-deploy"
           key="$1"
           case "$key" in ssh-ed25519 *) ;; *) echo "invalid_public_key"; exit 1 ;; esac
 
-          if ! id codex-sub >/dev/null 2>&1; then
-            useradd --create-home --shell /bin/bash codex-sub
+          if ! id "$user" >/dev/null 2>&1; then
+            useradd --create-home --shell /bin/bash "$user"
           fi
-          install -d -m 700 -o codex-sub -g codex-sub /home/codex-sub/.ssh
-          backup="/home/codex-sub/.ssh/authorized_keys.backup-$(date +%Y%m%d%H%M%S)"
-          if test -f /home/codex-sub/.ssh/authorized_keys; then
-            cp -a /home/codex-sub/.ssh/authorized_keys "$backup"
-            chown codex-sub:codex-sub "$backup"
+          install -d -m 700 -o "$user" -g "$user" "/home/$user/.ssh"
+          backup="/home/$user/.ssh/authorized_keys.backup-$(date +%Y%m%d%H%M%S)"
+          if test -f "/home/$user/.ssh/authorized_keys"; then
+            cp -a "/home/$user/.ssh/authorized_keys" "$backup"
+            chown "$user:$user" "$backup"
             chmod 600 "$backup"
             echo "previous_authorized_keys_backed_up"
           fi
-          printf 'restrict,pty %s\n' "$key" > /home/codex-sub/.ssh/authorized_keys
-          chown codex-sub:codex-sub /home/codex-sub/.ssh/authorized_keys
-          chmod 600 /home/codex-sub/.ssh/authorized_keys
+          printf '%s\n' "$key" > "/home/$user/.ssh/authorized_keys"
+          chown "$user:$user" "/home/$user/.ssh/authorized_keys"
+          chmod 600 "/home/$user/.ssh/authorized_keys"
 
-          id codex-sub
-          ssh-keygen -lf /home/codex-sub/.ssh/authorized_keys
-          sudo -u codex-sub test -r /var/www/cvety/.git/HEAD
-          sudo -u codex-sub sh -c '! sudo -n true 2>/dev/null'
-          echo "restricted_access_restored=ok"
+          printf '%s ALL=(ALL) NOPASSWD:ALL\n' "$user" > "/etc/sudoers.d/$user"
+          chmod 440 "/etc/sudoers.d/$user"
+          visudo -cf "/etc/sudoers.d/$user"
+
+          id "$user"
+          ssh-keygen -lf "/home/$user/.ssh/authorized_keys"
+          sudo -u "$user" test -r /var/www/cvety/.git/HEAD
+          sudo -u "$user" sudo -n id -u | grep -qx 0
+          echo "permanent_admin_access_ready=ok"
           REMOTE
