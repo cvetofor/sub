@@ -47,7 +47,10 @@ class AdminPagesTest extends TestCase {
         Livewire::test(\App\Filament\Widgets\StatsOverview::class)->assertOk()->assertSee('Доставок сегодня')->assertSee('Активных подписок');
 
         $token = $sub->amoViewToken();
-        $this->assertStringContainsString(route('amo.subscription.show', ['token' => $token]), AmoCrm::summary($sub));
+        $summary = AmoCrm::summary($sub);
+        $this->assertStringContainsString(route('amo.subscription.show', ['token' => $token]), $summary);
+        $this->assertStringContainsString('Ярославль, ул. Свободы, 1', $summary);
+        $this->assertStringContainsString('Карточка заявки (только просмотр, вход не нужен)', $summary);
         auth()->logout();
         $this->get(route('amo.subscription.show', ['token' => $token]))
             ->assertOk()
@@ -114,6 +117,7 @@ class AdminPagesTest extends TestCase {
                 && $fields[7]['values'][0]['enum_id'] === 71
                 && $fields[8]['values'][0]['enum_id'] === 81
                 && $fields[9]['values'][0]['enum_id'] === 91
+                && str_contains($fields[4]['values'][0]['value'], 'T00:00:00')
                 && str_contains($fields[10]['values'][0]['value'], 'Своя подписка');
         });
         Http::assertSent(function ($request) {
