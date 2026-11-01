@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Subscription;
 use App\Support\Days;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -14,8 +15,77 @@ use Illuminate\Support\Facades\Log;
  * и включённый флаг в настройках админки. Без них вызовы только пишутся в журнал.
  */
 class AmoCrm {
+    /** Доступ к API есть, даже если автоматическая передача заявок пока выключена. */
+    public static function credentialsPresent(): bool {
+        return (bool) config('services.amocrm.subdomain') && (bool) config('services.amocrm.token');
+    }
+
     public static function configured(): bool {
         return Settings::amoEnabled();
+    }
+
+    /** Список воронок для понятного выбора в админке: номер хранит сайт, человек видит название. */
+    public static function pipelineOptions(): array {
+        if (!self::credentialsPresent()) {
+            return [];
+        }
+
+        try {
+            return Cache::remember('amocrm:pipelines', now()->addMinutes(5), function () {
+                $pipelines = self::client()->get('/api/v4/leads/pipelines')->throw()->json('_embedded.pipelines', []);
+
+                return collect($pipelines)
+                    ->reject(fn (array $pipeline) => (bool) ($pipeline['is_archive'] ?? false))
+                    ->mapWithKeys(fn (array $pipeline) => [(string) $pipeline['id'] => $pipeline['name']])
+                    ->all();
+            });
+        } catch (\Throwable $e) {
+            Log::channel('shop')->warning('Не удалось получить список воронок amoCRM.', ['message' => $e->getMessage()]);
+
+            return [];
+        }
+    }
+
+    /** Этапы выбранной воронки для выбора по названию, а не по техническому номеру. */
+    public static function stageOptions(?int $pipelineId): array {
+        if (!$pipelineId || !self::credentialsPresent()) {
+            return [];
+        }
+
+        try {
+            return Cache::remember("amocrm:pipeline:{$pipelineId}:stages", now()->addMinutes(5), function () use ($pipelineId) {
+                $statuses = self::client()->get("/api/v4/leads/pipelines/{$pipelineId}/statuses")->throw()->json('_embedded.statuses', []);
+
+                return collect($statuses)
+                    ->mapWithKeys(fn (array $status) => [(string) $status['id'] => $status['name']])
+                    ->all();
+            });
+        } catch (\Throwable $e) {
+            Log::channel('shop')->warning('Не удалось получить этапы воронки amoCRM.', ['pipeline_id' => $pipelineId, 'message' => $e->getMessage()]);
+
+            return [];
+        }
+    }
+
+    /** Сотрудники amoCRM для назначения ответственного по имени. */
+    public static function userOptions(): array {
+        if (!self::credentialsPresent()) {
+            return [];
+        }
+
+        try {
+            return Cache::remember('amocrm:users', now()->addMinutes(5), function () {
+                $users = self::client()->get('/api/v4/users')->throw()->json('_embedded.users', []);
+
+                return collect($users)
+                    ->mapWithKeys(fn (array $user) => [(string) $user['id'] => $user['name']])
+                    ->all();
+            });
+        } catch (\Throwable $e) {
+            Log::channel('shop')->warning('Не удалось получить список сотрудников amoCRM.', ['message' => $e->getMessage()]);
+
+            return [];
+        }
     }
 
     /** Заявка оформлена (ещё не оплачена): сделка и контакт в amoCRM. Возвращает id сделки. */
@@ -125,7 +195,7 @@ class AmoCrm {
         if ($sub->comment) {
             $lines[] = 'Комментарий курьеру: ' . $sub->comment;
         }
-        $lines[] = 'Админка: ' . url('/hub/subscriptions/' . $sub->id . '/edit');
+        $lines[] = 'Карточка заявки (только просмотр, вход не нужен): ' . route('amo.subscription.show', ['token' => $sub->amoViewToken()]);
 
         return implode("\n", $lines);
     }
