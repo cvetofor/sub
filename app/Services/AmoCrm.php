@@ -297,7 +297,11 @@ class AmoCrm {
         }
 
         if (($field['type'] ?? null) === 'date') {
-            $value = $value instanceof Carbon ? $value->copy()->startOfDay()->timestamp : Carbon::parse($value)->startOfDay()->timestamp;
+            // В этом аккаунте amoCRM принимает даты только в ISO 8601 с
+            // часовым поясом, хотя общий API также документирует Unix-время.
+            $value = $value instanceof Carbon
+                ? $value->copy()->startOfDay()->toAtomString()
+                : Carbon::parse($value)->startOfDay()->toAtomString();
         }
         $entry = ['field_id' => (int) $field['id']];
         if (in_array($field['type'] ?? null, ['select', 'radiobutton'], true)) {
