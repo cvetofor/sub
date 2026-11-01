@@ -158,11 +158,11 @@ class QuizFlowTest extends TestCase {
     public function test_validation_and_staff_phone(): void {
         $this->postJson('/quiz/subscribe', $this->payload(['sender_phone' => '12345']))->assertStatus(422)->assertJsonPath('errors.sender_phone.0', 'В номере не хватает цифр. Пример: +7 924 000-00-00');
         $this->postJson('/quiz/subscribe', $this->payload(['who' => 'office']))->assertStatus(422);
-        $this->postJson('/quiz/subscribe', $this->payload(['plan_id' => null, 'budget' => 500]))->assertStatus(422)->assertJsonPath('errors.budget.0', 'Минимальный бюджет 990 ₽.');
+        $this->postJson('/quiz/subscribe', $this->payload(['plan_id' => null, 'budget' => 0]))->assertStatus(422)->assertJsonPath('errors.budget.0', 'Минимальный бюджет 1 ₽.');
         $this->postJson('/quiz/subscribe', $this->payload(['receiving_phone' => '123']))->assertStatus(422)->assertJsonPath('errors.receiving_phone.0', 'Телефон в формате +7 924 000-00-00.');
 
-        $r = $this->postJson('/quiz/subscribe', $this->payload(['plan_id' => null, 'budget' => 2500, 'option_ids' => []]))->assertCreated();
-        $this->assertSame(2500.0, (float) Subscription::find($r->json('subscription_id'))->plan->price);
+        $r = $this->postJson('/quiz/subscribe', $this->payload(['plan_id' => null, 'budget' => 1, 'option_ids' => []]))->assertCreated();
+        $this->assertSame(1.0, (float) Subscription::find($r->json('subscription_id'))->plan->price);
 
         User::create(['name' => 'Админ', 'email' => 'admin@site.local', 'phone' => '+79990000001', 'phone_e164' => '+79990000001', 'password' => 'x', 'role_id' => Role::ADMIN, 'is_active' => true]);
         $this->postJson('/quiz/subscribe', $this->payload(['sender_phone' => '+79990000001']))->assertStatus(422);
