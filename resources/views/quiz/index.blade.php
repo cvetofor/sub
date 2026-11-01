@@ -125,7 +125,7 @@
                 </div>
                 <div class="qz-own" id="ownBox">
                     <span class="qz-check" aria-hidden="true"></span>
-                    <div class="qz-own-t"><b>Свой бюджет</b><small>Назовите сумму за букет, соберём под неё. От 990 ₽.</small></div>
+                    <div class="qz-own-t"><b>Свой бюджет</b><small>Назовите сумму за букет, соберём под неё. На время проверки — от 1 ₽.</small></div>
                     <label class="qz-field"><span>Сумма за букет, ₽</span><input type="text" inputmode="numeric" id="ownBudget" placeholder="например, 2 500" maxlength="6"></label>
                 </div>
             </div>
