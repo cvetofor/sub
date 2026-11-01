@@ -2,12 +2,13 @@
 
 use App\Http\Api\Yookassa;
 use App\Models\Delivery;
+use App\Models\Payment;
+use App\Models\Subscription;
 use App\Services\DeliverySchedule;
 use App\Services\Notifier;
 use App\Services\TeamNotifier;
-use App\Models\Payment;
-use App\Models\Subscription;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schedule;
 
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\Schedule;
  * списываем сумму обычного месяца по сохранённому способу оплаты.
  */
 Schedule::call(function () {
-    if (!Yookassa::isConfigured()) {
+    if (! Yookassa::isConfigured()) {
         Log::channel('shop')->warning('Повторные списания пропущены: нет ключей ЮKassa.');
 
         return;
@@ -34,8 +35,9 @@ Schedule::call(function () {
             ->where('payment_status_id', Payment::IN_PROGRESS)
             ->orderByDesc('payments.created_at')
             ->first();
-        if ($attempt && !Yookassa::isUnsentRecurringAttempt($attempt)) {
+        if ($attempt && ! Yookassa::isUnsentRecurringAttempt($attempt)) {
             Log::channel('shop')->info('Повторное списание уже ожидает ответ ЮKassa.', ['subscription_id' => $subscription->id, 'payment' => $attempt->payment_gateway_transaction]);
+
             continue;
         }
 
@@ -47,19 +49,21 @@ Schedule::call(function () {
             ->orderByDesc('payments.created_at')
             ->first();
 
-        if (!$payment || str_starts_with((string) $payment->recurrent_token, 'test-')) {
+        if (! $payment || str_starts_with((string) $payment->recurrent_token, 'test-')) {
             Log::channel('shop')->warning('Нет сохранённого способа оплаты, подписка остановлена.', ['subscription_id' => $subscription->id]);
             $subscription->update(['is_active' => false, 'pause_reason' => \App\Models\Subscription::PAUSE_PAYMENT]);
             Notifier::paymentFailed($subscription, $subscription->monthlyAmount());
+
             continue;
         }
 
         try {
             $attempt ??= Yookassa::startRecurringPaymentAttempt($subscription, $payment->recurrent_token);
-            $yookassa = new Yookassa();
+            $yookassa = new Yookassa;
             $paymentYookassa = $yookassa->recurrentPayment($payment->recurrent_token, $subscription, $attempt->idempotence_key);
         } catch (\Throwable $e) {
             Log::channel('shop')->error('Ошибка повторного списания.', ['subscription_id' => $subscription->id, 'message' => $e->getMessage()]);
+
             continue;
         }
 
@@ -67,6 +71,7 @@ Schedule::call(function () {
             // Банк ещё думает: итог придёт уведомлением payment.succeeded или payment.canceled
             Yookassa::saveRecurringPaymentInProgress($subscription, $paymentYookassa, $payment->recurrent_token);
             Log::channel('shop')->info('Повторное списание в обработке, ждём уведомление.', ['subscription_id' => $subscription->id, 'payment' => $paymentYookassa->id]);
+
             continue;
         }
 
@@ -96,6 +101,126 @@ Schedule::call(function () {
         }
     }
 })->everyTwoHours()->name('subscriptions:charge-recurrent')->withoutOverlapping();
+
+/*
+ * Контролируемая проверка рекуррентного платежа: только одна конкретная
+ * подписка. Пока --confirm не повторяет её ID, команда лишь показывает
+ * готовность и не обращается в ЮKassa.
+ */
+Artisan::command('subscriptions:charge-one-recurrent
+    {subscription : Номер подписки для единственного списания}
+    {--due= : Ожидаемая дата следующей оплаты из проверки (ГГГГ-ММ-ДД)}
+    {--confirm= : Повторите номер подписки, чтобы действительно создать платёж}', function () {
+    $subscription = Subscription::with('plan.options')->find((int) $this->argument('subscription'));
+    if (! $subscription) {
+        $this->error('Подписка не найдена. Платёж не создавался.');
+
+        return 1;
+    }
+
+    $savedPayment = $subscription->payments()
+        ->where('payment_status_id', Payment::PAYED)
+        ->whereNotNull('recurrent_token')
+        ->where('recurrent_token', '!=', '')
+        ->orderByDesc('payments.created_at')
+        ->first();
+
+    $this->line('subscription_id='.$subscription->id);
+    $this->line('monthly_amount='.number_format($subscription->monthlyAmount(), 2, '.', '').' RUB');
+    $this->line('active='.($subscription->is_active ? 'yes' : 'no'));
+    $this->line('saved_payment_method='.($savedPayment && ! str_starts_with((string) $savedPayment->recurrent_token, 'test-') ? 'yes' : 'no'));
+    $this->line('next_payment_date='.($subscription->next_date_payment?->toDateString() ?? 'not_set'));
+
+    if ((string) $this->option('confirm') !== (string) $subscription->id) {
+        $this->warn('Платёж не создан. Для адресного списания повторите номер подписки: --confirm='.$subscription->id);
+
+        return 0;
+    }
+
+    $dueDate = $subscription->next_date_payment?->toDateString();
+    if (! $dueDate || (string) $this->option('due') !== $dueDate) {
+        $this->warn('Платёж не создан. Для адресного списания подтвердите дату из проверки: --due='.($dueDate ?? 'not_set'));
+
+        return 0;
+    }
+
+    if (! Yookassa::isConfigured()) {
+        $this->error('ЮKassa не настроена. Платёж не создавался.');
+
+        return 1;
+    }
+
+    if (! $subscription->is_active) {
+        $this->error('Подписка не активна. Платёж не создавался.');
+
+        return 1;
+    }
+
+    // Незавершённый запрос уже зафиксирован: повторно деньги не списываем.
+    $attempt = $subscription->payments()
+        ->where('payment_status_id', Payment::IN_PROGRESS)
+        ->orderByDesc('payments.created_at')
+        ->first();
+    if ($attempt && ! Yookassa::isUnsentRecurringAttempt($attempt)) {
+        $this->warn('Повторное списание уже ожидает ответ ЮKassa. Новый платёж не создавался.');
+
+        return 0;
+    }
+
+    if (! $savedPayment || str_starts_with((string) $savedPayment->recurrent_token, 'test-')) {
+        $this->error('Нет сохранённого боевого способа оплаты. Платёж не создавался.');
+
+        return 1;
+    }
+
+    try {
+        $attempt ??= Yookassa::startRecurringPaymentAttempt($subscription, $savedPayment->recurrent_token);
+        $paymentYookassa = (new Yookassa)->recurrentPayment($savedPayment->recurrent_token, $subscription, $attempt->idempotence_key);
+    } catch (\Throwable $e) {
+        Log::channel('shop')->error('Ошибка адресного теста повторного списания.', ['subscription_id' => $subscription->id, 'message' => $e->getMessage()]);
+        $this->error('ЮKassa вернула ошибку. Смотрите журнал магазина; повторный платёж не подтверждён.');
+
+        return 1;
+    }
+
+    if ($paymentYookassa && $paymentYookassa->status === 'pending') {
+        Yookassa::saveRecurringPaymentInProgress($subscription, $paymentYookassa, $savedPayment->recurrent_token);
+        $this->info('Платёж создан и ожидает ответ банка. Итог обработает уведомление ЮKassa.');
+
+        return 0;
+    }
+
+    if ($paymentYookassa && $paymentYookassa->status === 'succeeded' && $paymentYookassa->paid === true) {
+        $newPayment = Yookassa::completeRecurringPayment(
+            $subscription,
+            $paymentYookassa->id,
+            $paymentYookassa->amount->value,
+            $paymentYookassa->payment_method->id ?? $savedPayment->recurrent_token,
+        );
+        if ($newPayment) {
+            $subscription->refresh()->load('plan.options');
+            DeliverySchedule::planNextMonth($subscription);
+            Notifier::renewed($subscription, (float) $newPayment->amount);
+            $this->info('Платёж успешно списан, подписка продлена.');
+
+            return 0;
+        }
+
+        $this->warn('Платёж уже был обработан ранее. Повторное списание не создано.');
+
+        return 0;
+    }
+
+    $transactionId = $paymentYookassa?->id ?? $attempt->payment_gateway_transaction;
+    if (Yookassa::cancelRecurringPayment($subscription, $transactionId)) {
+        $subscription->refresh()->load('plan.options');
+        Notifier::paymentFailed($subscription, $subscription->monthlyAmount());
+        TeamNotifier::paymentFailed($subscription, $subscription->monthlyAmount());
+    }
+    $this->error('Банк не подтвердил повторное списание. Подписка поставлена на паузу.');
+
+    return 1;
+})->purpose('Создать одно подтверждённое рекуррентное списание для указанной подписки');
 
 /* Напоминание о завтрашней доставке: один раз, только по активным подпискам. */
 Schedule::call(function () {
