@@ -23,8 +23,8 @@ use Illuminate\Validation\Rule;
  * Оформление без входа по коду: после оплаты клиент получает ссылку в кабинет в СМС.
  */
 class QuizController extends Controller {
-    // Временно для контролируемой проверки рекуррентного платежа. После неё вернуть 990.
-    private const CUSTOM_BUDGET_MIN = 1;
+    /** Минимальный бюджет индивидуального букета в квизе. */
+    private const CUSTOM_BUDGET_MIN = 990;
 
     private const MESSAGES = [
         'required' => 'Заполните это поле.',
@@ -35,7 +35,7 @@ class QuizController extends Controller {
         'exists' => 'Такого варианта нет.',
         'address.min' => 'Укажите улицу и дом.',
         'sender_name.min' => 'Как к вам обращаться?',
-        'budget.min' => 'Минимальный бюджет 1 ₽.',
+        'budget.min' => 'Минимальный бюджет 990 ₽.',
         'budget.max' => 'Максимальный бюджет 50 000 ₽.',
         'frequency.in' => 'Выберите, как часто привозить.',
         'who.in' => 'Выберите, кому привозить.',
