@@ -10,6 +10,7 @@ use App\Models\Role;
 use App\Models\Subscription;
 use App\Models\TimeDelivery;
 use App\Models\User;
+use App\Services\AmoCrm;
 use App\Services\DeliverySchedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -42,5 +43,15 @@ class AdminPagesTest extends TestCase {
         $this->get('/hub')->assertOk();
         // Виджеты дашборда грузятся отложенно, проверяем сам виджет
         Livewire::test(\App\Filament\Widgets\StatsOverview::class)->assertOk()->assertSee('Доставок сегодня')->assertSee('Активных подписок');
+
+        $token = $sub->amoViewToken();
+        $this->assertStringContainsString(route('amo.subscription.show', ['token' => $token]), AmoCrm::summary($sub));
+        auth()->logout();
+        $this->get(route('amo.subscription.show', ['token' => $token]))
+            ->assertOk()
+            ->assertSee('Только просмотр')
+            ->assertSee('Ярославль, ул. Свободы, 1')
+            ->assertDontSee('/hub/subscriptions/');
+        $this->get(route('amo.subscription.show', ['token' => str_repeat('a', 64)]))->assertNotFound();
     }
 }

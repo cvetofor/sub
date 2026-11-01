@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\Pricing;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Subscription extends Model {
     public const PAUSE_CLIENT = 'client';
@@ -32,6 +33,7 @@ class Subscription extends Model {
         'ab_design',
         'source',
         'amo_lead_id',
+        'amo_view_token',
         'unpaid_reminded_at',
         'cancelled_at',
     ];
@@ -139,5 +141,17 @@ class Subscription extends Model {
     /** Совместимость со старым кодом: сумма обычного месяца. */
     public function totalAmount(): float {
         return $this->monthlyAmount();
+    }
+
+    /**
+     * Непредсказуемая ссылка только для просмотра карточки из amoCRM.
+     * Её можно отозвать в будущем, сгенерировав новый токен для подписки.
+     */
+    public function amoViewToken(): string {
+        if (!$this->amo_view_token) {
+            $this->forceFill(['amo_view_token' => Str::random(64)])->save();
+        }
+
+        return $this->amo_view_token;
     }
 }
