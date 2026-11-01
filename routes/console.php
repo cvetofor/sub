@@ -69,7 +69,7 @@ Schedule::call(function () {
 
         if ($paymentYookassa && $paymentYookassa->status === 'pending') {
             // Банк ещё думает: итог придёт уведомлением payment.succeeded или payment.canceled
-            Yookassa::saveRecurringPaymentInProgress($subscription, $paymentYookassa, $payment->recurrent_token);
+            Yookassa::saveRecurringPaymentInProgress($subscription, $paymentYookassa, $payment->recurrent_token, $attempt->idempotence_key);
             Log::channel('shop')->info('Повторное списание в обработке, ждём уведомление.', ['subscription_id' => $subscription->id, 'payment' => $paymentYookassa->id]);
 
             continue;
@@ -110,7 +110,8 @@ Schedule::call(function () {
 Artisan::command('subscriptions:charge-one-recurrent
     {subscription : Номер подписки для единственного списания}
     {--due= : Ожидаемая дата следующей оплаты из проверки (ГГГГ-ММ-ДД)}
-    {--confirm= : Повторите номер подписки, чтобы действительно создать платёж}', function () {
+    {--confirm= : Повторите номер подписки, чтобы действительно создать платёж}
+    {--replace-rejected-key : Заменить ключ только у подтверждённо отклонённой до создания платежа попытки}', function () {
     $subscription = Subscription::with('plan.options')->find((int) $this->argument('subscription'));
     if (! $subscription) {
         $this->error('Подписка не найдена. Платёж не создавался.');
@@ -173,6 +174,11 @@ Artisan::command('subscriptions:charge-one-recurrent
         return 1;
     }
 
+    if ($attempt && Yookassa::isUnsentRecurringAttempt($attempt) && $this->option('replace-rejected-key')) {
+        $attempt = Yookassa::renewUnsentRecurringAttemptKey($attempt);
+        $this->warn('Заменён ключ ранее отклонённой попытки. Создаётся один новый запрос в ЮKassa.');
+    }
+
     try {
         $attempt ??= Yookassa::startRecurringPaymentAttempt($subscription, $savedPayment->recurrent_token);
         $paymentYookassa = (new Yookassa)->recurrentPayment($savedPayment->recurrent_token, $subscription, $attempt->idempotence_key);
@@ -184,7 +190,7 @@ Artisan::command('subscriptions:charge-one-recurrent
     }
 
     if ($paymentYookassa && $paymentYookassa->status === 'pending') {
-        Yookassa::saveRecurringPaymentInProgress($subscription, $paymentYookassa, $savedPayment->recurrent_token);
+        Yookassa::saveRecurringPaymentInProgress($subscription, $paymentYookassa, $savedPayment->recurrent_token, $attempt->idempotence_key);
         $this->info('Платёж создан и ожидает ответ банка. Итог обработает уведомление ЮKassa.');
 
         return 0;
