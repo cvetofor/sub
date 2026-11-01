@@ -49,38 +49,29 @@ jobs:
           set -Eeuo pipefail
           repair="$1"
           key="$2"
-          current_user="$(id -un)"
 
-          echo "remote_user=$current_user"
-          id "$current_user"
-          getent passwd "$current_user"
-          if passwd -S "$current_user" >/dev/null 2>&1; then
-            passwd -S "$current_user" | awk '{print "account_state=" $2}'
-          else
-            echo "account_state=unavailable_to_restricted_user"
-          fi
-
-          test "$current_user" = codex-sub
-          test -d /home/codex-sub/.ssh
-          test -f /home/codex-sub/.ssh/authorized_keys
-          stat -c 'ssh_directory=%a owner=%U:%G' /home/codex-sub/.ssh
-          stat -c 'authorized_keys=%a owner=%U:%G' /home/codex-sub/.ssh/authorized_keys
-          ssh-keygen -lf /home/codex-sub/.ssh/authorized_keys
-          if command -v sshd >/dev/null && sshd -T >/dev/null 2>&1; then
-            sshd -T | grep -E '^(authorizedkeysfile|passwordauthentication|pubkeyauthentication|permitrootlogin|allowusers|denyusers) ' || true
-          else
-            echo "sshd_configuration=unavailable_to_restricted_user"
-          fi
-          test -r /var/www/cvety/.git/HEAD
+          echo "service_connection=ok"
+          sudo -n true
+          sudo -n id codex-sub
+          sudo -n getent passwd codex-sub
+          sudo -n passwd -S codex-sub | awk '{print "account_state=" $2}'
+          sudo -n test -d /home/codex-sub/.ssh
+          sudo -n test -f /home/codex-sub/.ssh/authorized_keys
+          sudo -n stat -c 'ssh_directory=%a owner=%U:%G' /home/codex-sub/.ssh
+          sudo -n stat -c 'authorized_keys=%a owner=%U:%G' /home/codex-sub/.ssh/authorized_keys
+          sudo -n ssh-keygen -lf /home/codex-sub/.ssh/authorized_keys
+          sudo -n sshd -T | grep -E '^(authorizedkeysfile|passwordauthentication|pubkeyauthentication|permitrootlogin|allowusers|denyusers) ' || true
+          sudo -n -u codex-sub test -r /var/www/cvety/.git/HEAD
           echo "site_directory_access=ok"
 
           if [ "$repair" = true ]; then
             test -n "$key"
             case "$key" in ssh-ed25519 *) ;; *) echo "invalid_public_key"; exit 1 ;; esac
-            install -d -m 700 /home/codex-sub/.ssh
-            printf 'restrict,pty %s\n' "$key" > /home/codex-sub/.ssh/authorized_keys
-            chmod 600 /home/codex-sub/.ssh/authorized_keys
-            ssh-keygen -lf /home/codex-sub/.ssh/authorized_keys
+            sudo -n install -d -m 700 -o codex-sub -g codex-sub /home/codex-sub/.ssh
+            printf 'restrict,pty %s\n' "$key" | sudo -n tee /home/codex-sub/.ssh/authorized_keys >/dev/null
+            sudo -n chown codex-sub:codex-sub /home/codex-sub/.ssh/authorized_keys
+            sudo -n chmod 600 /home/codex-sub/.ssh/authorized_keys
+            sudo -n ssh-keygen -lf /home/codex-sub/.ssh/authorized_keys
             echo "restricted_key_restored=ok"
           else
             echo "repair_not_requested"
