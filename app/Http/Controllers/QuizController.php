@@ -23,6 +23,9 @@ use Illuminate\Validation\Rule;
  * Оформление без входа по коду: после оплаты клиент получает ссылку в кабинет в СМС.
  */
 class QuizController extends Controller {
+    // Временно для контролируемой проверки рекуррентного платежа. После неё вернуть 990.
+    private const CUSTOM_BUDGET_MIN = 1;
+
     private const MESSAGES = [
         'required' => 'Заполните это поле.',
         'min' => 'Слишком коротко.',
@@ -32,7 +35,7 @@ class QuizController extends Controller {
         'exists' => 'Такого варианта нет.',
         'address.min' => 'Укажите улицу и дом.',
         'sender_name.min' => 'Как к вам обращаться?',
-        'budget.min' => 'Минимальный бюджет 990 ₽.',
+        'budget.min' => 'Минимальный бюджет 1 ₽.',
         'budget.max' => 'Максимальный бюджет 50 000 ₽.',
         'frequency.in' => 'Выберите, как часто привозить.',
         'who.in' => 'Выберите, кому привозить.',
@@ -93,7 +96,7 @@ class QuizController extends Controller {
             'who' => ['required', Rule::in([Plan::SCENARIO_HOME, Plan::SCENARIO_GIFT])],
             'frequency' => ['required', Rule::in(Pricing::frequencies())],
             'plan_id' => 'required_without:budget|nullable|integer',
-            'budget' => 'required_without:plan_id|nullable|integer|min:990|max:50000',
+            'budget' => 'required_without:plan_id|nullable|integer|min:' . self::CUSTOM_BUDGET_MIN . '|max:50000',
             'option_ids' => 'nullable|array|max:10',
             'option_ids.*' => ['integer', Rule::exists('plan_options', 'id')],
             'card_text' => 'nullable|string|max:300',
