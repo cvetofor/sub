@@ -2,9 +2,11 @@
 
 namespace App\Filament\Pages;
 
+use App\Services\AmoCrm;
 use App\Services\Settings;
 use BackedEnum;
 use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
@@ -47,7 +49,7 @@ class SiteSettings extends Page {
     }
 
     public function form(Schema $schema): Schema {
-        $amoConfigured = (bool) config('services.amocrm.subdomain') && (bool) config('services.amocrm.token');
+        $amoConfigured = AmoCrm::credentialsPresent();
 
         return $schema->components([
             Section::make('Дизайн сайта')
@@ -80,14 +82,41 @@ class SiteSettings extends Page {
                 )),
             Section::make('amoCRM')
                 ->description($amoConfigured
-                    ? 'Доступ настроен в окружении (AMOCRM_SUBDOMAIN, AMOCRM_TOKEN). Заявка с сайта создаёт сделку с контактом сразу после оформления, оплата переводит сделку на следующий этап и дописывает примечание.'
-                    : 'Доступ не настроен: добавьте AMOCRM_SUBDOMAIN и AMOCRM_TOKEN (долгосрочный токен интеграции) в .env на сервере. До этого сделки не создаются.')
+                    ? 'Доступ настроен. Выбирайте воронку, этапы и ответственного по названиям — технические номера сайт сохранит сам. Новая заявка создаёт сделку с контактом; после оплаты она перейдёт на выбранный этап и получит примечание.'
+                    : 'Доступ ещё не настроен: нужны адрес аккаунта и долгоживущий токен частной интеграции AmoCRM. Пока их нет, переключатель ниже не создаёт сделок. Пошаговая инструкция: docs/AMOCRM.md.')
                 ->schema([
-                    Toggle::make('amocrm_enabled')->label('Передавать заявки в amoCRM'),
-                    TextInput::make('amocrm_pipeline_id')->label('ID воронки')->numeric()->helperText('Пусто: основная воронка аккаунта.'),
-                    TextInput::make('amocrm_status_new')->label('ID этапа для новой заявки')->numeric()->helperText('Пусто: первый этап воронки.'),
-                    TextInput::make('amocrm_status_paid')->label('ID этапа после оплаты')->numeric()->helperText('Пусто: этап не меняется, только примечание и сумма.'),
-                    TextInput::make('amocrm_responsible_user_id')->label('ID ответственного менеджера')->numeric()->helperText('Пусто: по правилам amoCRM.'),
+                    Toggle::make('amocrm_enabled')->label('Передавать заявки в AmoCRM'),
+                    Select::make('amocrm_pipeline_id')
+                        ->label('Воронка для подписок')
+                        ->options(fn () => AmoCrm::pipelineOptions())
+                        ->placeholder($amoConfigured ? 'Выберите воронку' : 'Появится после подключения AmoCRM')
+                        ->searchable()
+                        ->reactive()
+                        ->afterStateUpdated(function (callable $set): void {
+                            $set('amocrm_status_new', null);
+                            $set('amocrm_status_paid', null);
+                        })
+                        ->helperText('Выберите название воронки. Если оставить пустым, AmoCRM использует основную воронку аккаунта.'),
+                    Select::make('amocrm_status_new')
+                        ->label('Этап для новой заявки')
+                        ->options(fn (callable $get) => AmoCrm::stageOptions((int) $get('amocrm_pipeline_id')))
+                        ->placeholder('Сначала выберите воронку')
+                        ->searchable()
+                        ->disabled(fn (callable $get) => !$get('amocrm_pipeline_id'))
+                        ->helperText('Сделка попадёт сюда сразу после оформления на сайте.'),
+                    Select::make('amocrm_status_paid')
+                        ->label('Этап после первой оплаты')
+                        ->options(fn (callable $get) => AmoCrm::stageOptions((int) $get('amocrm_pipeline_id')))
+                        ->placeholder('Сначала выберите воронку')
+                        ->searchable()
+                        ->disabled(fn (callable $get) => !$get('amocrm_pipeline_id'))
+                        ->helperText('После успешной оплаты сайт переведёт сделку на этот этап. Пусто — этап не меняется.'),
+                    Select::make('amocrm_responsible_user_id')
+                        ->label('Ответственный менеджер')
+                        ->options(fn () => AmoCrm::userOptions())
+                        ->placeholder($amoConfigured ? 'По правилам AmoCRM' : 'Появится после подключения AmoCRM')
+                        ->searchable()
+                        ->helperText('Необязательно: если не выбирать, AmoCRM назначит ответственного по своим правилам.'),
                 ])->columns(2),
         ])->statePath('data');
     }
@@ -100,10 +129,10 @@ class SiteSettings extends Page {
             'sms' => array_map(fn ($v) => (bool) $v, $data['sms'] ?? []),
             'unpaid_reminder_minutes' => max(5, (int) ($data['unpaid_reminder_minutes'] ?? 60)),
             'amocrm_enabled' => (bool) ($data['amocrm_enabled'] ?? false),
-            'amocrm_pipeline_id' => $data['amocrm_pipeline_id'] ?: null,
-            'amocrm_status_new' => $data['amocrm_status_new'] ?: null,
-            'amocrm_status_paid' => $data['amocrm_status_paid'] ?: null,
-            'amocrm_responsible_user_id' => $data['amocrm_responsible_user_id'] ?: null,
+            'amocrm_pipeline_id' => ($data['amocrm_pipeline_id'] ?? null) ?: null,
+            'amocrm_status_new' => ($data['amocrm_status_new'] ?? null) ?: null,
+            'amocrm_status_paid' => ($data['amocrm_status_paid'] ?? null) ?: null,
+            'amocrm_responsible_user_id' => ($data['amocrm_responsible_user_id'] ?? null) ?: null,
         ]);
 
         Notification::make()->title('Настройки сохранены')->success()->send();
