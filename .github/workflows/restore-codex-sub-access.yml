@@ -1,0 +1,72 @@
+name: Разово восстановить ограниченный SSH-доступ Codex
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cvety-production
+  cancel-in-progress: false
+
+jobs:
+  restore:
+    name: Восстановить ключ codex-sub без пароля и sudo
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: redesign
+
+      - name: Получить временный root-ключ через API Beget
+        env:
+          BEGET_LOGIN: ${{ secrets.BEGET_LOGIN }}
+          BEGET_PASSWORD: ${{ secrets.BEGET_PASSWORD }}
+          BEGET_API_PASSWORD: ${{ secrets.BEGET_API_PASSWORD }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          test -n "$BEGET_LOGIN"
+          test -n "$SSH_KNOWN_HOSTS"
+          test -n "$BEGET_PASSWORD$BEGET_API_PASSWORD"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          KEY_PATH="$HOME/.ssh/id_restore" MODE=ssh \
+            VPS_IP=93.189.231.103 DOMAIN_IDN=цветы.цветофор.рф \
+            bash deploy/beget-prepare.sh
+
+      - name: Установить один ограниченный ключ codex-sub
+        env:
+          CODEX_SUB_PUBLIC_KEY: ${{ secrets.CODEX_SUB_PUBLIC_KEY }}
+        run: |
+          test -n "$CODEX_SUB_PUBLIC_KEY"
+          TARGET="root@93.189.231.103"
+          SSH="ssh -i ~/.ssh/id_restore -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+          $SSH "$TARGET" "bash -s -- '$CODEX_SUB_PUBLIC_KEY'" <<'REMOTE'
+          set -Eeuo pipefail
+          key="$1"
+          case "$key" in ssh-ed25519 *) ;; *) echo "invalid_public_key"; exit 1 ;; esac
+
+          if ! id codex-sub >/dev/null 2>&1; then
+            useradd --create-home --shell /bin/bash codex-sub
+          fi
+          install -d -m 700 -o codex-sub -g codex-sub /home/codex-sub/.ssh
+          backup="/home/codex-sub/.ssh/authorized_keys.backup-$(date +%Y%m%d%H%M%S)"
+          if test -f /home/codex-sub/.ssh/authorized_keys; then
+            cp -a /home/codex-sub/.ssh/authorized_keys "$backup"
+            chown codex-sub:codex-sub "$backup"
+            chmod 600 "$backup"
+            echo "previous_authorized_keys_backed_up"
+          fi
+          printf 'restrict,pty %s\n' "$key" > /home/codex-sub/.ssh/authorized_keys
+          chown codex-sub:codex-sub /home/codex-sub/.ssh/authorized_keys
+          chmod 600 /home/codex-sub/.ssh/authorized_keys
+
+          id codex-sub
+          ssh-keygen -lf /home/codex-sub/.ssh/authorized_keys
+          sudo -u codex-sub test -r /var/www/cvety/.git/HEAD
+          sudo -u codex-sub sh -c '! sudo -n true 2>/dev/null'
+          echo "restricted_access_restored=ok"
+          REMOTE
