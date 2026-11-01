@@ -1,0 +1,77 @@
+name: Разово диагностировать доступ codex-sub
+
+on:
+  workflow_dispatch:
+    inputs:
+      repair:
+        description: Восстановить тот же ограниченный ключ после диагностики
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cvety-production
+  cancel-in-progress: false
+
+jobs:
+  diagnose:
+    name: Проверить ограниченный SSH-доступ
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Настроить служебное подключение к серверу
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          test -n "$SSH_PRIVATE_KEY"
+          test -n "$SSH_KNOWN_HOSTS"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Диагностировать и при явном выборе восстановить ключ
+        env:
+          DEPLOY_HOST: ${{ secrets.SSH_HOST }}
+          DEPLOY_USER: ${{ secrets.SSH_USER }}
+          CODEX_SUB_PUBLIC_KEY: ${{ secrets.CODEX_SUB_PUBLIC_KEY }}
+          REPAIR: ${{ inputs.repair }}
+        run: |
+          test -n "$DEPLOY_HOST" && test -n "$DEPLOY_USER"
+          TARGET="$DEPLOY_USER@$DEPLOY_HOST"
+          SSH="ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+          $SSH "$TARGET" "bash -s -- '$REPAIR' '$CODEX_SUB_PUBLIC_KEY'" <<'REMOTE'
+          set -Eeuo pipefail
+          repair="$1"
+          key="$2"
+
+          id codex-sub
+          getent passwd codex-sub
+          passwd -S codex-sub | awk '{print "account_state=" $2}'
+          test -d /home/codex-sub/.ssh
+          test -f /home/codex-sub/.ssh/authorized_keys
+          stat -c 'ssh_directory=%a owner=%U:%G' /home/codex-sub/.ssh
+          stat -c 'authorized_keys=%a owner=%U:%G' /home/codex-sub/.ssh/authorized_keys
+          ssh-keygen -lf /home/codex-sub/.ssh/authorized_keys
+          sshd -T | grep -E '^(authorizedkeysfile|passwordauthentication|pubkeyauthentication|permitrootlogin|allowusers|denyusers) ' || true
+          sudo -u codex-sub test -r /var/www/cvety/.git/HEAD
+          echo "site_directory_access=ok"
+
+          if [ "$repair" = true ]; then
+            test -n "$key"
+            case "$key" in ssh-ed25519 *) ;; *) echo "invalid_public_key"; exit 1 ;; esac
+            install -d -m 700 -o codex-sub -g codex-sub /home/codex-sub/.ssh
+            printf 'restrict,pty %s\n' "$key" > /home/codex-sub/.ssh/authorized_keys
+            chown codex-sub:codex-sub /home/codex-sub/.ssh/authorized_keys
+            chmod 600 /home/codex-sub/.ssh/authorized_keys
+            ssh-keygen -lf /home/codex-sub/.ssh/authorized_keys
+            echo "restricted_key_restored=ok"
+          else
+            echo "repair_not_requested"
+          fi
+          REMOTE
