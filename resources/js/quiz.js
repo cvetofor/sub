@@ -36,10 +36,13 @@ export function initQuiz() {
     };
     const nextCharge = () => { const d = new Date(today); d.setMonth(d.getMonth() + 1); return d; };
 
+    // Временно для контролируемой проверки рекуррентного платежа. После неё вернуть 990.
+    const CUSTOM_BUDGET_MIN = 1;
+
     /* Выбранный букет: готовый или свой бюджет */
     const plan = () => {
         if (st.planId === 0) {
-            const price = Math.max(990, parseInt(String(st.own).replace(/\D/g, ''), 10) || 0);
+            const price = Math.max(CUSTOM_BUDGET_MIN, parseInt(String(st.own).replace(/\D/g, ''), 10) || 0);
             return { id: 0, name: 'Свой бюджет', price, image: data.plans[0]?.image };
         }
         const p = data.plans.find((x) => x.id === st.planId);
@@ -59,7 +62,7 @@ export function initQuiz() {
             every, once,
         };
     };
-    const ownValid = () => (parseInt(String(st.own).replace(/\D/g, ''), 10) || 0) >= 990;
+    const ownValid = () => (parseInt(String(st.own).replace(/\D/g, ''), 10) || 0) >= CUSTOM_BUDGET_MIN;
     const planReady = () => (st.planId && st.planId > 0) || (st.planId === 0 && ownValid());
     const giftReady = () => st.who !== 'gift' || (!$('recPhone').value.trim() || phoneOk($('recPhone').value));
     const whenReady = () => st.agree || (!!st.day && (!!st.winId || !data.windows.length));
